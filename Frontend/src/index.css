@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Force dark background everywhere, even before Tailwind classes paint. */
+html,
+body {
+  background-color: #020617; /* slate-950 */
+  margin: 0;
+}
+
+/* V2: subtle entrance animation for the dashboard once results arrive. */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
