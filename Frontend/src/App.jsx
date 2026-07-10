@@ -16,7 +16,7 @@ import LoadingTimeline, { AGENT_STEP_NAMES } from "./components/LoadingTimeline.
 import BlueprintDashboard from "./components/BlueprintDashboard.jsx";
 
 // Change this if your backend runs on a different port.
-const API_URL = "http://localhost:5000/api/generate-blueprint";
+const API_URL = "http://localhost:5001/api/generate-blueprint";
 
 // Builds the initial "all pending" step list shown before any events arrive.
 function buildInitialSteps() {
@@ -163,7 +163,7 @@ function Hero() {
         <span className="text-indigo-400">full startup blueprint</span>
       </h1>
       <p className="text-slate-400 text-base md:text-lg">
-        Nine specialized AI agents analyze your idea end-to-end — market,
+        Fifteen specialized AI agents analyze your idea end-to-end — market,
         customers, product, tech stack, business model, pitch, roadmap, and a
         final AI Critic review with scores, SWOT, risks, and budget.
       </p>
@@ -199,7 +199,7 @@ function IdeaInput({ idea, setIdea, onGenerate, isLoading }) {
 function Footer() {
   return (
     <footer className="w-full border-t border-slate-900 px-6 py-4 text-center text-xs text-slate-600">
-      LaunchPilot AI — Version 2
+      LaunchPilot AI — Version 3
     </footer>
   );
 }

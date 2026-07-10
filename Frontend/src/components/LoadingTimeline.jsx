@@ -1,16 +1,23 @@
 // LoadingTimeline.jsx
 // ---------------------------------------------------------------------------
-// V2 CHANGE: this used to fake progress with a setInterval timer because
-// the backend only returned one final response. Now the backend streams
-// real per-agent progress events (see App.jsx's readNdjsonStream), so this
+// V2: this used to fake progress with a setInterval timer because the
+// backend only returned one final response. Now the backend streams real
+// per-agent progress events (see App.jsx's readNdjsonStream), so this
 // component just renders whatever `steps` prop it's given — no timers, no
-// guessing. It also now shows a "Currently running" line driven by real
-// state, and a 9th step for the AI Critic Agent.
+// guessing. It also shows a "Currently running" line driven by real state.
+//
+// V3 CHANGE: AGENT_STEP_NAMES grew from 9 to 15 entries to cover the new
+// execution-mode sections (Go-to-Market, Launch Checklist, Execution Plan,
+// Cost & Revenue, Competitor & Difficulty, Build Timeline). No rendering
+// logic changed — this component already just maps over whatever list of
+// step names it's given, which is exactly why this was the only edit
+// needed here.
 // ---------------------------------------------------------------------------
 import { CheckCircle2, Loader2, XCircle, Circle } from "lucide-react";
 
 // Exported so App.jsx can build its initial "all pending" step list without
-// duplicating the agent names in two places.
+// duplicating the agent names in two places. Order MUST match the STEPS
+// array in backend/agents.js.
 export const AGENT_STEP_NAMES = [
   "Idea Analysis",
   "Market Research",
@@ -21,6 +28,12 @@ export const AGENT_STEP_NAMES = [
   "Pitch Generation",
   "Roadmap",
   "AI Critic",
+  "Go-to-Market Strategy",
+  "Launch Checklist",
+  "Execution Plan",
+  "Cost & Revenue",
+  "Competitor & Difficulty",
+  "Build Timeline",
 ];
 
 // steps: [{ name: string, status: "pending" | "running" | "done" | "failed" }]

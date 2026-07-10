@@ -2,16 +2,20 @@
 // ---------------------------------------------------------------------------
 // Renders the full blueprint report returned by the backend.
 //
-// V2 CHANGES:
-//   - New sections: Startup Score (animated bars), SWOT Analysis, Risk
-//     Analysis, Budget Estimation, and the AI Critic review (all fed by the
-//     new `criticReview` field the backend returns).
-//   - Roadmap now renders as a milestone timeline instead of 3 flat weeks.
-//   - Every card can gracefully show "Generation unavailable. Please
-//     retry." instead of breaking if that agent failed on the backend.
-//   - Added icons (lucide-react), hover effects, and entrance transitions.
-// All helper components stay in this single file since they're only ever
-// used here — keeping the file count the same as V1.
+// V2: Startup Score, SWOT, Risk Analysis, Budget Estimation, AI Critic
+// review, milestone Roadmap, icons, hover/transition polish, graceful
+// per-section error states.
+//
+// V3 CHANGE — Execution Mode: added 6 new sections fed by the 6 new
+// backend keys (goToMarket, launchChecklist, executionPlan, costEstimator,
+// revenueSimulator, competitorWeaknessAnalysis, difficultyBreakdown,
+// buildTimePrediction). Every new section reuses the existing
+// DashboardCard / Field / ListField / ScoreBar / ErrorNotice helpers
+// wherever the shape fits, and follows the same `isError()` fallback
+// pattern as every V1/V2 section — nothing about those sections changed.
+// New one-off pieces (CopyableCard for GTM templates, the interactive
+// Launch Checklist) stay in this same file per the "no unnecessary files"
+// rule, since they're only ever used here.
 // ---------------------------------------------------------------------------
 import { useEffect, useState } from "react";
 import {
@@ -28,6 +32,15 @@ import {
   Wallet,
   Sparkles,
   AlertTriangle,
+  Target,
+  ListTodo,
+  CalendarClock,
+  Timer,
+  BarChart3,
+  Crosshair,
+  SlidersHorizontal,
+  Copy,
+  Check,
 } from "lucide-react";
 
 export default function BlueprintDashboard({ blueprint }) {
@@ -41,6 +54,14 @@ export default function BlueprintDashboard({ blueprint }) {
     pitch,
     roadmap,
     criticReview,
+    goToMarket,
+    launchChecklist,
+    executionPlan,
+    costEstimator,
+    revenueSimulator,
+    competitorWeaknessAnalysis,
+    difficultyBreakdown,
+    buildTimePrediction,
   } = blueprint;
 
   return (
@@ -152,6 +173,21 @@ export default function BlueprintDashboard({ blueprint }) {
         <SwotSection swot={criticReview.swot} />
       )}
 
+      {/* Go-to-Market Strategy (V3) */}
+      {!isError(goToMarket) && goToMarket && (
+        <GoToMarketSection gtm={goToMarket} />
+      )}
+
+      {/* Launch Checklist (V3, interactive) */}
+      {!isError(launchChecklist) && launchChecklist?.length > 0 && (
+        <LaunchChecklistSection items={launchChecklist} />
+      )}
+
+      {/* Execution Plan (V3) */}
+      {!isError(executionPlan) && executionPlan && (
+        <ExecutionPlanSection plan={executionPlan} />
+      )}
+
       {/* Enhanced Roadmap */}
       <DashboardCard icon={MapIcon} title="Roadmap" className="mt-6">
         {isError(roadmap) ? (
@@ -161,14 +197,33 @@ export default function BlueprintDashboard({ blueprint }) {
         )}
       </DashboardCard>
 
+      {/* Build Time Prediction (V3) */}
+      {!isError(buildTimePrediction) && buildTimePrediction && (
+        <BuildTimeSection prediction={buildTimePrediction} />
+      )}
+
       {/* Risk Analysis */}
       {!isError(criticReview) && criticReview?.riskAnalysis && (
         <RiskSection riskAnalysis={criticReview.riskAnalysis} />
       )}
 
-      {/* Budget Estimation */}
+      {/* Cost Estimator + Revenue Simulator (V3) */}
+      <CostRevenueSection cost={costEstimator} revenue={revenueSimulator} />
+
+      {/* Budget Estimation (one-time dev cost by stage — distinct from the
+          recurring monthly Cost Estimator above) */}
       {!isError(criticReview) && criticReview?.budgetEstimation && (
         <BudgetSection budget={criticReview.budgetEstimation} />
+      )}
+
+      {/* Competitor Weakness Analysis (V3) */}
+      {!isError(competitorWeaknessAnalysis) && competitorWeaknessAnalysis?.length > 0 && (
+        <CompetitorWeaknessSection analysis={competitorWeaknessAnalysis} />
+      )}
+
+      {/* Startup Difficulty Breakdown (V3) */}
+      {!isError(difficultyBreakdown) && difficultyBreakdown && (
+        <DifficultySection breakdown={difficultyBreakdown} />
       )}
 
       {/* AI Critic Review — always last */}
@@ -280,6 +335,7 @@ function ScoreBoard({ scores }) {
   );
 }
 
+// Reused (unmodified) by the V3 Difficulty Breakdown section too.
 function ScoreBar({ label, value }) {
   const [width, setWidth] = useState(0);
 
@@ -462,7 +518,7 @@ function RiskSection({ riskAnalysis }) {
 }
 
 // ---------------------------------------------------------------------------
-// Budget Estimation — four stage cards
+// Budget Estimation — four stage cards (one-time dev cost by stage)
 // ---------------------------------------------------------------------------
 const BUDGET_LABELS = {
   prototype: "Prototype",
@@ -518,5 +574,406 @@ function CriticReview({ critique }) {
       <ListField label="Contradictions" items={critique.contradictions} />
       <ListField label="Suggestions" items={critique.suggestions} />
     </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// V3 — Go-to-Market Strategy
+// ---------------------------------------------------------------------------
+// One-off "copy to clipboard" card used only for the 4 GTM templates below.
+function CopyableCard({ label, content }) {
+  const [copied, setCopied] = useState(false);
+  if (!content) return null;
+
+  function handleCopy() {
+    navigator.clipboard?.writeText(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+
+  return (
+    <div className="rounded-xl bg-slate-950/60 border border-slate-800 p-4">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+        <button
+          onClick={handleCopy}
+          className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+        >
+          {copied ? (
+            <>
+              <Check size={12} /> Copied
+            </>
+          ) : (
+            <>
+              <Copy size={12} /> Copy
+            </>
+          )}
+        </button>
+      </div>
+      <pre className="whitespace-pre-wrap break-words text-sm text-slate-200 leading-relaxed font-sans">
+        {content}
+      </pre>
+    </div>
+  );
+}
+
+function GoToMarketSection({ gtm }) {
+  return (
+    <DashboardCard icon={Target} title="Go-to-Market Strategy" className="mt-6">
+      <Field label="Target Audience" value={gtm.targetAudience} />
+
+      {gtm.platforms?.length > 0 && (
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">
+            Best Platforms to Reach Them
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {gtm.platforms.map((p, i) => (
+              <div
+                key={i}
+                className="rounded-xl bg-slate-950/60 border border-slate-800 p-3"
+              >
+                <p className="text-sm font-semibold text-white mb-1">{p.name}</p>
+                <p className="text-xs text-slate-400 leading-relaxed">{p.why}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {gtm.linkedInSearchStrategy?.length > 0 && (
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">
+            LinkedIn Search Strategy
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {gtm.linkedInSearchStrategy.map((query, i) => (
+              <span
+                key={i}
+                className="text-xs bg-indigo-950/40 text-indigo-300 border border-indigo-900 rounded-full px-3 py-1"
+              >
+                {query}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div>
+        <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">
+          Copy-Paste Templates
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <CopyableCard label="Cold Email Template" content={gtm.coldEmailTemplate} />
+          <CopyableCard label="LinkedIn DM Template" content={gtm.linkedInDmTemplate} />
+          <CopyableCard label="Reddit Launch Post" content={gtm.redditLaunchPost} />
+          <CopyableCard label="X (Twitter) Launch Post" content={gtm.twitterLaunchPost} />
+        </div>
+      </div>
+    </DashboardCard>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// V3 — Launch Checklist (interactive)
+// ---------------------------------------------------------------------------
+// Checked state lives only in memory (useState), same "no database" rule
+// as the rest of V1/V2 — a page refresh resets it, which is fine for a
+// hackathon MVP checklist.
+function LaunchChecklistSection({ items }) {
+  const [checked, setChecked] = useState(() => new Set());
+
+  function toggle(index) {
+    setChecked((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  }
+
+  return (
+    <DashboardCard icon={ListTodo} title="Launch Checklist" className="mt-6">
+      <p className="text-xs text-slate-500 -mt-2">
+        {checked.size} of {items.length} complete
+      </p>
+      <div className="space-y-2">
+        {items.map((item, i) => (
+          <label
+            key={i}
+            className="flex items-center gap-3 text-sm cursor-pointer group"
+          >
+            <input
+              type="checkbox"
+              checked={checked.has(i)}
+              onChange={() => toggle(i)}
+              className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 cursor-pointer"
+            />
+            <span
+              className={
+                checked.has(i)
+                  ? "text-slate-500 line-through"
+                  : "text-slate-200 group-hover:text-white transition-colors"
+              }
+            >
+              {item}
+            </span>
+          </label>
+        ))}
+      </div>
+    </DashboardCard>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// V3 — AI Execution Plan (Today / Tomorrow)
+// ---------------------------------------------------------------------------
+function ExecutionPlanSection({ plan }) {
+  return (
+    <DashboardCard icon={CalendarClock} title="Execution Plan" className="mt-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ExecutionPlanColumn label="Today" tasks={plan.today} dotColor="bg-indigo-400" />
+        <ExecutionPlanColumn label="Tomorrow" tasks={plan.tomorrow} dotColor="bg-purple-400" />
+      </div>
+    </DashboardCard>
+  );
+}
+
+function ExecutionPlanColumn({ label, tasks, dotColor }) {
+  if (!tasks || tasks.length === 0) return null;
+  return (
+    <div>
+      <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">{label}</p>
+      <ul className="space-y-2">
+        {tasks.map((task, i) => (
+          <li key={i} className="flex items-start gap-2 text-sm text-slate-200 leading-relaxed">
+            <span className={`mt-1.5 h-1.5 w-1.5 rounded-full shrink-0 ${dotColor}`} />
+            {task}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// V3 — Build Time Prediction
+// ---------------------------------------------------------------------------
+const BUILD_TIME_LABELS = {
+  prototype: "Prototype",
+  mvp: "MVP",
+  beta: "Beta",
+  publicLaunch: "Public Launch",
+};
+
+function BuildTimeSection({ prediction }) {
+  return (
+    <div className="mt-6">
+      <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-1 px-1">
+        <Timer size={18} className="text-indigo-400" />
+        Build Time Prediction
+      </h3>
+      {prediction.teamAssumptions && (
+        <p className="text-xs text-slate-500 mb-4 px-1">
+          Assumes: {prediction.teamAssumptions}
+        </p>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {Object.entries(BUILD_TIME_LABELS).map(([key, label]) => (
+          <div
+            key={key}
+            className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors"
+          >
+            <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+              {label}
+            </p>
+            <p className="text-lg font-semibold text-indigo-400 mb-2">
+              {prediction[key]?.duration || "—"}
+            </p>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              {prediction[key]?.assumptions}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// V3 — Cost Estimator + Revenue Simulator
+// ---------------------------------------------------------------------------
+const COST_LABELS = {
+  domain: "Domain",
+  hosting: "Hosting",
+  database: "Database",
+  aiApis: "AI APIs",
+  email: "Email",
+  analytics: "Analytics",
+  storage: "Storage",
+  authentication: "Authentication",
+};
+
+function CostRevenueSection({ cost, revenue }) {
+  return (
+    <div className="mt-6 space-y-6">
+      <div>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-4 px-1">
+          <Wallet size={18} className="text-indigo-400" />
+          Cost Estimator
+        </h3>
+        {isError(cost) ? (
+          <ErrorNotice />
+        ) : (
+          cost && (
+            <>
+              <div className="flex flex-wrap gap-x-6 gap-y-1 mb-4 px-1">
+                <p className="text-sm text-slate-300">
+                  <span className="text-slate-500">Est. Monthly: </span>
+                  <span className="text-indigo-400 font-semibold">
+                    {cost.estimatedMonthlyCost}
+                  </span>
+                </p>
+                <p className="text-sm text-slate-300">
+                  <span className="text-slate-500">Est. Yearly: </span>
+                  <span className="text-indigo-400 font-semibold">
+                    {cost.estimatedYearlyCost}
+                  </span>
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {Object.entries(COST_LABELS).map(([key, label]) => {
+                  const item = cost[key];
+                  if (!item) return null;
+                  return (
+                    <div
+                      key={key}
+                      className="p-4 rounded-xl bg-slate-900/60 border border-slate-800"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                          {label}
+                        </p>
+                        {item.freeTierSufficient && (
+                          <span className="shrink-0 text-[10px] font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-800 rounded-full px-2 py-0.5">
+                            Free tier OK
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm font-semibold text-slate-200 mb-1">
+                        {item.monthlyCost}
+                      </p>
+                      <p className="text-xs text-slate-500 leading-relaxed">
+                        {item.note}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )
+        )}
+      </div>
+
+      <div>
+        <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-4 px-1">
+          <BarChart3 size={18} className="text-indigo-400" />
+          Revenue Simulator
+        </h3>
+        {isError(revenue) ? (
+          <ErrorNotice />
+        ) : (
+          revenue && (
+            <>
+              {revenue.pricingAssumption && (
+                <p className="text-xs text-slate-500 mb-3 px-1">
+                  Assumption: {revenue.pricingAssumption}
+                </p>
+              )}
+              <div className="overflow-x-auto rounded-xl border border-slate-800">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-900/80 text-left text-xs uppercase tracking-wide text-slate-500">
+                      <th className="px-4 py-3">Users</th>
+                      <th className="px-4 py-3">Monthly Revenue</th>
+                      <th className="px-4 py-3">Annual Revenue</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(revenue.projections || []).map((p, i) => (
+                      <tr key={i} className="border-t border-slate-800 bg-slate-900/40">
+                        <td className="px-4 py-3 text-slate-200 font-medium">
+                          {typeof p.users === "number" ? p.users.toLocaleString() : p.users}
+                        </td>
+                        <td className="px-4 py-3 text-indigo-400">{p.monthlyRevenue}</td>
+                        <td className="px-4 py-3 text-indigo-400">{p.annualRevenue}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// V3 — Competitor Weakness Analysis
+// ---------------------------------------------------------------------------
+function CompetitorWeaknessSection({ analysis }) {
+  return (
+    <div className="mt-6">
+      <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-4 px-1">
+        <Crosshair size={18} className="text-indigo-400" />
+        Competitor Weakness Analysis
+      </h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {analysis.map((c, i) => (
+          <div
+            key={i}
+            className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors"
+          >
+            <p className="text-sm font-semibold text-white mb-3">{c.competitor}</p>
+            <ListField label="Weaknesses" items={c.weaknesses} />
+            <ListField label="Missed Opportunities" items={c.missedOpportunities} />
+            <Field label="Suggested Differentiation" value={c.suggestedDifferentiation} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// V3 — Startup Difficulty Breakdown (reuses ScoreBar from Startup Score)
+// ---------------------------------------------------------------------------
+const DIFFICULTY_LABELS = {
+  frontendComplexity: "Frontend Complexity",
+  backendComplexity: "Backend Complexity",
+  aiComplexity: "AI Complexity",
+  marketingDifficulty: "Marketing Difficulty",
+  competitionLevel: "Competition Level",
+  fundraisingDifficulty: "Fundraising Difficulty",
+};
+
+function DifficultySection({ breakdown }) {
+  return (
+    <DashboardCard icon={SlidersHorizontal} title="Startup Difficulty Breakdown" className="mt-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-5">
+        {Object.entries(DIFFICULTY_LABELS).map(([key, label]) => (
+          <div key={key}>
+            <ScoreBar label={label} value={breakdown[key]?.score ?? 0} />
+            {breakdown[key]?.reason && (
+              <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                {breakdown[key].reason}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </DashboardCard>
   );
 }
