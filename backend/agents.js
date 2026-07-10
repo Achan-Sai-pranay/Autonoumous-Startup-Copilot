@@ -22,10 +22,10 @@
 // Everything downstream:
 //   - runAllAgents(idea, onProgress) signature is unchanged → server.js
 //     needs no changes.
-//   - onProgress still fires { step, agent, status } events, now for 15
-//     steps instead of 9 → only LoadingTimeline.jsx's step-name list needs
+//   - onProgress still fires { step, agent, status } events, now for 13
+//     steps instead of 15 → only LoadingTimeline.jsx's step-name list needs
 //     updating, no logic changes there or in App.jsx.
-//   - BlueprintDashboard.jsx gets the 6 new top-level keys as plain
+//   - BlueprintDashboard.jsx gets the remaining top-level keys as plain
 //     objects/arrays, following the exact same shape convention as every
 //     existing section (including the same `{ error: true, message }`
 //     fallback), so existing V1/V2 sections are completely unaffected.
@@ -64,13 +64,10 @@ const STEPS = [
   { keys: ["businessStrategy"], name: "Business Strategy" },
   { keys: ["pitch"], name: "Pitch Generation" },
   { keys: ["roadmap"], name: "Roadmap" },
-  { keys: ["criticReview"], name: "AI Critic" },
   { keys: ["goToMarket"], name: "Go-to-Market Strategy" },
   { keys: ["launchChecklist"], name: "Launch Checklist" },
-  { keys: ["executionPlan"], name: "Execution Plan" },
   { keys: ["costEstimator", "revenueSimulator"], name: "Cost & Revenue" },
-  { keys: ["competitorWeaknessAnalysis", "difficultyBreakdown"], name: "Competitor & Difficulty" },
-  { keys: ["buildTimePrediction"], name: "Build Timeline" },
+  { keys: ["competitorWeaknessAnalysis"], name: "Competitor Weakness Analysis" },
 ];
 
 export const AGENT_STEP_NAMES = STEPS.map((s) => s.name);
@@ -93,10 +90,10 @@ blueprint AND an execution plan by reasoning through all roles below, in
 order, then return everything as ONE JSON object.
 
 Startup idea:
-"${idea}"
+"\${idea}"
 
 ---
-PART A — PLANNING (roles 1-9)
+PART A — PLANNING (roles 1-8)
 
 ROLE 1 — Senior Startup Analyst → key "ideaAnalysis"
 Analyze the core problem, goal, domain, and feasibility.
@@ -126,19 +123,12 @@ ROLE 8 — Technical Project Manager → key "roadmap"
 Create a build roadmap of 4 to 6 milestones (roughly one per week), each
 with a title and specific tasks, plus a launch plan.
 
-ROLE 9 — AI Critic (independent reviewer) → key "criticReview"
-Step back and critically review the ENTIRE blueprint as one connected plan.
-Identify weak business assumptions, missing features, an MVP that's too
-ambitious, risks, and contradictions between sections. Also score the idea,
-run a SWOT analysis, break down risks by category, and estimate a rough
-budget.
-
 ---
-PART B — EXECUTION (roles 10-15). This is what makes LaunchPilot an
+PART B — EXECUTION (roles 9-12). This is what makes LaunchPilot an
 execution platform, not just an advisor: be concrete and actionable, not
 generic.
 
-ROLE 10 — Growth Marketer → key "goToMarket"
+ROLE 9 — Growth Marketer → key "goToMarket"
 Define the target audience, then recommend specific platforms to reach them
 (choose from: LinkedIn, Reddit, Discord, X (Twitter), Facebook Groups,
 Slack Communities, Product Hunt, Hacker News — pick whichever genuinely fit
@@ -148,39 +138,27 @@ email template, a LinkedIn DM template, a Reddit launch post, and an X
 (Twitter) launch post — all personalized to this specific idea, ready to
 copy-paste.
 
-ROLE 11 — Launch Operations Lead → key "launchChecklist"
+ROLE 10 — Launch Operations Lead → key "launchChecklist"
 Produce a professional pre-launch checklist as a flat list of short,
 concrete action items (e.g. "Buy Domain", "Create Landing Page", "Setup
 Analytics", "Privacy Policy", "Find First 20 Users").
 
-ROLE 12 — AI Project Manager → key "executionPlan"
-Assign concrete tasks for "Today" and "Tomorrow" as if actively managing
-this founder — specific, doable-in-a-day actions, not vague advice.
-
-ROLE 13a — Finance: Cost Estimator → key "costEstimator"
+ROLE 11a — Finance: Cost Estimator → key "costEstimator"
 Estimate monthly costs for: domain, hosting, database, AI APIs, email,
 analytics, storage, and authentication. For each, note whether a free tier
 is sufficient at early stage. Provide overall estimated monthly and yearly
 totals.
 
-ROLE 13b — Finance: Revenue Simulator → key "revenueSimulator"
+ROLE 11b — Finance: Revenue Simulator → key "revenueSimulator"
 Using the pricing idea from businessStrategy, project monthly and annual
 revenue at 100, 500, 1000, and 5000 users. State the pricing assumption
 used.
 
-ROLE 14a — Competitive Strategist → key "competitorWeaknessAnalysis"
+ROLE 12 — Competitive Strategist → key "competitorWeaknessAnalysis"
 For each competitor named in marketResearch.competitors, identify their
 weaknesses, missed opportunities, and a suggested way this startup can
 differentiate against them.
 
-ROLE 14b — Feasibility Assessor → key "difficultyBreakdown"
-Instead of one score, rate (0-100) and explain the reasoning for: frontend
-complexity, backend complexity, AI complexity, marketing difficulty,
-competition level, and fundraising difficulty.
-
-ROLE 15 — Delivery Estimator → key "buildTimePrediction"
-Estimate realistic timelines for prototype, MVP, beta, and public launch,
-stating the team size/experience assumptions behind the estimate.
 ---
 Return ONE JSON object with this exact structure:
 {
@@ -228,38 +206,6 @@ Return ONE JSON object with this exact structure:
     ],
     "launchPlan": "a short paragraph describing how to launch after the final milestone"
   },
-  "criticReview": {
-    "critique": {
-      "weakAssumptions": ["assumption 1", "assumption 2"],
-      "missingFeatures": ["missing feature 1", "missing feature 2"],
-      "overambitiousMvpFeatures": ["feature that should be cut from MVP 1"],
-      "risksIdentified": ["risk 1", "risk 2"],
-      "contradictions": ["contradiction 1"],
-      "suggestions": ["concrete suggestion 1", "concrete suggestion 2"]
-    },
-    "startupScore": {
-      "innovation": 0, "marketDemand": 0, "technicalFeasibility": 0,
-      "businessPotential": 0, "investmentReadiness": 0, "scalability": 0, "overall": 0
-    },
-    "swot": {
-      "strengths": ["strength 1", "strength 2"],
-      "weaknesses": ["weakness 1", "weakness 2"],
-      "opportunities": ["opportunity 1", "opportunity 2"],
-      "threats": ["threat 1", "threat 2"]
-    },
-    "riskAnalysis": {
-      "technical": [{ "description": "risk description", "severity": "Low", "mitigation": "suggested mitigation" }],
-      "business": [{ "description": "risk description", "severity": "Medium", "mitigation": "suggested mitigation" }],
-      "financial": [{ "description": "risk description", "severity": "High", "mitigation": "suggested mitigation" }],
-      "market": [{ "description": "risk description", "severity": "Medium", "mitigation": "suggested mitigation" }]
-    },
-    "budgetEstimation": {
-      "prototype": { "range": "e.g. $500 - $1,500", "assumptions": "short assumption note" },
-      "mvp": { "range": "e.g. $3,000 - $8,000", "assumptions": "short assumption note" },
-      "betaLaunch": { "range": "e.g. $8,000 - $20,000", "assumptions": "short assumption note" },
-      "fullProduct": { "range": "e.g. $25,000+", "assumptions": "short assumption note" }
-    }
-  },
   "goToMarket": {
     "targetAudience": "who exactly to target, 1-2 sentences",
     "platforms": [
@@ -271,11 +217,7 @@ Return ONE JSON object with this exact structure:
     "redditLaunchPost": "a full Reddit launch post, personalized to this idea",
     "twitterLaunchPost": "a full X (Twitter) launch post/thread starter, personalized to this idea"
   },
-  "launchChecklist": ["Buy Domain", "Create Landing Page", "Create Waitlist"],
-  "executionPlan": {
-    "today": ["specific task 1", "specific task 2"],
-    "tomorrow": ["specific task 1", "specific task 2"]
-  },
+  "launchChecklist": ["Buy Domain", "Create Landing Page", "Setup Analytics"],
   "costEstimator": {
     "domain": { "monthlyCost": "e.g. $1 (amortized)", "freeTierSufficient": false, "note": "short note" },
     "hosting": { "monthlyCost": "e.g. $0", "freeTierSufficient": true, "note": "short note" },
@@ -304,29 +246,11 @@ Return ONE JSON object with this exact structure:
       "missedOpportunities": ["missed opportunity 1"],
       "suggestedDifferentiation": "how this startup can win against this specific competitor"
     }
-  ],
-  "difficultyBreakdown": {
-    "frontendComplexity": { "score": 0, "reason": "why this score" },
-    "backendComplexity": { "score": 0, "reason": "why this score" },
-    "aiComplexity": { "score": 0, "reason": "why this score" },
-    "marketingDifficulty": { "score": 0, "reason": "why this score" },
-    "competitionLevel": { "score": 0, "reason": "why this score" },
-    "fundraisingDifficulty": { "score": 0, "reason": "why this score" }
-  },
-  "buildTimePrediction": {
-    "teamAssumptions": "e.g. 1 solo technical founder, part-time",
-    "prototype": { "duration": "e.g. 1-2 weeks", "assumptions": "short note" },
-    "mvp": { "duration": "e.g. 4-6 weeks", "assumptions": "short note" },
-    "beta": { "duration": "e.g. 8-10 weeks", "assumptions": "short note" },
-    "publicLaunch": { "duration": "e.g. 12-14 weeks", "assumptions": "short note" }
-  }
+  ]
 }
 
 Rules:
 - Generate between 4 and 6 milestone objects in "roadmap.milestones", in order.
-- All "startupScore" values and all "difficultyBreakdown" scores must be integers between 0 and 100.
-- Each "severity" value must be exactly "Low", "Medium", or "High".
-- Include 2-4 items per risk category array in "riskAnalysis".
 - Include 3-6 items in "launchChecklist", ordered logically (earliest task first).
 - Include one "competitorWeaknessAnalysis" entry per competitor listed in "marketResearch.competitors".
 - Every field must be filled in — do not leave placeholders like "TBD".
@@ -345,7 +269,9 @@ ${JSON_ONLY_RULE}`;
  * retries), or the response is missing/malformed for a given key, that key
  * is marked unavailable — the app still returns a fully-shaped response and
  * never crashes. A step covering multiple keys (e.g. "Cost & Revenue") is
- * only marked "done" if every key it covers came back valid.
+ * only marked "done" if every key it covers came back valid; otherwise it's
+ * "failed" and only the broken key(s) show the "Generation unavailable"
+ * fallback — everything else on that step still renders.
  */
 export async function runAllAgents(idea, onProgress = () => {}) {
   onProgress({ step: 0, agent: STEPS[0].name, status: "running" });

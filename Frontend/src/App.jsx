@@ -4,12 +4,6 @@
 // Footer are small enough and used only once, so they're plain functions
 // in this file rather than separate component files.
 //
-// V2 CHANGE: the backend now streams progress as newline-delimited JSON
-// (NDJSON) instead of returning one final blob, so we switched from axios
-// to the native fetch() streaming API (axios doesn't expose a readable
-// stream for the browser the same simple way). As each line arrives we
-// update `agentSteps` in real time, which LoadingTimeline renders directly
-// — so "currently running agent" is now real backend state, not a timer.
 // ---------------------------------------------------------------------------
 import { useState } from "react";
 import LoadingTimeline, { AGENT_STEP_NAMES } from "./components/LoadingTimeline.jsx";
@@ -49,8 +43,6 @@ export default function App() {
       });
 
       if (!response.ok) {
-        // Non-streamed error path (e.g. validation error, 400/500 before
-        // streaming started).
         const data = await response.json().catch(() => ({}));
         throw new Error(data.error || `Request failed (${response.status})`);
       }
@@ -79,17 +71,14 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-white flex flex-col">
       <Navbar />
-
       <main className="flex-1 flex flex-col items-center px-4">
         <Hero />
-
         <IdeaInput
           idea={idea}
           setIdea={setIdea}
           onGenerate={handleGenerate}
           isLoading={isLoading}
         />
-
         {error && (
           <p className="mt-6 text-sm text-red-400 bg-red-950/40 border border-red-900 px-4 py-2 rounded-lg">
             {error}
@@ -102,7 +91,6 @@ export default function App() {
           <BlueprintDashboard blueprint={blueprint} />
         )}
       </main>
-
       <Footer />
     </div>
   );
@@ -163,15 +151,16 @@ function Hero() {
         <span className="text-indigo-400">full startup blueprint</span>
       </h1>
       <p className="text-slate-400 text-base md:text-lg">
-        Fifteen specialized AI agents analyze your idea end-to-end — market,
-        customers, product, tech stack, business model, pitch, roadmap, and a
-        final AI Critic review with scores, SWOT, risks, and budget.
+        Twelve specialized AI agents analyze your idea end-to-end — market,
+        customers, product, tech stack, business model, pitch, roadmap,
+        go‑to‑market, launch checklist, cost/revenue simulator, and competitor
+        weakness analysis.
       </p>
     </section>
   );
 }
 
-// --- IdeaInput ----------------------------------------------------------------
+// --- IdeaInput ---------------------------------------------------------------
 function IdeaInput({ idea, setIdea, onGenerate, isLoading }) {
   return (
     <div className="w-full max-w-2xl">

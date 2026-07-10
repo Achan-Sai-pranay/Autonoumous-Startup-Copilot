@@ -6,12 +6,8 @@
 // component just renders whatever `steps` prop it's given — no timers, no
 // guessing. It also shows a "Currently running" line driven by real state.
 //
-// V3 CHANGE: AGENT_STEP_NAMES grew from 9 to 15 entries to cover the new
-// execution-mode sections (Go-to-Market, Launch Checklist, Execution Plan,
-// Cost & Revenue, Competitor & Difficulty, Build Timeline). No rendering
-// logic changed — this component already just maps over whatever list of
-// step names it's given, which is exactly why this was the only edit
-// needed here.
+// After cleanup: AGENT_STEP_NAMES updated to reflect the remaining 13 steps
+// (removed AI Critic, Execution Plan, Startup Difficulty Breakdown, Build Timeline).
 // ---------------------------------------------------------------------------
 import { CheckCircle2, Loader2, XCircle, Circle } from "lucide-react";
 
@@ -27,13 +23,10 @@ export const AGENT_STEP_NAMES = [
   "Business Strategy",
   "Pitch Generation",
   "Roadmap",
-  "AI Critic",
   "Go-to-Market Strategy",
   "Launch Checklist",
-  "Execution Plan",
   "Cost & Revenue",
-  "Competitor & Difficulty",
-  "Build Timeline",
+  "Competitor Weakness Analysis",
 ];
 
 // steps: [{ name: string, status: "pending" | "running" | "done" | "failed" }]
