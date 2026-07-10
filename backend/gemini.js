@@ -18,14 +18,17 @@
 //
 // V4 CHANGE: improved JSON extraction to handle extra text before/after
 // the JSON object, ensuring valid JSON is returned for parsing.
+// V5 CHANGE: added validation that the extracted text looks like a JSON
+// object; if not, throws an error so the caller knows the model did not
+// return usable JSON.
 // ---------------------------------------------------------------------------
 
-const GEMINI_MODEL = "gemini-3-flash-preview";
+const GEMINI_MODEL = "gemini-3.1-flash-lite";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 const MAX_RETRIES = 3; // retries AFTER the first attempt (4 attempts total)
 const BASE_DELAY_MS = 1000; // 1s, then 2s, then 4s
-const MAX_OUTPUT_TOKENS = 16384; // room for the full 15-section V3 JSON blueprint
+const MAX_OUTPUT_TOKENS = 32768; // increased to be extra safe for the large V3 prompt
 
 /**
  * Sends a prompt to Gemini and returns the raw text response, retrying
@@ -101,7 +104,12 @@ async function requestOnce(prompt, apiKey) {
     throw new Error("Gemini returned an empty response.");
   }
 
-  return extractJSON(rawText);
+  const extracted = extractJSON(rawText);
+  // Validate that we actually got a JSON object
+  if (!extracted || !extracted.trim().startsWith('{') || !extracted.trim().endsWith('}')) {
+    throw new Error("Gemini did not return a valid JSON object.");
+  }
+  return extracted;
 }
 
 /**
