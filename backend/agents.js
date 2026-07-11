@@ -89,9 +89,9 @@ specialist roles. Given a single startup idea, generate a COMPLETE startup
 blueprint AND an execution plan by reasoning through all roles below, in
 order, then return everything as ONE JSON object.
 
+// ✅ After (fix):
 Startup idea:
-"\${idea}"
-
+"${idea}"
 ---
 PART A — PLANNING (roles 1-8)
 

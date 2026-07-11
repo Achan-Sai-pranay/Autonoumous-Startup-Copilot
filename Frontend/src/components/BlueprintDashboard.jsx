@@ -1,17 +1,15 @@
 // BlueprintDashboard.jsx
 // ---------------------------------------------------------------------------
-// Renders the full blueprint report returned by the backend.
-//
-// V2: Startup Score, SWOT, Risk Analysis, Budget Estimation, AI Critic
-// review, milestone Roadmap, icons, hover/transition polish, graceful
-// per-section error states.
-//
-// After cleanup: removed Startup Score, SWOT Analysis, AI Critic Review,
-// Startup Difficulty Breakdown, Build Time Prediction, and Execution Plan.
-// Only core planning sections plus Go-to-Market, Launch Checklist,
-// Cost Estimator + Revenue Simulator, and Competitor Weakness Analysis remain.
+// UX overhaul: instead of one long scrolling page, sections are grouped into
+// 5 modules (Idea & Validation, Market Intelligence, Product Planning,
+// Business Strategy, Launch Strategy) with sidebar nav on desktop and
+// horizontal scrollable tabs on mobile. No new libraries — just useState for
+// the active module. All original sub-components (GoToMarketSection,
+// LaunchChecklistSection, CostRevenueSection, CompetitorWeaknessSection,
+// RoadmapTimeline) are preserved and reused, now accepting an `accent` prop
+// so each module keeps a consistent color identity.
 // ---------------------------------------------------------------------------
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Lightbulb,
   TrendingUp,
@@ -28,9 +26,75 @@ import {
   Crosshair,
   Copy,
   Check,
+  Rocket,
 } from "lucide-react";
 
-export default function BlueprintDashboard({ blueprint }) {
+// ---------------------------------------------------------------------------
+// Accent system — literal Tailwind class strings only (Tailwind's JIT scans
+// source text for class names; dynamic string concatenation like
+// `text-${accent}-400` would get purged from the production build, so every
+// color combination that can appear is spelled out here in full).
+// ---------------------------------------------------------------------------
+const ACCENT_TEXT = {
+  sky: "text-sky-400",
+  emerald: "text-emerald-400",
+  amber: "text-amber-400",
+  orange: "text-orange-400",
+  rose: "text-rose-400",
+  indigo: "text-indigo-400",
+};
+const ACCENT_BG = {
+  sky: "bg-sky-500/10",
+  emerald: "bg-emerald-500/10",
+  amber: "bg-amber-500/10",
+  orange: "bg-orange-500/10",
+  rose: "bg-rose-500/10",
+  indigo: "bg-indigo-500/10",
+};
+const ACCENT_BORDER = {
+  sky: "border-sky-500/40",
+  emerald: "border-emerald-500/40",
+  amber: "border-amber-500/40",
+  orange: "border-orange-500/40",
+  rose: "border-rose-500/40",
+  indigo: "border-indigo-500/40",
+};
+const ACCENT_DOT = {
+  sky: "bg-sky-500",
+  emerald: "bg-emerald-500",
+  amber: "bg-amber-500",
+  orange: "bg-orange-500",
+  rose: "bg-rose-500",
+  indigo: "bg-indigo-500",
+};
+const ACCENT_CHECKBOX = {
+  sky: "text-sky-500",
+  emerald: "text-emerald-500",
+  amber: "text-amber-500",
+  orange: "text-orange-500",
+  rose: "text-rose-500",
+  indigo: "text-indigo-500",
+};
+const ACCENT_RING = {
+  sky: "focus:ring-sky-500",
+  emerald: "focus:ring-emerald-500",
+  amber: "focus:ring-amber-500",
+  orange: "focus:ring-orange-500",
+  rose: "focus:ring-rose-500",
+  indigo: "focus:ring-indigo-500",
+};
+
+const MODULES = [
+  { id: "idea", label: "Idea & Validation", icon: Lightbulb, accent: "sky" },
+  { id: "market", label: "Market Intelligence", icon: TrendingUp, accent: "emerald" },
+  { id: "product", label: "Product Planning", icon: ListChecks, accent: "amber" },
+  { id: "business", label: "Business Strategy", icon: Landmark, accent: "orange" },
+  { id: "launch", label: "Launch Strategy", icon: Rocket, accent: "rose" },
+];
+
+export default function BlueprintDashboard({ blueprint, originalIdea }) {
+  const [activeModule, setActiveModule] = useState("idea");
+
   const {
     ideaAnalysis,
     marketResearch,
@@ -48,130 +112,130 @@ export default function BlueprintDashboard({ blueprint }) {
   } = blueprint;
 
   return (
-    <div className="w-full max-w-6xl mx-auto mt-12 px-4 pb-24 animate-[fadeIn_0.4s_ease-out]">
-      {/* Pitch section gets top billing — it's the headline. */}
-      <div className="mb-8 p-6 rounded-2xl bg-gradient-to-br from-indigo-600/20 to-purple-600/10 border border-indigo-500/30 hover:border-indigo-500/50 transition-colors">
-        <p className="text-xs uppercase tracking-widest text-indigo-400 mb-2">
-          Elevator Pitch
-        </p>
-        {isError(pitch) ? (
-          <ErrorNotice />
-        ) : (
-          <>
-            <p className="text-xl md:text-2xl font-semibold text-white mb-4">
-              {pitch?.elevatorPitch}
-            </p>
-            <p className="text-slate-300 leading-relaxed">
-              {pitch?.executiveSummary}
-            </p>
-          </>
+    <div className="w-full max-w-7xl mx-auto mt-10 px-4 pb-24 animate-[fadeIn_0.4s_ease-out]">
+      {/* Mobile: horizontal scrollable tabs */}
+      <nav className="md:hidden -mx-4 px-4 mb-6 overflow-x-auto">
+        <div className="flex gap-2 w-max">
+          {MODULES.map((m) => (
+            <ModuleTabButton
+              key={m.id}
+              module={m}
+              active={activeModule === m.id}
+              onClick={() => setActiveModule(m.id)}
+            />
+          ))}
+        </div>
+      </nav>
+
+      <div className="md:flex md:gap-8 md:items-start">
+        {/* Desktop: sidebar */}
+        <aside className="hidden md:block w-60 shrink-0 sticky top-6 self-start">
+          <div className="space-y-1.5">
+            {MODULES.map((m) => (
+              <SidebarItem
+                key={m.id}
+                module={m}
+                active={activeModule === m.id}
+                onClick={() => setActiveModule(m.id)}
+              />
+            ))}
+          </div>
+        </aside>
+
+        {/* Active module content */}
+        <main className="flex-1 min-w-0">
+          {activeModule === "idea" && (
+            <IdeaModule originalIdea={originalIdea} ideaAnalysis={ideaAnalysis} />
+          )}
+          {activeModule === "market" && (
+            <MarketModule
+              marketResearch={marketResearch}
+              competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+              goToMarket={goToMarket}
+            />
+          )}
+          {activeModule === "product" && (
+            <ProductModule
+              customerPersona={customerPersona}
+              productPlan={productPlan}
+              technicalArchitecture={technicalArchitecture}
+            />
+          )}
+          {activeModule === "business" && (
+            <BusinessModule
+              businessStrategy={businessStrategy}
+              costEstimator={costEstimator}
+              revenueSimulator={revenueSimulator}
+            />
+          )}
+          {activeModule === "launch" && (
+            <LaunchModule
+              launchChecklist={launchChecklist}
+              pitch={pitch}
+              roadmap={roadmap}
+            />
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Navigation pieces
+// ---------------------------------------------------------------------------
+function SidebarItem({ module, active, onClick }) {
+  const { icon: Icon, label, accent } = module;
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold border transition-all duration-200
+        ${
+          active
+            ? `${ACCENT_BG[accent]} ${ACCENT_BORDER[accent]} ${ACCENT_TEXT[accent]}`
+            : "bg-transparent border-transparent text-slate-400 hover:text-white hover:bg-slate-900/60"
+        }`}
+    >
+      <Icon size={18} />
+      {label}
+    </button>
+  );
+}
+
+function ModuleTabButton({ module, active, onClick }) {
+  const { icon: Icon, label, accent } = module;
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold border transition-colors
+        ${
+          active
+            ? `${ACCENT_BG[accent]} ${ACCENT_BORDER[accent]} ${ACCENT_TEXT[accent]}`
+            : "bg-slate-900/60 border-slate-800 text-slate-400"
+        }`}
+    >
+      <Icon size={14} />
+      {label}
+    </button>
+  );
+}
+
+function ModuleHeader({ icon: Icon, title, description, accent }) {
+  return (
+    <div className="mb-6 flex items-start gap-4">
+      <span
+        className={`flex items-center justify-center h-12 w-12 rounded-2xl shrink-0 border ${ACCENT_BG[accent]} ${ACCENT_BORDER[accent]}`}
+      >
+        <Icon size={22} className={ACCENT_TEXT[accent]} />
+      </span>
+      <div>
+        <h2 className="text-2xl md:text-3xl font-bold text-white tracking-tight">
+          {title}
+        </h2>
+        {description && (
+          <p className="text-sm text-slate-500 mt-1">{description}</p>
         )}
       </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-        <DashboardCard icon={Lightbulb} title="Idea Analysis">
-          {isError(ideaAnalysis) ? (
-            <ErrorNotice />
-          ) : (
-            <>
-              <Field label="Problem" value={ideaAnalysis?.problem} />
-              <Field label="Goal" value={ideaAnalysis?.goal} />
-              <Field label="Domain" value={ideaAnalysis?.domain} />
-              <Field label="Feasibility" value={ideaAnalysis?.feasibility} />
-            </>
-          )}
-        </DashboardCard>
-
-        <DashboardCard icon={TrendingUp} title="Market Research">
-          {isError(marketResearch) ? (
-            <ErrorNotice />
-          ) : (
-            <>
-              <ListField label="Competitors" items={marketResearch?.competitors} />
-              <ListField label="Opportunities" items={marketResearch?.opportunities} />
-              <Field label="Market Demand" value={marketResearch?.marketDemand} />
-            </>
-          )}
-        </DashboardCard>
-
-        <DashboardCard icon={Users} title="Customer Persona">
-          {isError(customerPersona) ? (
-            <ErrorNotice />
-          ) : (
-            <>
-              <ListField label="Target Users" items={customerPersona?.targetUsers} />
-              <ListField label="Pain Points" items={customerPersona?.painPoints} />
-              <Field label="User Profile" value={customerPersona?.userProfile} />
-            </>
-          )}
-        </DashboardCard>
-
-        <DashboardCard icon={ListChecks} title="Product Plan">
-          {isError(productPlan) ? (
-            <ErrorNotice />
-          ) : (
-            <>
-              <ListField label="MVP Features" items={productPlan?.mvpFeatures} />
-              <ListField label="Future Features" items={productPlan?.futureFeatures} />
-              <Field label="Priority" value={productPlan?.developmentPriority} />
-            </>
-          )}
-        </DashboardCard>
-
-        <DashboardCard icon={Cpu} title="Technical Architecture">
-          {isError(technicalArchitecture) ? (
-            <ErrorNotice />
-          ) : (
-            <>
-              <Field label="Frontend" value={technicalArchitecture?.frontend} />
-              <Field label="Backend" value={technicalArchitecture?.backend} />
-              <Field label="Database" value={technicalArchitecture?.database} />
-              <Field label="Hosting" value={technicalArchitecture?.hosting} />
-              <Field label="AI APIs" value={technicalArchitecture?.aiApis} />
-              <Field label="Overview" value={technicalArchitecture?.architectureOverview} />
-            </>
-          )}
-        </DashboardCard>
-
-        <DashboardCard icon={Landmark} title="Business Strategy">
-          {isError(businessStrategy) ? (
-            <ErrorNotice />
-          ) : (
-            <>
-              <Field label="Revenue Model" value={businessStrategy?.revenueModel} />
-              <Field label="Pricing Idea" value={businessStrategy?.pricingIdea} />
-              <ListField label="Marketing Channels" items={businessStrategy?.marketingChannels} />
-            </>
-          )}
-        </DashboardCard>
-      </div>
-
-      {/* Go-to-Market Strategy */}
-      {!isError(goToMarket) && goToMarket && (
-        <GoToMarketSection gtm={goToMarket} />
-      )}
-
-      {/* Launch Checklist (interactive) */}
-      {!isError(launchChecklist) && launchChecklist?.length > 0 && (
-        <LaunchChecklistSection items={launchChecklist} />
-      )}
-
-      {/* Enhanced Roadmap */}
-      <DashboardCard icon={MapIcon} title="Roadmap" className="mt-6">
-        {isError(roadmap) ? (
-          <ErrorNotice />
-        ) : (
-          <RoadmapTimeline roadmap={roadmap} />
-        )}
-      </DashboardCard>
-
-      {/* Cost Estimator + Revenue Simulator */}
-      <CostRevenueSection cost={costEstimator} revenue={revenueSimulator} />
-
-      {/* Competitor Weakness Analysis */}
-      {!isError(competitorWeaknessAnalysis) && competitorWeaknessAnalysis?.length > 0 && (
-        <CompetitorWeaknessSection analysis={competitorWeaknessAnalysis} />
-      )}
     </div>
   );
 }
@@ -179,41 +243,48 @@ export default function BlueprintDashboard({ blueprint }) {
 // ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
-
 function isError(section) {
   return Boolean(section?.error);
 }
 
 function ErrorNotice() {
   return (
-    <div className="flex items-center gap-2 text-sm text-amber-400 bg-amber-950/30 border border-amber-900 rounded-lg px-3 py-2">
+    <div className="flex items-center gap-2 text-sm text-amber-400 bg-amber-950/30 border border-amber-900 rounded-xl px-3 py-2">
       <AlertTriangle size={16} className="shrink-0" />
       <span>Generation unavailable. Please retry.</span>
     </div>
   );
 }
 
-// Reusable card shell used for every section.
-function DashboardCard({ icon: Icon, title, children, className = "" }) {
+// Reusable card shell used for every section. `accent` controls the icon
+// badge color; defaults to indigo for anything not tied to a specific module.
+function DashboardCard({ icon: Icon, title, children, className = "", accent = "indigo" }) {
   return (
     <div
-      className={`p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 hover:shadow-lg hover:shadow-indigo-950/40 transition-all duration-300 ${className}`}
+      className={`p-7 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-0.5 transition-all duration-300 ${className}`}
     >
-      <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-4">
-        {Icon && <Icon size={18} className="text-indigo-400" />}
+      <h3 className="flex items-center gap-3 text-xl font-bold text-white mb-5">
+        {Icon && (
+          <span className={`flex items-center justify-center h-9 w-9 rounded-xl ${ACCENT_BG[accent]}`}>
+            <Icon size={18} className={ACCENT_TEXT[accent]} />
+          </span>
+        )}
         {title}
       </h3>
-      <div className="space-y-4">{children}</div>
+      <div className="space-y-5">{children}</div>
     </div>
   );
 }
 
-// Small labeled text block.
-function Field({ label, value }) {
+// Labeled text block — bumped up in size/weight so subsection names like
+// "Development Priority" are immediately readable, with a small accent dot
+// instead of a generic gray label.
+function Field({ label, value, accent = "indigo" }) {
   if (!value) return null;
   return (
     <div>
-      <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+      <p className={`text-sm font-bold uppercase tracking-wide mb-1.5 flex items-center gap-2 ${ACCENT_TEXT[accent]}`}>
+        <span className="h-1.5 w-1.5 rounded-full bg-current" />
         {label}
       </p>
       <p className="text-sm text-slate-200 leading-relaxed">{value}</p>
@@ -221,18 +292,21 @@ function Field({ label, value }) {
   );
 }
 
-// Small labeled bullet list.
-function ListField({ label, items }) {
+// Labeled bullet list — this is what renders "MVP Features", "Future
+// Features", etc., so these headings get the same treatment as Field labels.
+function ListField({ label, items, accent = "indigo" }) {
   if (!items || items.length === 0) return null;
   return (
     <div>
-      <p className="text-xs uppercase tracking-wide text-slate-500 mb-1">
+      <p className={`text-sm font-bold uppercase tracking-wide mb-2 flex items-center gap-2 ${ACCENT_TEXT[accent]}`}>
+        <span className="h-1.5 w-1.5 rounded-full bg-current" />
         {label}
       </p>
-      <ul className="list-disc list-inside space-y-1">
+      <ul className="space-y-1.5">
         {items.map((item, i) => (
-          <li key={i} className="text-sm text-slate-200 leading-relaxed">
-            {item}
+          <li key={i} className="flex gap-2 text-sm text-slate-200 leading-relaxed">
+            <span className="text-slate-600 mt-0.5">›</span>
+            <span>{item}</span>
           </li>
         ))}
       </ul>
@@ -241,10 +315,210 @@ function ListField({ label, items }) {
 }
 
 // ---------------------------------------------------------------------------
-// V3 — Go-to-Market Strategy
+// Module: Idea & Validation
 // ---------------------------------------------------------------------------
-// One-off "copy to clipboard" card used only for the 4 GTM templates below.
-function CopyableCard({ label, content }) {
+function IdeaModule({ originalIdea, ideaAnalysis }) {
+  return (
+    <div>
+      <ModuleHeader
+        icon={Lightbulb}
+        title="Idea & Validation"
+        description="What you're building, and whether it holds up."
+        accent="sky"
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <DashboardCard icon={Target} title="Startup Idea" accent="sky">
+          <p className="text-sm text-slate-200 leading-relaxed">
+            {originalIdea || "No idea text available."}
+          </p>
+        </DashboardCard>
+
+        <DashboardCard icon={Lightbulb} title="Idea Analysis" accent="sky">
+          {isError(ideaAnalysis) ? (
+            <ErrorNotice />
+          ) : (
+            <>
+              <Field label="Problem Statement" value={ideaAnalysis?.problem} accent="sky" />
+              <Field label="Objectives" value={ideaAnalysis?.goal} accent="sky" />
+              <Field label="Domain" value={ideaAnalysis?.domain} accent="sky" />
+              <Field label="Feasibility" value={ideaAnalysis?.feasibility} accent="sky" />
+            </>
+          )}
+        </DashboardCard>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Module: Market Intelligence
+// ---------------------------------------------------------------------------
+function MarketModule({ marketResearch, competitorWeaknessAnalysis, goToMarket }) {
+  return (
+    <div className="space-y-6">
+      <ModuleHeader
+        icon={TrendingUp}
+        title="Market Intelligence"
+        description="Competitors, demand, and how to reach the market."
+        accent="emerald"
+      />
+      <DashboardCard icon={TrendingUp} title="Market Research" accent="emerald">
+        {isError(marketResearch) ? (
+          <ErrorNotice />
+        ) : (
+          <>
+            <ListField label="Competitors" items={marketResearch?.competitors} accent="emerald" />
+            <ListField label="Opportunities" items={marketResearch?.opportunities} accent="emerald" />
+            <Field label="Market Demand" value={marketResearch?.marketDemand} accent="emerald" />
+          </>
+        )}
+      </DashboardCard>
+
+      {!isError(competitorWeaknessAnalysis) && competitorWeaknessAnalysis?.length > 0 && (
+        <CompetitorWeaknessSection analysis={competitorWeaknessAnalysis} accent="emerald" />
+      )}
+
+      {!isError(goToMarket) && goToMarket && (
+        <GoToMarketSection gtm={goToMarket} accent="emerald" />
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Module: Product Planning
+// ---------------------------------------------------------------------------
+function ProductModule({ customerPersona, productPlan, technicalArchitecture }) {
+  return (
+    <div>
+      <ModuleHeader
+        icon={ListChecks}
+        title="Product Planning"
+        description="Who it's for, and what to build first."
+        accent="amber"
+      />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <DashboardCard icon={Users} title="Customer Persona" accent="amber">
+          {isError(customerPersona) ? (
+            <ErrorNotice />
+          ) : (
+            <>
+              <ListField label="Target Users" items={customerPersona?.targetUsers} accent="amber" />
+              <ListField label="Pain Points" items={customerPersona?.painPoints} accent="amber" />
+              <Field label="User Profile" value={customerPersona?.userProfile} accent="amber" />
+            </>
+          )}
+        </DashboardCard>
+
+        <DashboardCard icon={ListChecks} title="Product Plan" accent="amber">
+          {isError(productPlan) ? (
+            <ErrorNotice />
+          ) : (
+            <>
+              <ListField label="MVP Features" items={productPlan?.mvpFeatures} accent="amber" />
+              <ListField label="Future Features" items={productPlan?.futureFeatures} accent="amber" />
+              <Field label="Development Priority" value={productPlan?.developmentPriority} accent="amber" />
+            </>
+          )}
+        </DashboardCard>
+
+        <DashboardCard
+          icon={Cpu}
+          title="Technical Architecture"
+          accent="amber"
+          className="md:col-span-2"
+        >
+          {isError(technicalArchitecture) ? (
+            <ErrorNotice />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <Field label="Frontend" value={technicalArchitecture?.frontend} accent="amber" />
+              <Field label="Backend" value={technicalArchitecture?.backend} accent="amber" />
+              <Field label="Database" value={technicalArchitecture?.database} accent="amber" />
+              <Field label="Hosting" value={technicalArchitecture?.hosting} accent="amber" />
+              <Field label="AI APIs" value={technicalArchitecture?.aiApis} accent="amber" />
+              <Field label="Overview" value={technicalArchitecture?.architectureOverview} accent="amber" />
+            </div>
+          )}
+        </DashboardCard>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Module: Business Strategy
+// ---------------------------------------------------------------------------
+function BusinessModule({ businessStrategy, costEstimator, revenueSimulator }) {
+  return (
+    <div className="space-y-6">
+      <ModuleHeader
+        icon={Landmark}
+        title="Business Strategy"
+        description="How this makes money, and what it costs to run."
+        accent="orange"
+      />
+      <DashboardCard icon={Landmark} title="Business Strategy" accent="orange">
+        {isError(businessStrategy) ? (
+          <ErrorNotice />
+        ) : (
+          <>
+            <Field label="Revenue Model" value={businessStrategy?.revenueModel} accent="orange" />
+            <Field label="Pricing Strategy" value={businessStrategy?.pricingIdea} accent="orange" />
+            <ListField label="Marketing Channels" items={businessStrategy?.marketingChannels} accent="orange" />
+          </>
+        )}
+      </DashboardCard>
+
+      <CostRevenueSection cost={costEstimator} revenue={revenueSimulator} accent="orange" />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Module: Launch Strategy
+// ---------------------------------------------------------------------------
+function LaunchModule({ launchChecklist, pitch, roadmap }) {
+  return (
+    <div className="space-y-6">
+      <ModuleHeader
+        icon={Rocket}
+        title="Launch Strategy"
+        description="The pitch, the plan, and what's left before you ship."
+        accent="rose"
+      />
+
+      <div className="p-7 rounded-3xl bg-gradient-to-br from-rose-600/15 to-purple-600/10 border border-rose-500/30 hover:border-rose-500/50 transition-colors">
+        <p className="text-xs uppercase tracking-widest text-rose-400 font-bold mb-2">
+          Investor Pitch
+        </p>
+        {isError(pitch) ? (
+          <ErrorNotice />
+        ) : (
+          <>
+            <p className="text-xl md:text-2xl font-bold text-white mb-4">
+              {pitch?.elevatorPitch}
+            </p>
+            <p className="text-slate-300 leading-relaxed">{pitch?.executiveSummary}</p>
+          </>
+        )}
+      </div>
+
+      {!isError(launchChecklist) && launchChecklist?.length > 0 && (
+        <LaunchChecklistSection items={launchChecklist} accent="rose" />
+      )}
+
+      <DashboardCard icon={MapIcon} title="Startup Roadmap" accent="rose">
+        {isError(roadmap) ? <ErrorNotice /> : <RoadmapTimeline roadmap={roadmap} accent="rose" />}
+      </DashboardCard>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Go-to-Market Strategy (unchanged logic, now accent-aware)
+// ---------------------------------------------------------------------------
+function CopyableCard({ label, content, accent = "indigo" }) {
   const [copied, setCopied] = useState(false);
   if (!content) return null;
 
@@ -255,12 +529,12 @@ function CopyableCard({ label, content }) {
   }
 
   return (
-    <div className="rounded-xl bg-slate-950/60 border border-slate-800 p-4">
+    <div className="rounded-2xl bg-slate-950/60 border border-slate-800 p-4 hover:border-slate-700 transition-colors">
       <div className="flex items-center justify-between mb-2">
-        <p className="text-xs uppercase tracking-wide text-slate-500">{label}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+          className={`flex items-center gap-1 text-xs ${ACCENT_TEXT[accent]} hover:opacity-80 transition-opacity`}
         >
           {copied ? (
             <>
@@ -280,22 +554,21 @@ function CopyableCard({ label, content }) {
   );
 }
 
-function GoToMarketSection({ gtm }) {
+function GoToMarketSection({ gtm, accent = "indigo" }) {
+  const a = ACCENT_TEXT[accent];
   return (
-    <DashboardCard icon={Target} title="Go-to-Market Strategy" className="mt-6">
-      <Field label="Target Audience" value={gtm.targetAudience} />
+    <DashboardCard icon={Target} title="Go-to-Market Strategy" accent={accent}>
+      <Field label="Target Audience" value={gtm.targetAudience} accent={accent} />
 
       {gtm.platforms?.length > 0 && (
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">
+          <p className={`text-sm font-bold uppercase tracking-wide mb-3 flex items-center gap-2 ${a}`}>
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
             Best Platforms to Reach Them
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {gtm.platforms.map((p, i) => (
-              <div
-                key={i}
-                className="rounded-xl bg-slate-950/60 border border-slate-800 p-3"
-              >
+              <div key={i} className="rounded-2xl bg-slate-950/60 border border-slate-800 p-4">
                 <p className="text-sm font-semibold text-white mb-1">{p.name}</p>
                 <p className="text-xs text-slate-400 leading-relaxed">{p.why}</p>
               </div>
@@ -306,14 +579,15 @@ function GoToMarketSection({ gtm }) {
 
       {gtm.linkedInSearchStrategy?.length > 0 && (
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">
+          <p className={`text-sm font-bold uppercase tracking-wide mb-3 flex items-center gap-2 ${a}`}>
+            <span className="h-1.5 w-1.5 rounded-full bg-current" />
             LinkedIn Search Strategy
           </p>
           <div className="flex flex-wrap gap-2">
             {gtm.linkedInSearchStrategy.map((query, i) => (
               <span
                 key={i}
-                className="text-xs bg-indigo-950/40 text-indigo-300 border border-indigo-900 rounded-full px-3 py-1"
+                className={`text-xs bg-slate-950/60 ${a} border border-slate-800 rounded-full px-3 py-1`}
               >
                 {query}
               </span>
@@ -323,14 +597,15 @@ function GoToMarketSection({ gtm }) {
       )}
 
       <div>
-        <p className="text-xs uppercase tracking-wide text-slate-500 mb-2">
+        <p className={`text-sm font-bold uppercase tracking-wide mb-3 flex items-center gap-2 ${a}`}>
+          <span className="h-1.5 w-1.5 rounded-full bg-current" />
           Copy-Paste Templates
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <CopyableCard label="Cold Email Template" content={gtm.coldEmailTemplate} />
-          <CopyableCard label="LinkedIn DM Template" content={gtm.linkedInDmTemplate} />
-          <CopyableCard label="Reddit Launch Post" content={gtm.redditLaunchPost} />
-          <CopyableCard label="X (Twitter) Launch Post" content={gtm.twitterLaunchPost} />
+          <CopyableCard label="Cold Email Template" content={gtm.coldEmailTemplate} accent={accent} />
+          <CopyableCard label="LinkedIn DM Template" content={gtm.linkedInDmTemplate} accent={accent} />
+          <CopyableCard label="Reddit Launch Post" content={gtm.redditLaunchPost} accent={accent} />
+          <CopyableCard label="X (Twitter) Launch Post" content={gtm.twitterLaunchPost} accent={accent} />
         </div>
       </div>
     </DashboardCard>
@@ -338,12 +613,9 @@ function GoToMarketSection({ gtm }) {
 }
 
 // ---------------------------------------------------------------------------
-// V3 — Launch Checklist (interactive)
+// Launch Checklist (unchanged logic — in-memory checked state — now accent-aware)
 // ---------------------------------------------------------------------------
-// Checked state lives only in memory (useState), same "no database" rule
-// as the rest of V1/V2 — a page refresh resets it, which is fine for a
-// hackathon MVP checklist.
-function LaunchChecklistSection({ items }) {
+function LaunchChecklistSection({ items, accent = "indigo" }) {
   const [checked, setChecked] = useState(() => new Set());
 
   function toggle(index) {
@@ -356,21 +628,18 @@ function LaunchChecklistSection({ items }) {
   }
 
   return (
-    <DashboardCard icon={ListTodo} title="Launch Checklist" className="mt-6">
+    <DashboardCard icon={ListTodo} title="Launch Checklist" accent={accent}>
       <p className="text-xs text-slate-500 -mt-2">
         {checked.size} of {items.length} complete
       </p>
       <div className="space-y-2">
         {items.map((item, i) => (
-          <label
-            key={i}
-            className="flex items-center gap-3 text-sm cursor-pointer group"
-          >
+          <label key={i} className="flex items-center gap-3 text-sm cursor-pointer group">
             <input
               type="checkbox"
               checked={checked.has(i)}
               onChange={() => toggle(i)}
-              className="h-4 w-4 rounded border-slate-700 bg-slate-900 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0 cursor-pointer"
+              className={`h-4 w-4 rounded border-slate-700 bg-slate-900 ${ACCENT_CHECKBOX[accent]} ${ACCENT_RING[accent]} focus:ring-offset-0 cursor-pointer`}
             />
             <span
               className={
@@ -389,25 +658,26 @@ function LaunchChecklistSection({ items }) {
 }
 
 // ---------------------------------------------------------------------------
-// Enhanced Roadmap — milestone timeline
+// Roadmap timeline (unchanged logic, now accent-aware)
 // ---------------------------------------------------------------------------
-function RoadmapTimeline({ roadmap }) {
+function RoadmapTimeline({ roadmap, accent = "indigo" }) {
   const milestones = roadmap?.milestones || [];
+  const a = ACCENT_TEXT[accent];
+  const dotBg = ACCENT_DOT[accent];
 
   return (
     <div>
       <div className="relative border-l border-slate-800 ml-2 space-y-6">
         {milestones.map((m, i) => (
           <div key={i} className="pl-6 relative">
-            <span className="absolute -left-[7px] top-1 h-3 w-3 rounded-full bg-indigo-500 ring-4 ring-indigo-500/20" />
-            <p className="text-xs uppercase tracking-wide text-indigo-400 mb-0.5">
-              {m.week}
-            </p>
+            <span className={`absolute -left-[7px] top-1 h-3 w-3 rounded-full ${dotBg} ring-4 ring-current/20 ${a}`} />
+            <p className={`text-xs font-bold uppercase tracking-wide mb-0.5 ${a}`}>{m.week}</p>
             <p className="text-sm font-semibold text-white mb-1">{m.title}</p>
-            <ul className="list-disc list-inside space-y-0.5">
+            <ul className="space-y-1">
               {(m.tasks || []).map((task, j) => (
-                <li key={j} className="text-sm text-slate-300">
-                  {task}
+                <li key={j} className="flex gap-2 text-sm text-slate-300">
+                  <span className="text-slate-600 mt-0.5">›</span>
+                  <span>{task}</span>
                 </li>
               ))}
             </ul>
@@ -417,7 +687,7 @@ function RoadmapTimeline({ roadmap }) {
 
       {roadmap?.launchPlan && (
         <div className="mt-6">
-          <Field label="Launch Plan" value={roadmap.launchPlan} />
+          <Field label="Launch Plan" value={roadmap.launchPlan} accent={accent} />
         </div>
       )}
     </div>
@@ -425,7 +695,7 @@ function RoadmapTimeline({ roadmap }) {
 }
 
 // ---------------------------------------------------------------------------
-// V3 — Cost Estimator + Revenue Simulator
+// Cost Estimator + Revenue Simulator (unchanged logic, now accent-aware)
 // ---------------------------------------------------------------------------
 const COST_LABELS = {
   domain: "Domain",
@@ -438,12 +708,15 @@ const COST_LABELS = {
   authentication: "Authentication",
 };
 
-function CostRevenueSection({ cost, revenue }) {
+function CostRevenueSection({ cost, revenue, accent = "indigo" }) {
+  const a = ACCENT_TEXT[accent];
   return (
-    <div className="mt-6 space-y-6">
-      <div>
-        <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-4 px-1">
-          <Wallet size={18} className="text-indigo-400" />
+    <div className="space-y-6">
+      <div className="p-7 rounded-3xl bg-slate-900/60 border border-slate-800">
+        <h3 className="flex items-center gap-3 text-xl font-bold text-white mb-5">
+          <span className={`flex items-center justify-center h-9 w-9 rounded-xl ${ACCENT_BG[accent]}`}>
+            <Wallet size={18} className={a} />
+          </span>
           Cost Estimator
         </h3>
         {isError(cost) ? (
@@ -451,18 +724,14 @@ function CostRevenueSection({ cost, revenue }) {
         ) : (
           cost && (
             <>
-              <div className="flex flex-wrap gap-x-6 gap-y-1 mb-4 px-1">
+              <div className="flex flex-wrap gap-x-6 gap-y-1 mb-5">
                 <p className="text-sm text-slate-300">
                   <span className="text-slate-500">Est. Monthly: </span>
-                  <span className="text-indigo-400 font-semibold">
-                    {cost.estimatedMonthlyCost}
-                  </span>
+                  <span className={`${a} font-semibold`}>{cost.estimatedMonthlyCost}</span>
                 </p>
                 <p className="text-sm text-slate-300">
                   <span className="text-slate-500">Est. Yearly: </span>
-                  <span className="text-indigo-400 font-semibold">
-                    {cost.estimatedYearlyCost}
-                  </span>
+                  <span className={`${a} font-semibold`}>{cost.estimatedYearlyCost}</span>
                 </p>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -470,12 +739,9 @@ function CostRevenueSection({ cost, revenue }) {
                   const item = cost[key];
                   if (!item) return null;
                   return (
-                    <div
-                      key={key}
-                      className="p-4 rounded-xl bg-slate-900/60 border border-slate-800"
-                    >
+                    <div key={key} className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
                       <div className="flex items-center justify-between gap-2 mb-1">
-                        <p className="text-xs uppercase tracking-wide text-slate-500">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                           {label}
                         </p>
                         {item.freeTierSufficient && (
@@ -484,12 +750,8 @@ function CostRevenueSection({ cost, revenue }) {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm font-semibold text-slate-200 mb-1">
-                        {item.monthlyCost}
-                      </p>
-                      <p className="text-xs text-slate-500 leading-relaxed">
-                        {item.note}
-                      </p>
+                      <p className="text-sm font-semibold text-slate-200 mb-1">{item.monthlyCost}</p>
+                      <p className="text-xs text-slate-500 leading-relaxed">{item.note}</p>
                     </div>
                   );
                 })}
@@ -499,9 +761,11 @@ function CostRevenueSection({ cost, revenue }) {
         )}
       </div>
 
-      <div>
-        <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-4 px-1">
-          <BarChart3 size={18} className="text-indigo-400" />
+      <div className="p-7 rounded-3xl bg-slate-900/60 border border-slate-800">
+        <h3 className="flex items-center gap-3 text-xl font-bold text-white mb-5">
+          <span className={`flex items-center justify-center h-9 w-9 rounded-xl ${ACCENT_BG[accent]}`}>
+            <BarChart3 size={18} className={a} />
+          </span>
           Revenue Simulator
         </h3>
         {isError(revenue) ? (
@@ -510,14 +774,14 @@ function CostRevenueSection({ cost, revenue }) {
           revenue && (
             <>
               {revenue.pricingAssumption && (
-                <p className="text-xs text-slate-500 mb-3 px-1">
+                <p className="text-xs text-slate-500 mb-4">
                   Assumption: {revenue.pricingAssumption}
                 </p>
               )}
-              <div className="overflow-x-auto rounded-xl border border-slate-800">
+              <div className="overflow-x-auto rounded-2xl border border-slate-800">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-slate-900/80 text-left text-xs uppercase tracking-wide text-slate-500">
+                    <tr className="bg-slate-950/80 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">
                       <th className="px-4 py-3">Users</th>
                       <th className="px-4 py-3">Monthly Revenue</th>
                       <th className="px-4 py-3">Annual Revenue</th>
@@ -529,8 +793,8 @@ function CostRevenueSection({ cost, revenue }) {
                         <td className="px-4 py-3 text-slate-200 font-medium">
                           {typeof p.users === "number" ? p.users.toLocaleString() : p.users}
                         </td>
-                        <td className="px-4 py-3 text-indigo-400">{p.monthlyRevenue}</td>
-                        <td className="px-4 py-3 text-indigo-400">{p.annualRevenue}</td>
+                        <td className={`px-4 py-3 ${a}`}>{p.monthlyRevenue}</td>
+                        <td className={`px-4 py-3 ${a}`}>{p.annualRevenue}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -545,25 +809,30 @@ function CostRevenueSection({ cost, revenue }) {
 }
 
 // ---------------------------------------------------------------------------
-// V3 — Competitor Weakness Analysis
+// Competitor Weakness Analysis (unchanged logic, now accent-aware)
 // ---------------------------------------------------------------------------
-function CompetitorWeaknessSection({ analysis }) {
+function CompetitorWeaknessSection({ analysis, accent = "indigo" }) {
+  const a = ACCENT_TEXT[accent];
   return (
-    <div className="mt-6">
-      <h3 className="flex items-center gap-2 text-lg font-semibold text-white mb-4 px-1">
-        <Crosshair size={18} className="text-indigo-400" />
+    <div className="p-7 rounded-3xl bg-slate-900/60 border border-slate-800">
+      <h3 className="flex items-center gap-3 text-xl font-bold text-white mb-5">
+        <span className={`flex items-center justify-center h-9 w-9 rounded-xl ${ACCENT_BG[accent]}`}>
+          <Crosshair size={18} className={a} />
+        </span>
         Competitor Weakness Analysis
       </h3>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {analysis.map((c, i) => (
           <div
             key={i}
-            className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors"
+            className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 transition-colors"
           >
-            <p className="text-sm font-semibold text-white mb-3">{c.competitor}</p>
-            <ListField label="Weaknesses" items={c.weaknesses} />
-            <ListField label="Missed Opportunities" items={c.missedOpportunities} />
-            <Field label="Suggested Differentiation" value={c.suggestedDifferentiation} />
+            <p className="text-sm font-bold text-white mb-3">{c.competitor}</p>
+            <div className="space-y-4">
+              <ListField label="Weaknesses" items={c.weaknesses} accent={accent} />
+              <ListField label="Missed Opportunities" items={c.missedOpportunities} accent={accent} />
+              <Field label="Suggested Differentiation" value={c.suggestedDifferentiation} accent={accent} />
+            </div>
           </div>
         ))}
       </div>

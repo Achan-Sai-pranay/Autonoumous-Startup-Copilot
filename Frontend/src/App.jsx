@@ -88,7 +88,7 @@ export default function App() {
         {isLoading && <LoadingTimeline steps={agentSteps} />}
 
         {blueprint && !isLoading && (
-          <BlueprintDashboard blueprint={blueprint} />
+           <BlueprintDashboard blueprint={blueprint} originalIdea={idea} />
         )}
       </main>
       <Footer />
