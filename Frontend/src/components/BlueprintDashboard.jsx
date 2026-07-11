@@ -1,15 +1,16 @@
 // BlueprintDashboard.jsx
 // ---------------------------------------------------------------------------
-// UX overhaul: instead of one long scrolling page, sections are grouped into
-// 5 modules (Idea & Validation, Market Intelligence, Product Planning,
-// Business Strategy, Launch Strategy) with sidebar nav on desktop and
-// horizontal scrollable tabs on mobile. No new libraries — just useState for
-// the active module. All original sub-components (GoToMarketSection,
-// LaunchChecklistSection, CostRevenueSection, CompetitorWeaknessSection,
-// RoadmapTimeline) are preserved and reused, now accepting an `accent` prop
-// so each module keeps a consistent color identity.
+// V3: module-based layout (sidebar/tabs) grouping the 12 backend sections
+// into 5 modules.
+//
+// V4: adds PDF/Markdown export (via utils/exportBlueprint.js), a success
+// toast, smooth module-switch transitions (fade+slide, driven by a `key`
+// change on the content wrapper — no animation library), staggered card
+// entrance, a progress bar on the Launch Checklist, subtle hover/icon
+// micro-interactions, and React.memo on repeated leaf components to cut
+// down re-renders.
 // ---------------------------------------------------------------------------
-import { useState } from "react";
+import { useState, memo, useCallback } from "react";
 import {
   Lightbulb,
   TrendingUp,
@@ -27,13 +28,15 @@ import {
   Copy,
   Check,
   Rocket,
+  FileDown,
+  FileText,
+  Loader2,
 } from "lucide-react";
+import { downloadMarkdown, downloadPdf } from "../components/exportBlueprint.js";
 
 // ---------------------------------------------------------------------------
-// Accent system — literal Tailwind class strings only (Tailwind's JIT scans
-// source text for class names; dynamic string concatenation like
-// `text-${accent}-400` would get purged from the production build, so every
-// color combination that can appear is spelled out here in full).
+// Accent system — literal Tailwind class strings only (dynamic string
+// concatenation would get purged by Tailwind's JIT scanner).
 // ---------------------------------------------------------------------------
 const ACCENT_TEXT = {
   sky: "text-sky-400",
@@ -83,6 +86,14 @@ const ACCENT_RING = {
   rose: "focus:ring-rose-500",
   indigo: "focus:ring-indigo-500",
 };
+const ACCENT_BAR = {
+  sky: "bg-sky-500",
+  emerald: "bg-emerald-500",
+  amber: "bg-amber-500",
+  orange: "bg-orange-500",
+  rose: "bg-rose-500",
+  indigo: "bg-indigo-500",
+};
 
 const MODULES = [
   { id: "idea", label: "Idea & Validation", icon: Lightbulb, accent: "sky" },
@@ -92,8 +103,44 @@ const MODULES = [
   { id: "launch", label: "Launch Strategy", icon: Rocket, accent: "rose" },
 ];
 
+// Small helper for staggered card entrance — index-based delay in ms.
+const stagger = (i, step = 80) => ({ animationDelay: `${i * step}ms` });
+
 export default function BlueprintDashboard({ blueprint, originalIdea }) {
   const [activeModule, setActiveModule] = useState("idea");
+  const [exporting, setExporting] = useState(null); // null | "pdf" | "md"
+  const [toast, setToast] = useState(null); // null | string
+
+  const showToast = useCallback((message) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 2500);
+  }, []);
+
+  const handleExportPdf = useCallback(async () => {
+    setExporting("pdf");
+    try {
+      await downloadPdf(blueprint, originalIdea);
+      showToast("PDF exported successfully");
+    } catch (err) {
+      console.error("PDF export failed:", err);
+      showToast("PDF export failed — please try again");
+    } finally {
+      setExporting(null);
+    }
+  }, [blueprint, originalIdea, showToast]);
+
+  const handleExportMarkdown = useCallback(() => {
+    setExporting("md");
+    try {
+      downloadMarkdown(blueprint, originalIdea);
+      showToast("Markdown exported successfully");
+    } catch (err) {
+      console.error("Markdown export failed:", err);
+      showToast("Markdown export failed — please try again");
+    } finally {
+      setExporting(null);
+    }
+  }, [blueprint, originalIdea, showToast]);
 
   const {
     ideaAnalysis,
@@ -113,6 +160,22 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
 
   return (
     <div className="w-full max-w-7xl mx-auto mt-10 px-4 pb-24 animate-[fadeIn_0.4s_ease-out]">
+      {/* Export bar */}
+      <div className="flex flex-wrap items-center justify-end gap-3 mb-6">
+        <ExportButton
+          icon={FileText}
+          label="Export Markdown"
+          busy={exporting === "md"}
+          onClick={handleExportMarkdown}
+        />
+        <ExportButton
+          icon={FileDown}
+          label="Export PDF"
+          busy={exporting === "pdf"}
+          onClick={handleExportPdf}
+        />
+      </div>
+
       {/* Mobile: horizontal scrollable tabs */}
       <nav className="md:hidden -mx-4 px-4 mb-6 overflow-x-auto">
         <div className="flex gap-2 w-max">
@@ -142,72 +205,100 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
           </div>
         </aside>
 
-        {/* Active module content */}
+        {/* Active module content — `key` forces a remount on module change,
+            retriggering the animate-module-in CSS animation each switch. */}
         <main className="flex-1 min-w-0">
-          {activeModule === "idea" && (
-            <IdeaModule originalIdea={originalIdea} ideaAnalysis={ideaAnalysis} />
-          )}
-          {activeModule === "market" && (
-            <MarketModule
-              marketResearch={marketResearch}
-              competitorWeaknessAnalysis={competitorWeaknessAnalysis}
-              goToMarket={goToMarket}
-            />
-          )}
-          {activeModule === "product" && (
-            <ProductModule
-              customerPersona={customerPersona}
-              productPlan={productPlan}
-              technicalArchitecture={technicalArchitecture}
-            />
-          )}
-          {activeModule === "business" && (
-            <BusinessModule
-              businessStrategy={businessStrategy}
-              costEstimator={costEstimator}
-              revenueSimulator={revenueSimulator}
-            />
-          )}
-          {activeModule === "launch" && (
-            <LaunchModule
-              launchChecklist={launchChecklist}
-              pitch={pitch}
-              roadmap={roadmap}
-            />
-          )}
+          <div key={activeModule} className="animate-module-in">
+            {activeModule === "idea" && (
+              <IdeaModule originalIdea={originalIdea} ideaAnalysis={ideaAnalysis} />
+            )}
+            {activeModule === "market" && (
+              <MarketModule
+                marketResearch={marketResearch}
+                competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                goToMarket={goToMarket}
+              />
+            )}
+            {activeModule === "product" && (
+              <ProductModule
+                customerPersona={customerPersona}
+                productPlan={productPlan}
+                technicalArchitecture={technicalArchitecture}
+              />
+            )}
+            {activeModule === "business" && (
+              <BusinessModule
+                businessStrategy={businessStrategy}
+                costEstimator={costEstimator}
+                revenueSimulator={revenueSimulator}
+              />
+            )}
+            {activeModule === "launch" && (
+              <LaunchModule
+                launchChecklist={launchChecklist}
+                pitch={pitch}
+                roadmap={roadmap}
+              />
+            )}
+          </div>
         </main>
       </div>
+
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-toast-in">
+          <div className="flex items-center gap-2 bg-slate-900 border border-slate-700 text-slate-100 text-sm px-4 py-3 rounded-2xl shadow-xl">
+            <Check size={16} className="text-emerald-400" />
+            {toast}
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Export bar button
+// ---------------------------------------------------------------------------
+function ExportButton({ icon: Icon, label, busy, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      disabled={busy}
+      className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-900/60 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-600 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
+    >
+      {busy ? <Loader2 size={14} className="animate-spin" /> : <Icon size={14} />}
+      {busy ? "Preparing…" : label}
+    </button>
   );
 }
 
 // ---------------------------------------------------------------------------
 // Navigation pieces
 // ---------------------------------------------------------------------------
-function SidebarItem({ module, active, onClick }) {
+const SidebarItem = memo(function SidebarItem({ module, active, onClick }) {
   const { icon: Icon, label, accent } = module;
   return (
     <button
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold border transition-all duration-200
+      className={`group w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-semibold border transition-all duration-200
         ${
           active
             ? `${ACCENT_BG[accent]} ${ACCENT_BORDER[accent]} ${ACCENT_TEXT[accent]}`
             : "bg-transparent border-transparent text-slate-400 hover:text-white hover:bg-slate-900/60"
         }`}
     >
-      <Icon size={18} />
+      <Icon size={18} className="transition-transform duration-200 group-hover:scale-110" />
       {label}
     </button>
   );
-}
+});
 
-function ModuleTabButton({ module, active, onClick }) {
+const ModuleTabButton = memo(function ModuleTabButton({ module, active, onClick }) {
   const { icon: Icon, label, accent } = module;
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold border transition-colors
+      className={`flex items-center gap-2 whitespace-nowrap px-4 py-2 rounded-full text-xs font-semibold border transition-colors duration-200
         ${
           active
             ? `${ACCENT_BG[accent]} ${ACCENT_BORDER[accent]} ${ACCENT_TEXT[accent]}`
@@ -218,7 +309,7 @@ function ModuleTabButton({ module, active, onClick }) {
       {label}
     </button>
   );
-}
+});
 
 function ModuleHeader({ icon: Icon, title, description, accent }) {
   return (
@@ -256,12 +347,20 @@ function ErrorNotice() {
   );
 }
 
-// Reusable card shell used for every section. `accent` controls the icon
-// badge color; defaults to indigo for anything not tied to a specific module.
-function DashboardCard({ icon: Icon, title, children, className = "", accent = "indigo" }) {
+// Reusable card shell. `accent` controls the icon badge color; `delayIndex`
+// (optional) applies a staggered entrance animation.
+const DashboardCard = memo(function DashboardCard({
+  icon: Icon,
+  title,
+  children,
+  className = "",
+  accent = "indigo",
+  delayIndex,
+}) {
   return (
     <div
-      className={`p-7 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-0.5 transition-all duration-300 ${className}`}
+      style={delayIndex !== undefined ? stagger(delayIndex) : undefined}
+      className={`${delayIndex !== undefined ? "card-stagger" : ""} p-7 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 hover:shadow-xl hover:shadow-black/20 hover:-translate-y-0.5 transition-all duration-300 ${className}`}
     >
       <h3 className="flex items-center gap-3 text-xl font-bold text-white mb-5">
         {Icon && (
@@ -274,12 +373,9 @@ function DashboardCard({ icon: Icon, title, children, className = "", accent = "
       <div className="space-y-5">{children}</div>
     </div>
   );
-}
+});
 
-// Labeled text block — bumped up in size/weight so subsection names like
-// "Development Priority" are immediately readable, with a small accent dot
-// instead of a generic gray label.
-function Field({ label, value, accent = "indigo" }) {
+const Field = memo(function Field({ label, value, accent = "indigo" }) {
   if (!value) return null;
   return (
     <div>
@@ -290,11 +386,9 @@ function Field({ label, value, accent = "indigo" }) {
       <p className="text-sm text-slate-200 leading-relaxed">{value}</p>
     </div>
   );
-}
+});
 
-// Labeled bullet list — this is what renders "MVP Features", "Future
-// Features", etc., so these headings get the same treatment as Field labels.
-function ListField({ label, items, accent = "indigo" }) {
+const ListField = memo(function ListField({ label, items, accent = "indigo" }) {
   if (!items || items.length === 0) return null;
   return (
     <div>
@@ -312,7 +406,7 @@ function ListField({ label, items, accent = "indigo" }) {
       </ul>
     </div>
   );
-}
+});
 
 // ---------------------------------------------------------------------------
 // Module: Idea & Validation
@@ -327,13 +421,13 @@ function IdeaModule({ originalIdea, ideaAnalysis }) {
         accent="sky"
       />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <DashboardCard icon={Target} title="Startup Idea" accent="sky">
+        <DashboardCard icon={Target} title="Startup Idea" accent="sky" delayIndex={0}>
           <p className="text-sm text-slate-200 leading-relaxed">
             {originalIdea || "No idea text available."}
           </p>
         </DashboardCard>
 
-        <DashboardCard icon={Lightbulb} title="Idea Analysis" accent="sky">
+        <DashboardCard icon={Lightbulb} title="Idea Analysis" accent="sky" delayIndex={1}>
           {isError(ideaAnalysis) ? (
             <ErrorNotice />
           ) : (
@@ -362,7 +456,7 @@ function MarketModule({ marketResearch, competitorWeaknessAnalysis, goToMarket }
         description="Competitors, demand, and how to reach the market."
         accent="emerald"
       />
-      <DashboardCard icon={TrendingUp} title="Market Research" accent="emerald">
+      <DashboardCard icon={TrendingUp} title="Market Research" accent="emerald" delayIndex={0}>
         {isError(marketResearch) ? (
           <ErrorNotice />
         ) : (
@@ -375,11 +469,11 @@ function MarketModule({ marketResearch, competitorWeaknessAnalysis, goToMarket }
       </DashboardCard>
 
       {!isError(competitorWeaknessAnalysis) && competitorWeaknessAnalysis?.length > 0 && (
-        <CompetitorWeaknessSection analysis={competitorWeaknessAnalysis} accent="emerald" />
+        <CompetitorWeaknessSection analysis={competitorWeaknessAnalysis} accent="emerald" delayIndex={1} />
       )}
 
       {!isError(goToMarket) && goToMarket && (
-        <GoToMarketSection gtm={goToMarket} accent="emerald" />
+        <GoToMarketSection gtm={goToMarket} accent="emerald" delayIndex={2} />
       )}
     </div>
   );
@@ -398,7 +492,7 @@ function ProductModule({ customerPersona, productPlan, technicalArchitecture }) 
         accent="amber"
       />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <DashboardCard icon={Users} title="Customer Persona" accent="amber">
+        <DashboardCard icon={Users} title="Customer Persona" accent="amber" delayIndex={0}>
           {isError(customerPersona) ? (
             <ErrorNotice />
           ) : (
@@ -410,7 +504,7 @@ function ProductModule({ customerPersona, productPlan, technicalArchitecture }) 
           )}
         </DashboardCard>
 
-        <DashboardCard icon={ListChecks} title="Product Plan" accent="amber">
+        <DashboardCard icon={ListChecks} title="Product Plan" accent="amber" delayIndex={1}>
           {isError(productPlan) ? (
             <ErrorNotice />
           ) : (
@@ -427,6 +521,7 @@ function ProductModule({ customerPersona, productPlan, technicalArchitecture }) 
           title="Technical Architecture"
           accent="amber"
           className="md:col-span-2"
+          delayIndex={2}
         >
           {isError(technicalArchitecture) ? (
             <ErrorNotice />
@@ -458,7 +553,7 @@ function BusinessModule({ businessStrategy, costEstimator, revenueSimulator }) {
         description="How this makes money, and what it costs to run."
         accent="orange"
       />
-      <DashboardCard icon={Landmark} title="Business Strategy" accent="orange">
+      <DashboardCard icon={Landmark} title="Business Strategy" accent="orange" delayIndex={0}>
         {isError(businessStrategy) ? (
           <ErrorNotice />
         ) : (
@@ -470,7 +565,7 @@ function BusinessModule({ businessStrategy, costEstimator, revenueSimulator }) {
         )}
       </DashboardCard>
 
-      <CostRevenueSection cost={costEstimator} revenue={revenueSimulator} accent="orange" />
+      <CostRevenueSection cost={costEstimator} revenue={revenueSimulator} accent="orange" delayIndex={1} />
     </div>
   );
 }
@@ -488,7 +583,10 @@ function LaunchModule({ launchChecklist, pitch, roadmap }) {
         accent="rose"
       />
 
-      <div className="p-7 rounded-3xl bg-gradient-to-br from-rose-600/15 to-purple-600/10 border border-rose-500/30 hover:border-rose-500/50 transition-colors">
+      <div
+        className="card-stagger p-7 rounded-3xl bg-gradient-to-br from-rose-600/15 to-purple-600/10 border border-rose-500/30 hover:border-rose-500/50 transition-colors"
+        style={stagger(0)}
+      >
         <p className="text-xs uppercase tracking-widest text-rose-400 font-bold mb-2">
           Investor Pitch
         </p>
@@ -505,10 +603,10 @@ function LaunchModule({ launchChecklist, pitch, roadmap }) {
       </div>
 
       {!isError(launchChecklist) && launchChecklist?.length > 0 && (
-        <LaunchChecklistSection items={launchChecklist} accent="rose" />
+        <LaunchChecklistSection items={launchChecklist} accent="rose" delayIndex={1} />
       )}
 
-      <DashboardCard icon={MapIcon} title="Startup Roadmap" accent="rose">
+      <DashboardCard icon={MapIcon} title="Startup Roadmap" accent="rose" delayIndex={2}>
         {isError(roadmap) ? <ErrorNotice /> : <RoadmapTimeline roadmap={roadmap} accent="rose" />}
       </DashboardCard>
     </div>
@@ -516,9 +614,9 @@ function LaunchModule({ launchChecklist, pitch, roadmap }) {
 }
 
 // ---------------------------------------------------------------------------
-// Go-to-Market Strategy (unchanged logic, now accent-aware)
+// Go-to-Market Strategy
 // ---------------------------------------------------------------------------
-function CopyableCard({ label, content, accent = "indigo" }) {
+const CopyableCard = memo(function CopyableCard({ label, content, accent = "indigo" }) {
   const [copied, setCopied] = useState(false);
   if (!content) return null;
 
@@ -529,7 +627,7 @@ function CopyableCard({ label, content, accent = "indigo" }) {
   }
 
   return (
-    <div className="rounded-2xl bg-slate-950/60 border border-slate-800 p-4 hover:border-slate-700 transition-colors">
+    <div className="rounded-2xl bg-slate-950/60 border border-slate-800 p-4 hover:border-slate-700 hover:-translate-y-0.5 transition-all duration-200">
       <div className="flex items-center justify-between mb-2">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</p>
         <button
@@ -552,12 +650,12 @@ function CopyableCard({ label, content, accent = "indigo" }) {
       </pre>
     </div>
   );
-}
+});
 
-function GoToMarketSection({ gtm, accent = "indigo" }) {
+function GoToMarketSection({ gtm, accent = "indigo", delayIndex }) {
   const a = ACCENT_TEXT[accent];
   return (
-    <DashboardCard icon={Target} title="Go-to-Market Strategy" accent={accent}>
+    <DashboardCard icon={Target} title="Go-to-Market Strategy" accent={accent} delayIndex={delayIndex}>
       <Field label="Target Audience" value={gtm.targetAudience} accent={accent} />
 
       {gtm.platforms?.length > 0 && (
@@ -568,7 +666,10 @@ function GoToMarketSection({ gtm, accent = "indigo" }) {
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {gtm.platforms.map((p, i) => (
-              <div key={i} className="rounded-2xl bg-slate-950/60 border border-slate-800 p-4">
+              <div
+                key={i}
+                className="rounded-2xl bg-slate-950/60 border border-slate-800 p-4 hover:border-slate-700 hover:-translate-y-0.5 transition-all duration-200"
+              >
                 <p className="text-sm font-semibold text-white mb-1">{p.name}</p>
                 <p className="text-xs text-slate-400 leading-relaxed">{p.why}</p>
               </div>
@@ -613,10 +714,11 @@ function GoToMarketSection({ gtm, accent = "indigo" }) {
 }
 
 // ---------------------------------------------------------------------------
-// Launch Checklist (unchanged logic — in-memory checked state — now accent-aware)
+// Launch Checklist — now with an animated progress bar.
 // ---------------------------------------------------------------------------
-function LaunchChecklistSection({ items, accent = "indigo" }) {
+function LaunchChecklistSection({ items, accent = "indigo", delayIndex }) {
   const [checked, setChecked] = useState(() => new Set());
+  const percent = items.length ? Math.round((checked.size / items.length) * 100) : 0;
 
   function toggle(index) {
     setChecked((prev) => {
@@ -628,10 +730,22 @@ function LaunchChecklistSection({ items, accent = "indigo" }) {
   }
 
   return (
-    <DashboardCard icon={ListTodo} title="Launch Checklist" accent={accent}>
-      <p className="text-xs text-slate-500 -mt-2">
-        {checked.size} of {items.length} complete
-      </p>
+    <DashboardCard icon={ListTodo} title="Launch Checklist" accent={accent} delayIndex={delayIndex}>
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs text-slate-500">
+            {checked.size} of {items.length} complete
+          </p>
+          <p className={`text-xs font-semibold ${ACCENT_TEXT[accent]}`}>{percent}%</p>
+        </div>
+        <div className="h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
+          <div
+            className={`h-full rounded-full ${ACCENT_BAR[accent]} transition-all duration-500 ease-out`}
+            style={{ width: `${percent}%` }}
+          />
+        </div>
+      </div>
+
       <div className="space-y-2">
         {items.map((item, i) => (
           <label key={i} className="flex items-center gap-3 text-sm cursor-pointer group">
@@ -639,7 +753,7 @@ function LaunchChecklistSection({ items, accent = "indigo" }) {
               type="checkbox"
               checked={checked.has(i)}
               onChange={() => toggle(i)}
-              className={`h-4 w-4 rounded border-slate-700 bg-slate-900 ${ACCENT_CHECKBOX[accent]} ${ACCENT_RING[accent]} focus:ring-offset-0 cursor-pointer`}
+              className={`h-4 w-4 rounded border-slate-700 bg-slate-900 ${ACCENT_CHECKBOX[accent]} ${ACCENT_RING[accent]} focus:ring-offset-0 cursor-pointer transition-transform duration-150 checked:scale-105`}
             />
             <span
               className={
@@ -658,7 +772,7 @@ function LaunchChecklistSection({ items, accent = "indigo" }) {
 }
 
 // ---------------------------------------------------------------------------
-// Roadmap timeline (unchanged logic, now accent-aware)
+// Roadmap timeline
 // ---------------------------------------------------------------------------
 function RoadmapTimeline({ roadmap, accent = "indigo" }) {
   const milestones = roadmap?.milestones || [];
@@ -669,7 +783,11 @@ function RoadmapTimeline({ roadmap, accent = "indigo" }) {
     <div>
       <div className="relative border-l border-slate-800 ml-2 space-y-6">
         {milestones.map((m, i) => (
-          <div key={i} className="pl-6 relative">
+          <div
+            key={i}
+            className="card-stagger pl-6 relative"
+            style={stagger(i, 100)}
+          >
             <span className={`absolute -left-[7px] top-1 h-3 w-3 rounded-full ${dotBg} ring-4 ring-current/20 ${a}`} />
             <p className={`text-xs font-bold uppercase tracking-wide mb-0.5 ${a}`}>{m.week}</p>
             <p className="text-sm font-semibold text-white mb-1">{m.title}</p>
@@ -695,7 +813,7 @@ function RoadmapTimeline({ roadmap, accent = "indigo" }) {
 }
 
 // ---------------------------------------------------------------------------
-// Cost Estimator + Revenue Simulator (unchanged logic, now accent-aware)
+// Cost Estimator + Revenue Simulator
 // ---------------------------------------------------------------------------
 const COST_LABELS = {
   domain: "Domain",
@@ -708,11 +826,14 @@ const COST_LABELS = {
   authentication: "Authentication",
 };
 
-function CostRevenueSection({ cost, revenue, accent = "indigo" }) {
+function CostRevenueSection({ cost, revenue, accent = "indigo", delayIndex }) {
   const a = ACCENT_TEXT[accent];
   return (
     <div className="space-y-6">
-      <div className="p-7 rounded-3xl bg-slate-900/60 border border-slate-800">
+      <div
+        className="card-stagger p-7 rounded-3xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-colors"
+        style={stagger(delayIndex ?? 0)}
+      >
         <h3 className="flex items-center gap-3 text-xl font-bold text-white mb-5">
           <span className={`flex items-center justify-center h-9 w-9 rounded-xl ${ACCENT_BG[accent]}`}>
             <Wallet size={18} className={a} />
@@ -739,7 +860,10 @@ function CostRevenueSection({ cost, revenue, accent = "indigo" }) {
                   const item = cost[key];
                   if (!item) return null;
                   return (
-                    <div key={key} className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800">
+                    <div
+                      key={key}
+                      className="p-4 rounded-2xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 hover:-translate-y-0.5 transition-all duration-200"
+                    >
                       <div className="flex items-center justify-between gap-2 mb-1">
                         <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                           {label}
@@ -761,7 +885,10 @@ function CostRevenueSection({ cost, revenue, accent = "indigo" }) {
         )}
       </div>
 
-      <div className="p-7 rounded-3xl bg-slate-900/60 border border-slate-800">
+      <div
+        className="card-stagger p-7 rounded-3xl bg-slate-900/60 border border-slate-800"
+        style={stagger((delayIndex ?? 0) + 1)}
+      >
         <h3 className="flex items-center gap-3 text-xl font-bold text-white mb-5">
           <span className={`flex items-center justify-center h-9 w-9 rounded-xl ${ACCENT_BG[accent]}`}>
             <BarChart3 size={18} className={a} />
@@ -789,7 +916,7 @@ function CostRevenueSection({ cost, revenue, accent = "indigo" }) {
                   </thead>
                   <tbody>
                     {(revenue.projections || []).map((p, i) => (
-                      <tr key={i} className="border-t border-slate-800 bg-slate-900/40">
+                      <tr key={i} className="border-t border-slate-800 bg-slate-900/40 hover:bg-slate-900/70 transition-colors">
                         <td className="px-4 py-3 text-slate-200 font-medium">
                           {typeof p.users === "number" ? p.users.toLocaleString() : p.users}
                         </td>
@@ -809,12 +936,15 @@ function CostRevenueSection({ cost, revenue, accent = "indigo" }) {
 }
 
 // ---------------------------------------------------------------------------
-// Competitor Weakness Analysis (unchanged logic, now accent-aware)
+// Competitor Weakness Analysis
 // ---------------------------------------------------------------------------
-function CompetitorWeaknessSection({ analysis, accent = "indigo" }) {
+function CompetitorWeaknessSection({ analysis, accent = "indigo", delayIndex }) {
   const a = ACCENT_TEXT[accent];
   return (
-    <div className="p-7 rounded-3xl bg-slate-900/60 border border-slate-800">
+    <div
+      className="card-stagger p-7 rounded-3xl bg-slate-900/60 border border-slate-800"
+      style={stagger(delayIndex ?? 0)}
+    >
       <h3 className="flex items-center gap-3 text-xl font-bold text-white mb-5">
         <span className={`flex items-center justify-center h-9 w-9 rounded-xl ${ACCENT_BG[accent]}`}>
           <Crosshair size={18} className={a} />
@@ -825,7 +955,7 @@ function CompetitorWeaknessSection({ analysis, accent = "indigo" }) {
         {analysis.map((c, i) => (
           <div
             key={i}
-            className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 transition-colors"
+            className="p-5 rounded-2xl bg-slate-950/60 border border-slate-800 hover:border-slate-700 hover:-translate-y-0.5 transition-all duration-200"
           >
             <p className="text-sm font-bold text-white mb-3">{c.competitor}</p>
             <div className="space-y-4">
