@@ -5,10 +5,14 @@
 // in this file rather than separate component files.
 //
 // ---------------------------------------------------------------------------
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LoadingTimeline, { AGENT_STEP_NAMES } from "./components/LoadingTimeline.jsx";
 import BlueprintDashboard from "./components/BlueprintDashboard.jsx";
 import SplineBackground from "./components/SplineBackground.jsx";
+import HistoryPanel from "./components/HistoryPanel.jsx";
+import { getHistory, saveToHistory, deleteFromHistory } from "./lib/projectHistory.js";
+import { useSpeechToText } from "./hooks/useSpeechToText.js";
+import { History, Mic, MicOff } from "lucide-react";
 
 // Change this if your backend runs on a different port.
 const API_URL = "http://localhost:5001/api/generate-blueprint";
@@ -24,6 +28,31 @@ export default function App() {
   const [blueprint, setBlueprint] = useState(null);
   const [error, setError] = useState("");
   const [agentSteps, setAgentSteps] = useState(buildInitialSteps());
+
+  // --- Startup History & Saved Projects (localStorage-backed) -------------
+  const [history, setHistory] = useState([]);
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Load whatever was saved from previous sessions on first mount.
+  useEffect(() => {
+    setHistory(getHistory());
+  }, []);
+
+  function handleOpenHistory() {
+    setHistory(getHistory()); // refresh in case another tab changed it
+    setShowHistory(true);
+  }
+
+  function handleLoadProject(entry) {
+    setIdea(entry.idea);
+    setBlueprint(entry.blueprint);
+    setError("");
+    setShowHistory(false);
+  }
+
+  function handleDeleteProject(id) {
+    setHistory(deleteFromHistory(id));
+  }
 
   async function handleGenerate() {
     if (!idea.trim()) {
@@ -56,7 +85,11 @@ export default function App() {
             )
           );
         },
-        onResult: (data) => setBlueprint(data),
+        onResult: (data) => {
+          setBlueprint(data);
+          // Auto-save every completed blueprint to history.
+          setHistory(saveToHistory(idea.trim(), data));
+        },
         onError: (message) => setError(message),
       });
     } catch (err) {
@@ -73,7 +106,7 @@ export default function App() {
     <>
       <SplineBackground />
       <div className="relative z-10 min-h-screen bg-transparent text-white flex flex-col">
-        <Navbar />
+        <Navbar onOpenHistory={handleOpenHistory} historyCount={history.length} />
         <main className="flex-1 flex flex-col items-center px-4">
           <Hero />
           <IdeaInput
@@ -96,6 +129,14 @@ export default function App() {
         </main>
         <Footer />
       </div>
+
+      <HistoryPanel
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        history={history}
+        onLoad={handleLoadProject}
+        onDelete={handleDeleteProject}
+      />
     </>
   );
 }
@@ -133,15 +174,30 @@ async function readNdjsonStream(response, { onProgress, onResult, onError }) {
 }
 
 // --- Navbar -----------------------------------------------------------------
-function Navbar() {
+function Navbar({ onOpenHistory, historyCount }) {
   return (
     <header className="w-full border-b border-slate-900 px-6 py-4 flex items-center justify-between">
       <span className="font-bold text-lg tracking-tight">
         Launch<span className="text-indigo-400">Pilot</span> AI
       </span>
-      <span className="text-xs text-slate-500 hidden sm:block">
-        Your Autonomous AI Co-Founder
-      </span>
+
+      <div className="flex items-center gap-4">
+        <button
+          onClick={onOpenHistory}
+          className="relative flex items-center gap-1.5 text-sm text-slate-400 hover:text-slate-100 transition-colors"
+        >
+          <History size={16} />
+          <span className="hidden sm:inline">History</span>
+          {historyCount > 0 && (
+            <span className="ml-0.5 text-xs bg-indigo-600 text-white rounded-full px-1.5 py-0.5 leading-none">
+              {historyCount}
+            </span>
+          )}
+        </button>
+        <span className="text-xs text-slate-500 hidden sm:block">
+          Your Autonomous AI Co-Founder
+        </span>
+      </div>
     </header>
   );
 }
@@ -158,10 +214,7 @@ function Hero() {
         startup blueprint
       </h1>
       <p className="text-slate-300 text-base md:text-lg drop-shadow-[0_2px_12px_rgba(2,6,23,0.9)]">
-        Twelve specialized AI agents analyze your idea end-to-end — market,
-        customers, product, tech stack, business model, pitch, roadmap,
-        go‑to‑market, launch checklist, cost/revenue simulator, and competitor
-        weakness analysis.
+        5 specialized AI agents collaborate to validate your idea, research your market, design your product, craft your business strategy, and generate a launch-ready startup blueprint.
       </p>
     </section>
   );
@@ -169,16 +222,52 @@ function Hero() {
 
 // --- IdeaInput ---------------------------------------------------------------
 function IdeaInput({ idea, setIdea, onGenerate, isLoading }) {
+  const {
+    isSupported: micSupported,
+    isListening,
+    error: micError,
+    toggleListening,
+  } = useSpeechToText({
+    onResult: (transcript) => {
+      setIdea((prev) => (prev.trim() ? `${prev.trim()} ${transcript}` : transcript));
+    },
+  });
+
   return (
     <div className="w-full max-w-2xl">
-      <textarea
-        value={idea}
-        onChange={(e) => setIdea(e.target.value)}
-        placeholder='e.g. "I want to build an AI platform for placement preparation."'
-        rows={3}
-        disabled={isLoading}
-        className="w-full resize-none rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 transition-shadow"
-      />
+      <div className="relative">
+        <textarea
+          value={idea}
+          onChange={(e) => setIdea(e.target.value)}
+          placeholder='e.g. "I want to build an AI platform for placement preparation."'
+          rows={3}
+          disabled={isLoading}
+          className="w-full resize-none rounded-xl bg-slate-900 border border-slate-800 px-4 py-3 pr-12 text-sm text-slate-100 placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 transition-shadow"
+        />
+
+        {micSupported && (
+          <button
+            type="button"
+            onClick={toggleListening}
+            disabled={isLoading}
+            title={isListening ? "Stop recording" : "Speak your idea"}
+            className={`absolute bottom-3 right-3 flex items-center justify-center w-8 h-8 rounded-full transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
+              isListening
+                ? "bg-red-600 text-white animate-pulse"
+                : "bg-slate-800 text-slate-400 hover:text-indigo-400 hover:bg-slate-700"
+            }`}
+          >
+            {isListening ? <MicOff size={15} /> : <Mic size={15} />}
+          </button>
+        )}
+      </div>
+
+      {isListening && (
+        <p className="mt-2 text-xs text-indigo-400 animate-pulse">
+          Listening… speak your idea.
+        </p>
+      )}
+      {micError && <p className="mt-2 text-xs text-red-400">{micError}</p>}
 
       <button
         onClick={onGenerate}
