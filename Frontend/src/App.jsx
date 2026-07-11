@@ -8,6 +8,7 @@
 import { useState } from "react";
 import LoadingTimeline, { AGENT_STEP_NAMES } from "./components/LoadingTimeline.jsx";
 import BlueprintDashboard from "./components/BlueprintDashboard.jsx";
+import SplineBackground from "./components/SplineBackground.jsx";
 
 // Change this if your backend runs on a different port.
 const API_URL = "http://localhost:5001/api/generate-blueprint";
@@ -69,30 +70,33 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col">
-      <Navbar />
-      <main className="flex-1 flex flex-col items-center px-4">
-        <Hero />
-        <IdeaInput
-          idea={idea}
-          setIdea={setIdea}
-          onGenerate={handleGenerate}
-          isLoading={isLoading}
-        />
-        {error && (
-          <p className="mt-6 text-sm text-red-400 bg-red-950/40 border border-red-900 px-4 py-2 rounded-lg">
-            {error}
-          </p>
-        )}
+    <>
+      <SplineBackground />
+      <div className="relative z-10 min-h-screen bg-transparent text-white flex flex-col">
+        <Navbar />
+        <main className="flex-1 flex flex-col items-center px-4">
+          <Hero />
+          <IdeaInput
+            idea={idea}
+            setIdea={setIdea}
+            onGenerate={handleGenerate}
+            isLoading={isLoading}
+          />
+          {error && (
+            <p className="mt-6 text-sm text-red-400 bg-red-950/40 border border-red-900 px-4 py-2 rounded-lg">
+              {error}
+            </p>
+          )}
 
-        {isLoading && <LoadingTimeline steps={agentSteps} />}
+          {isLoading && <LoadingTimeline steps={agentSteps} />}
 
-        {blueprint && !isLoading && (
-           <BlueprintDashboard blueprint={blueprint} originalIdea={idea} />
-        )}
-      </main>
-      <Footer />
-    </div>
+          {blueprint && !isLoading && (
+             <BlueprintDashboard blueprint={blueprint} originalIdea={idea} />
+          )}
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 }
 
@@ -146,11 +150,14 @@ function Navbar() {
 function Hero() {
   return (
     <section className="text-center max-w-2xl mt-16 mb-6">
-      <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4">
+      <h1 className="text-3xl md:text-5xl font-bold tracking-tight mb-4 drop-shadow-[0_2px_20px_rgba(2,6,23,0.9)]">
         Turn your idea into a{" "}
-        <span className="text-indigo-400">full startup blueprint</span>
+        <span className="text-cyan-300 drop-shadow-[0_2px_16px_rgba(2,6,23,0.9)]">
+          full
+        </span>{" "}
+        startup blueprint
       </h1>
-      <p className="text-slate-400 text-base md:text-lg">
+      <p className="text-slate-300 text-base md:text-lg drop-shadow-[0_2px_12px_rgba(2,6,23,0.9)]">
         Twelve specialized AI agents analyze your idea end-to-end — market,
         customers, product, tech stack, business model, pitch, roadmap,
         go‑to‑market, launch checklist, cost/revenue simulator, and competitor
