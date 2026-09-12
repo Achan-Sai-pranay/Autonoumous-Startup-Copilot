@@ -31,7 +31,7 @@
 //     fallback), so existing V1/V2 sections are completely unaffected.
 // ---------------------------------------------------------------------------
 
-import { callGemini } from "./gemini.js";
+import { callGemini, streamGemini } from "./gemini.js";
 
 // Shared instruction so Gemini always returns clean, parseable JSON.
 const JSON_ONLY_RULE = `
@@ -72,11 +72,21 @@ const STEPS = [
 
 export const AGENT_STEP_NAMES = STEPS.map((s) => s.name);
 
-// Small cosmetic delay between step reveals once the real response is in
-// hand, so the checklist doesn't just flash from empty to fully complete
-// instantly. Purely visual — the actual work already finished by this
-// point since it's all one Gemini call.
-const STEP_REVEAL_DELAY_MS = 150;
+// The primary JSON key that indicates the beginning of each step's generation
+const STEP_START_KEYS = [
+  "ideaAnalysis",
+  "marketResearch",
+  "customerPersona",
+  "productPlan",
+  "technicalArchitecture",
+  "businessStrategy",
+  "pitch",
+  "roadmap",
+  "goToMarket",
+  "launchChecklist",
+  "costEstimator",
+  "competitorWeaknessAnalysis",
+];
 
 // ---------------------------------------------------------------------------
 // The single mega-prompt: 8 planning agents + AI Critic + 6 execution
@@ -274,40 +284,68 @@ ${JSON_ONLY_RULE}`;
  * fallback — everything else on that step still renders.
  */
 export async function runAllAgents(idea, onProgress = () => {}) {
+  // Step 0 begins immediately as the AI co-founder pipeline starts
+  let activeStep = 0;
+  const stepStates = Array(STEPS.length).fill("pending");
+  stepStates[0] = "running";
   onProgress({ step: 0, agent: STEPS[0].name, status: "running" });
 
   let parsed = null;
 
   try {
-    const rawText = await callGemini(buildMegaPrompt(idea));
-    // Additional sanitization: remove trailing commas before ] or }
+    const rawText = await streamGemini(buildMegaPrompt(idea), (_chunk, fullRawText) => {
+      // Check if any subsequent step has started streaming in the model output
+      for (let i = activeStep + 1; i < STEP_START_KEYS.length; i++) {
+        const triggerKey = `"${STEP_START_KEYS[i]}"`;
+        if (fullRawText.includes(triggerKey)) {
+          // Mark all previous running/pending steps up to i as done
+          for (let prev = activeStep; prev < i; prev++) {
+            if (stepStates[prev] !== "done") {
+              stepStates[prev] = "done";
+              onProgress({ step: prev, agent: STEPS[prev].name, status: "done" });
+            }
+          }
+          activeStep = i;
+          stepStates[i] = "running";
+          onProgress({ step: i, agent: STEPS[i].name, status: "running" });
+        }
+      }
+    });
+
+    // When the stream ends, mark any remaining running/pending steps as done
+    for (let i = 0; i < STEPS.length; i++) {
+      if (stepStates[i] !== "done") {
+        stepStates[i] = "done";
+        onProgress({ step: i, agent: STEPS[i].name, status: "done" });
+      }
+    }
+
     const cleaned = rawText
       .trim()
-      // Remove trailing commas before closing brackets or braces
       .replace(/,\s*([\]}])/g, '$1');
     parsed = JSON.parse(cleaned);
   } catch (error) {
-    // Covers both network/API failures (after gemini.js's retries) and
-    // malformed JSON that didn't parse. Every section falls back to
-    // "unavailable" below.
-    console.error("Blueprint generation call failed:", error.message);
+    console.error("Stream blueprint generation failed, attempting fallback:", error.message);
+    try {
+      const rawText = await callGemini(buildMegaPrompt(idea));
+      const cleaned = rawText.trim().replace(/,\s*([\]}])/g, '$1');
+      parsed = JSON.parse(cleaned);
+      for (let i = 0; i < STEPS.length; i++) {
+        onProgress({ step: i, agent: STEPS[i].name, status: "done" });
+      }
+    } catch (fallbackErr) {
+      console.error("Fallback generation also failed:", fallbackErr.message);
+    }
   }
 
   const result = {};
 
   for (let i = 0; i < STEPS.length; i++) {
     const { keys, name } = STEPS[i];
-
-    if (i > 0) {
-      onProgress({ step: i, agent: name, status: "running" });
-    }
-
     let stepIsFullyValid = true;
 
     for (const key of keys) {
       const section = parsed?.[key];
-      // Accept objects AND arrays (e.g. launchChecklist, competitorWeaknessAnalysis
-      // are top-level arrays) — anything non-null/non-undefined of type "object".
       const isValidSection = section !== null && section !== undefined && typeof section === "object";
 
       if (isValidSection) {
@@ -319,16 +357,10 @@ export async function runAllAgents(idea, onProgress = () => {}) {
       }
     }
 
-    onProgress({ step: i, agent: name, status: stepIsFullyValid ? "done" : "failed" });
-
-    // Purely cosmetic stagger so the checklist reveals section by section
-    // instead of flashing straight to fully done.
-    await sleep(STEP_REVEAL_DELAY_MS);
+    if (!stepIsFullyValid) {
+      onProgress({ step: i, agent: name, status: "failed" });
+    }
   }
 
   return result;
-}
-
-function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
+}

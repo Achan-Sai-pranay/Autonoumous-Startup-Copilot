@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="-40 -40 304.76 304.76">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#linear-gradient);
+      }
+
+      .cls-1, .cls-2 {
+        stroke-width: 0px;
+      }
+
+      .cls-2 {
+        fill: #070707;
+      }
+    </style>
+    <linearGradient id="linear-gradient" x1="127.4" y1=".6" x2="127.4" y2="336.62" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00ffa4"/>
+      <stop offset="1" stop-color="#be33ff"/>
+    </linearGradient>
+  </defs>
+  <g id="Layer_1-2" data-name="Layer 1">
+    <g id="logo_design" data-name="logo design">
+      <path id="logomark" class="cls-1" d="M244.05,12.56l-67.31,78.64c-6.71,8.9-11.36,19.21-13.71,30.05L73.13,2.42c-1.15-1.53-2.96-2.42-4.87-2.42H6.07C2.71.02,0,2.75,0,6.11v82.23c0,1.33.43,2.62,1.24,3.68l120.09,158.72,1.19,1.58c2.44,3.24,7.31,3.24,9.75,0l1.19-1.58,38.76-51.22c.8-1.06,1.24-2.35,1.24-3.69v-40.7l11.31,14.95c2.44,3.23,7.3,3.23,9.74,0l59.05-78.07c.8-1.06,1.24-2.35,1.24-3.68V16.53c0-5.67-7.06-8.28-10.75-3.97ZM121.33,230.65L12.13,86.31V24.19l109.2,144.3v62.16ZM161.33,193.8l-27.87,36.84v-66.21L18.28,12.13h47l96.05,126.99v54.68ZM242.66,86.31l-53.02,70.09-16.14-21.31c.45-13.14,4.97-26.05,12.9-36.56l56.26-66.65v54.43Z"/>
+    </g>
+  </g>
+</svg>

@@ -32,10 +32,119 @@ import { jsonrepair } from "jsonrepair";
 
 const GEMINI_MODEL = "gemini-3.1-flash-lite";
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
+const GEMINI_STREAM_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent`;
 
 const MAX_RETRIES = 3; // retries AFTER the first attempt (4 attempts total)
 const BASE_DELAY_MS = 1000; // 1s, then 2s, then 4s
 const MAX_OUTPUT_TOKENS = 32768; // increased to be extra safe for the large V3 prompt
+
+/**
+ * Streams a prompt to Gemini via Server-Sent Events (SSE), invoking onChunk
+ * as new partial text arrives, and returns the final extracted JSON.
+ *
+ * @param {string} prompt - full instruction text
+ * @param {function(string, string): void} onChunk - (chunkText, fullRawText) => void
+ * @returns {Promise<string>} raw text (expected to be a JSON string)
+ */
+export async function streamGemini(prompt, onChunk = () => {}) {
+  const apiKey = process.env.GEMINI_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      "Missing GEMINI_API_KEY. Add it to backend/.env (see .env.example)."
+    );
+  }
+
+  let lastError;
+
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      return await streamRequestOnce(prompt, apiKey, onChunk);
+    } catch (error) {
+      lastError = error;
+
+      const isLastAttempt = attempt === MAX_RETRIES;
+      if (isLastAttempt) break;
+
+      const delayMs = BASE_DELAY_MS * 2 ** attempt;
+      console.warn(
+        `Gemini stream failed (attempt ${attempt + 1}/${MAX_RETRIES + 1}): ${
+          error.message
+        }. Retrying in ${delayMs}ms...`
+      );
+      await sleep(delayMs);
+    }
+  }
+
+  throw lastError;
+}
+
+async function streamRequestOnce(prompt, apiKey, onChunk) {
+  const response = await fetch(`${GEMINI_STREAM_URL}?key=${apiKey}&alt=sse`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.7,
+        responseMimeType: "application/json",
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
+      },
+    }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(
+      `Gemini API stream failed (${response.status}): ${errorBody}`
+    );
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let done = false;
+  let fullRawText = "";
+  let buffer = "";
+
+  while (!done) {
+    const { value, done: isDone } = await reader.read();
+    done = isDone;
+    if (value) {
+      buffer += decoder.decode(value, { stream: !done });
+      const lines = buffer.split("\n");
+      buffer = lines.pop(); // keep incomplete line in buffer
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("data:")) {
+          const jsonStr = trimmed.replace(/^data:\s*/, "");
+          if (!jsonStr || jsonStr === "[DONE]") continue;
+          try {
+            const data = JSON.parse(jsonStr);
+            const chunkText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            if (chunkText) {
+              fullRawText += chunkText;
+              onChunk(chunkText, fullRawText);
+            }
+          } catch (e) {
+            // non-fatal SSE chunk parse issue
+          }
+        }
+      }
+    }
+  }
+
+  if (!fullRawText) {
+    throw new Error("Gemini stream returned an empty response.");
+  }
+
+  const extracted = extractJSON(fullRawText);
+  if (!extracted || !extracted.trim().startsWith("{") || !extracted.trim().endsWith("}")) {
+    throw new Error("Gemini did not return a valid JSON object.");
+  }
+
+  return extracted;
+}
 
 /**
  * Sends a prompt to Gemini and returns the raw text response, retrying

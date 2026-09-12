@@ -1,31 +1,23 @@
 // components/SplineBackground.jsx
 // ---------------------------------------------------------------------------
-// Full-screen animated 3D background using Spline. Lazy-loaded (code-split)
-// so it never blocks the initial app bundle, and pointer-events-none so it
-// never intercepts clicks, scroll, hover, or form interactions. Sits fixed
-// behind everything else at z-0; app content is rendered at z-10 in App.jsx.
+// Clean White + Orange Ambient Canvas: Zero-latency, GPU-composited atmospheric
+// warm glow and soft dot-matrix backdrop matching VenturusAI light theme.
 // ---------------------------------------------------------------------------
-import { Suspense, lazy } from "react";
-
-const Spline = lazy(() => import("@splinetool/react-spline"));
-
-// Get this from the Spline editor: File -> Export -> Code Export -> React,
-// then copy the "scene" URL (looks like
-// https://prod.spline.design/XXXXXXXXXXXXXXXXX/scene.splinecode).
-// The community.spline.design link you shared is just the viewer page, so
-// you'll need to open the scene in the Spline editor to grab this.
-const SPLINE_SCENE_URL =
-  "https://prod.spline.design/XXXXXXXXXXXXXXXXX/scene.splinecode";
-
 export default function SplineBackground() {
   return (
     <div
-      className="fixed inset-0 z-0 bg-slate-950 pointer-events-none overflow-hidden"
+      className="fixed inset-0 -z-10 pointer-events-none overflow-hidden select-none"
       aria-hidden="true"
     >
-      <Suspense fallback={null}>
-        <Spline scene={"https://prod.spline.design/sa4LtsCoSAMP0vOa/scene.splinecode"} className="w-full h-full" />
-      </Suspense>
+      {/* Top Center Warm Orange Spotlight */}
+      <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[1100px] h-[600px] bg-gradient-to-b from-orange-500/10 via-amber-500/5 to-transparent rounded-full blur-3xl opacity-70" />
+
+      {/* Subtle secondary warm glows */}
+      <div className="absolute top-1/4 -left-48 w-[600px] h-[500px] bg-orange-100/40 rounded-full blur-[120px] opacity-40" />
+      <div className="absolute top-1/3 -right-48 w-[600px] h-[500px] bg-amber-100/40 rounded-full blur-[120px] opacity-40" />
+
+      {/* Micro-dot grid texture */}
+      <div className="absolute inset-0 bg-dot-grid opacity-30" />
     </div>
   );
-}
+}

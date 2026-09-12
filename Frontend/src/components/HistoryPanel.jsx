@@ -1,12 +1,10 @@
 // components/HistoryPanel.jsx
 // ---------------------------------------------------------------------------
-// Slide-over drawer listing saved projects from localStorage. Purely
-// presentational — App.jsx owns the actual history array and passes down
-// callbacks for loading/deleting entries.
+// Slide-over drawer listing saved projects from localStorage in White + Orange.
 // ---------------------------------------------------------------------------
 import { History, X, Trash2, FolderOpen } from "lucide-react";
 
-function truncate(text, max = 90) {
+function truncate(text, max = 80) {
   if (!text) return "";
   return text.length > max ? `${text.slice(0, max).trim()}…` : text;
 }
@@ -29,62 +27,66 @@ export default function HistoryPanel({ isOpen, onClose, history, onLoad, onDelet
 
   return (
     <>
-      {/* Backdrop — click to close. */}
+      {/* Backdrop */}
       <div
-        className="fixed inset-0 z-40 bg-black/60"
+        className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-xs transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      <aside className="fixed top-0 right-0 z-50 h-full w-full max-w-sm bg-slate-950 border-l border-slate-800 shadow-2xl flex flex-col">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-900">
-          <div className="flex items-center gap-2">
-            <History size={18} className="text-indigo-400" />
-            <h2 className="font-semibold text-slate-100">Saved Projects</h2>
+      <aside className="fixed top-0 right-0 z-50 h-full w-full max-w-sm bg-white border-l border-slate-200 shadow-2xl flex flex-col animate-toast-in">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-2.5">
+            <span className="flex items-center justify-center h-7 w-7 rounded-lg bg-orange-50 border border-orange-200 text-orange-600">
+              <History size={15} />
+            </span>
+            <h2 className="text-sm font-bold text-slate-900 tracking-tight">Project Vault</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-500 hover:text-slate-300 transition-colors"
+            className="text-slate-400 hover:text-slate-700 transition-colors p-1.5 rounded-lg hover:bg-slate-100"
             aria-label="Close saved projects"
           >
-            <X size={20} />
+            <X size={16} />
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2">
+        <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5">
           {history.length === 0 && (
-            <p className="text-sm text-slate-500 text-center mt-10 px-4">
-              No saved projects yet. Every blueprint you generate is saved
-              here automatically.
-            </p>
+            <div className="text-center py-16 px-4">
+              <p className="text-xs font-mono text-slate-400">
+                No blueprints in vault yet. Every generated startup plan is saved here automatically.
+              </p>
+            </div>
           )}
 
           {history.map((entry) => (
             <div
               key={entry.id}
-              className="group rounded-lg border border-slate-800 bg-slate-900/60 hover:border-indigo-700 transition-colors p-3"
+              className="group rounded-xl border border-slate-200 bg-slate-50/70 hover:border-orange-300 hover:bg-orange-50/20 transition-all p-3.5 shadow-2xs"
             >
               <button onClick={() => onLoad(entry)} className="w-full text-left">
-                <p className="text-sm text-slate-100 leading-snug">
+                <p className="text-xs sm:text-sm text-slate-800 font-semibold leading-snug line-clamp-2 group-hover:text-orange-950 transition-colors">
                   {truncate(entry.idea)}
                 </p>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-[11px] font-mono text-slate-400 mt-1.5">
                   {formatDate(entry.createdAt)}
                 </p>
               </button>
 
-              <div className="flex items-center gap-3 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-slate-200/60">
                 <button
                   onClick={() => onLoad(entry)}
-                  className="text-xs flex items-center gap-1 text-indigo-400 hover:text-indigo-300"
+                  className="text-xs flex items-center gap-1 text-orange-600 hover:text-orange-700 font-semibold font-mono"
                 >
-                  <FolderOpen size={13} /> Open
+                  <FolderOpen size={12} /> Load Blueprint
                 </button>
                 <button
                   onClick={() => onDelete(entry.id)}
-                  className="text-xs flex items-center gap-1 text-red-400 hover:text-red-300"
+                  className="text-xs flex items-center gap-1 text-slate-400 hover:text-red-600 transition-colors p-1 rounded hover:bg-red-50"
+                  title="Delete blueprint"
                 >
-                  <Trash2 size={13} /> Delete
+                  <Trash2 size={13} />
                 </button>
               </div>
             </div>
