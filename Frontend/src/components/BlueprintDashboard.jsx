@@ -14,7 +14,7 @@
 //    - Every card contains full, rich analysis, all questions, all features, all
 //      metrics, and detailed narrative breakdowns matching the screenshot style.
 // ---------------------------------------------------------------------------
-import { useState, useRef, memo, useCallback } from "react";
+import { Component, useState, useRef, memo, useCallback, useMemo, useEffect } from "react";
 import {
   Lightbulb,
   TrendingUp,
@@ -72,6 +72,44 @@ export const BUSINESS_SECTIONS = [
   { id: "gtm", label: "Go-to-market strategy", title: "Go-to-market Strategy" },
   { id: "competitive-analysis", label: "Competitive analysis", title: "Competitive Analysis" },
 ];
+
+class SectionErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error("Section render error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8 rounded-2xl bg-white border border-rose-200 shadow-xs max-w-2xl">
+          <div className="flex items-center gap-3 text-rose-600 mb-2">
+            <AlertTriangle size={20} />
+            <h3 className="font-bold text-sm">Unable to display this section</h3>
+          </div>
+          <p className="text-xs text-slate-600 mb-4">
+            An unexpected error occurred while parsing the venture strategic data for this view.
+          </p>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null })}
+            className="px-3 py-1.5 rounded-lg bg-orange-600 text-white text-xs font-semibold hover:bg-orange-700 transition-colors"
+          >
+            Retry Section
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function BlueprintDashboard({
   blueprint,
@@ -295,88 +333,90 @@ export default function BlueprintDashboard({
 
             {/* Render Scrollable Vertical Cards Track */}
             <div key={activeSection} className="animate-fade-in">
-              {/* FINANCES (Pixel-Matched to Screenshot Structure with Horizontal Scroll) */}
-              {activeSection === "finances" && (
-                <FinancesSection
-                  marketSizing={marketSizing}
-                  marketResearch={marketResearch}
-                  costEstimator={costEstimator}
-                  customerPersona={customerPersona}
-                  businessStrategy={businessStrategy}
-                  revenueSimulator={revenueSimulator}
-                />
-              )}
+              <SectionErrorBoundary key={activeSection}>
+                {/* FINANCES (Pixel-Matched to Screenshot Structure with Horizontal Scroll) */}
+                {activeSection === "finances" && (
+                  <FinancesSection
+                    marketSizing={marketSizing}
+                    marketResearch={marketResearch}
+                    costEstimator={costEstimator}
+                    customerPersona={customerPersona}
+                    businessStrategy={businessStrategy}
+                    revenueSimulator={revenueSimulator}
+                  />
+                )}
 
-              {/* STANDARD ANALYSIS */}
-              {activeSection === "standard-analysis" && (
-                <StandardAnalysisSection
-                  viabilityScorecard={viabilityScorecard}
-                  ideaAnalysis={ideaAnalysis}
-                  customerDiscovery={customerDiscovery}
-                  originalIdea={originalIdea}
-                  marketResearch={marketResearch}
-                  costEstimator={costEstimator}
-                />
-              )}
+                {/* STANDARD ANALYSIS */}
+                {activeSection === "standard-analysis" && (
+                  <StandardAnalysisSection
+                    viabilityScorecard={viabilityScorecard}
+                    ideaAnalysis={ideaAnalysis}
+                    customerDiscovery={customerDiscovery}
+                    originalIdea={originalIdea}
+                    marketResearch={marketResearch}
+                    costEstimator={costEstimator}
+                  />
+                )}
 
-              {/* PATH TO AN MVP */}
-              {activeSection === "path-to-mvp" && (
-                <PathToMvpSection
-                  productPlan={productPlan}
-                  technicalArchitecture={technicalArchitecture}
-                  roadmap={roadmap}
-                />
-              )}
+                {/* PATH TO AN MVP */}
+                {activeSection === "path-to-mvp" && (
+                  <PathToMvpSection
+                    productPlan={productPlan}
+                    technicalArchitecture={technicalArchitecture}
+                    roadmap={roadmap}
+                  />
+                )}
 
-              {/* UNIQUE SELLING POINTS */}
-              {activeSection === "usp" && (
-                <UniqueSellingPointsSection
-                  swotAnalysis={swotAnalysis}
-                  portersFiveForces={portersFiveForces}
-                  competitorWeaknessAnalysis={competitorWeaknessAnalysis}
-                  ideaAnalysis={ideaAnalysis}
-                  marketResearch={marketResearch}
-                  originalIdea={originalIdea}
-                  blueprint={blueprint}
-                />
-              )}
+                {/* UNIQUE SELLING POINTS */}
+                {activeSection === "usp" && (
+                  <UniqueSellingPointsSection
+                    swotAnalysis={swotAnalysis}
+                    portersFiveForces={portersFiveForces}
+                    competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                    ideaAnalysis={ideaAnalysis}
+                    marketResearch={marketResearch}
+                    originalIdea={originalIdea}
+                    blueprint={blueprint}
+                  />
+                )}
 
-              {/* CUSTOMER PERSONA */}
-              {activeSection === "customer-persona" && (
-                <CustomerPersonaSection customerPersona={customerPersona} />
-              )}
+                {/* CUSTOMER PERSONA */}
+                {activeSection === "customer-persona" && (
+                  <CustomerPersonaSection customerPersona={customerPersona} />
+                )}
 
-              {/* GO-TO-MARKET STRATEGY */}
-              {activeSection === "gtm" && (
-                <GoToMarketFullSection
-                  goToMarket={goToMarket}
-                  launchChecklist={launchChecklist}
-                  pitch={pitch}
-                  onToast={showToast}
-                />
-              )}
+                {/* GO-TO-MARKET STRATEGY */}
+                {activeSection === "gtm" && (
+                  <GoToMarketFullSection
+                    goToMarket={goToMarket}
+                    launchChecklist={launchChecklist}
+                    pitch={pitch}
+                    onToast={showToast}
+                  />
+                )}
 
-              {/* COMPETITIVE ANALYSIS */}
-              {activeSection === "competitive-analysis" && (
-                <CompetitiveAnalysisFullSection
-                  marketSizing={marketSizing}
-                  viabilityScorecard={viabilityScorecard}
-                  competitorWeaknessAnalysis={competitorWeaknessAnalysis}
-                  ideaTitle={ventureTitle}
-                />
-              )}
+                {/* COMPETITIVE ANALYSIS */}
+                {activeSection === "competitive-analysis" && (
+                  <CompetitiveAnalysisFullSection
+                    marketSizing={marketSizing}
+                    viabilityScorecard={viabilityScorecard}
+                    competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                    ideaTitle={ventureTitle}
+                  />
+                )}
 
-              {/* DASHBOARD */}
-              {activeSection === "dashboard" && (
-                <DashboardOverviewSection
-                  onNavigate={setActiveSection}
-                  viabilityScorecard={viabilityScorecard}
-                  marketSizing={marketSizing}
-                  costEstimator={costEstimator}
-                  revenueSimulator={revenueSimulator}
-                  ideaAnalysis={ideaAnalysis}
-                />
-              )}
+                {/* DASHBOARD */}
+                {activeSection === "dashboard" && (
+                  <DashboardOverviewSection
+                    onNavigate={setActiveSection}
+                    viabilityScorecard={viabilityScorecard}
+                    marketSizing={marketSizing}
+                    costEstimator={costEstimator}
+                    revenueSimulator={revenueSimulator}
+                    ideaAnalysis={ideaAnalysis}
+                  />
+                )}
+              </SectionErrorBoundary>
             </div>
           </main>
         </div>
@@ -1400,17 +1440,21 @@ function UniqueSellingPointsSection({
           detailsText="Focus on hyper-personalized founder experiences that incumbents cannot easily copy."
         >
           <div className="space-y-2.5 text-xs">
-            {competitorWeaknessAnalysis.map((c, i) => (
-              <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-slate-900">Moat #{i + 1}: vs {c.competitor}</span>
-                  <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded font-bold">
-                    Incumbent
-                  </span>
+            {competitorWeaknessAnalysis.map((c, i) => {
+              const compName = c?.competitor || (typeof c === "string" ? c : `Competitor #${i + 1}`);
+              const diffText = c?.suggestedDifferentiation || c?.weakness || (typeof c === "string" ? c : "Focus on rapid iteration and tailored founder workflows.");
+              return (
+                <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="font-bold text-slate-900">Moat #{i + 1}: vs {compName}</span>
+                    <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded font-bold">
+                      Incumbent
+                    </span>
+                  </div>
+                  <p className="text-slate-700 leading-relaxed">{diffText}</p>
                 </div>
-                <p className="text-slate-700 leading-relaxed">{c.suggestedDifferentiation}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </StatCard>
       )}
