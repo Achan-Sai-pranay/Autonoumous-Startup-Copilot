@@ -383,22 +383,8 @@ function Navbar({
         </a>
       </nav>
 
-      {/* Right Actions: Vault & Unblocked Start / Profile */}
+      {/* Right Actions: Unblocked Start / Profile */}
       <div className="flex items-center gap-2.5 sm:gap-3.5">
-        <button
-          onClick={onOpenHistory}
-          className="relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold text-gray-700 bg-gray-50 border border-gray-200 hover:border-orange-300 hover:text-orange-600 transition-all cursor-pointer shadow-2xs"
-          title="Open saved projects vault"
-        >
-          <History size={14} className="text-gray-500" />
-          <span className="hidden sm:inline">Vault</span>
-          {historyCount > 0 && (
-            <span className="ml-0.5 text-[10px] font-mono bg-orange-600 text-white rounded-full px-1.5 py-0.2 leading-none font-bold">
-              {historyCount}
-            </span>
-          )}
-        </button>
-
         {currentUser ? (
           <div className="relative" ref={dropdownRef}>
             <button
