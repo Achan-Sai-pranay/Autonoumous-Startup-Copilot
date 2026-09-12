@@ -858,6 +858,9 @@ function FinancialsModule({
         )}
       </div>
 
+      {/* Interactive Financial Simulator with Amount Selector Bar & Real-Time Automatic Calculations */}
+      <UpmetricsFinancialSimulator costEstimator={costEstimator} revenueSimulator={revenueSimulator} />
+
       {/* Cloud Cost Estimator & ARR Revenue Simulator */}
       <CostRevenueSection cost={costEstimator} revenue={revenueSimulator} accent="amber" delayIndex={1} />
 
@@ -1189,8 +1192,8 @@ function CostRevenueSection({ cost, revenue, accent = "amber", delayIndex }) {
                   <thead>
                     <tr className="bg-slate-50 text-left text-[11px] font-mono uppercase tracking-wider text-slate-500 border-b border-slate-200">
                       <th className="px-4 py-2.5 font-semibold">Active Subscribers</th>
-                      <th className="px-4 py-2.5 font-semibold">Estimated Monthly ARR</th>
-                      <th className="px-4 py-2.5 font-semibold">Annualized Run-rate</th>
+                      <th className="px-4 py-2.5 font-semibold">Estimated MRR (Monthly Recurring Revenue)</th>
+                      <th className="px-4 py-2.5 font-semibold">Annualized ARR (Annual Recurring Revenue)</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">

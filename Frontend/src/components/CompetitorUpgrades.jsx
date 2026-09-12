@@ -907,13 +907,15 @@ export const UpmetricsFinancialSimulator = memo(function UpmetricsFinancialSimul
       const match = revenueSimulator.pricingAssumption.match(/\$(\d+)/);
       if (match && match[1]) {
         const p = parseInt(match[1], 10);
-        if (p >= 5 && p <= 299) return p;
+        if (p >= 5 && p <= 500) return p;
       }
     }
     return 29;
   }, [revenueSimulator]);
 
+  // Interactive amount and volume selection states
   const [pricePerMonth, setPricePerMonth] = useState(initialPrice);
+  const [customerCount, setCustomerCount] = useState(250);
 
   // Extract monthly infrastructure burn
   const monthlyCloudBurn = useMemo(() => {
@@ -924,10 +926,23 @@ export const UpmetricsFinancialSimulator = memo(function UpmetricsFinancialSimul
     return 15; // default lean baseline
   }, [costEstimator]);
 
-  // Real-time calculations
-  const breakEvenCustomers = Math.max(1, Math.ceil(monthlyCloudBurn / pricePerMonth));
+  // Automatic Real-Time Calculations
+  const safePrice = Math.max(1, Number(pricePerMonth) || 1);
+  const safeCustomers = Math.max(1, Number(customerCount) || 1);
 
-  const TIERS = [
+  const mrr = safeCustomers * safePrice;
+  const arr = mrr * 12;
+  const netMonthlyProfit = Math.max(0, mrr - monthlyCloudBurn);
+  const marginPercent = mrr > 0 ? Math.max(0, Math.min(100, Math.round((netMonthlyProfit / mrr) * 100))) : 0;
+  const breakEvenCustomers = Math.max(1, Math.ceil(monthlyCloudBurn / safePrice));
+  const estimatedLtv = Math.round(safePrice / 0.05); // Standard ~5% monthly SaaS churn benchmark
+  const customersTo100kArr = Math.max(1, Math.ceil(100000 / (safePrice * 12)));
+  const customersTo1mArr = Math.max(1, Math.ceil(1000000 / (safePrice * 12)));
+
+  const PRICE_PRESETS = [9, 19, 29, 49, 79, 99, 149, 299];
+  const USER_PRESETS = [50, 100, 250, 500, 1000, 2500, 5000];
+
+  const BENCHMARK_TIERS = [
     { users: 100, label: "Initial Traction" },
     { users: 500, label: "Product-Market Fit" },
     { users: 1000, label: "Scaling Phase" },
@@ -935,129 +950,361 @@ export const UpmetricsFinancialSimulator = memo(function UpmetricsFinancialSimul
   ];
 
   return (
-    <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-sm mt-6">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
-            <Calculator size={20} />
+    <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm mt-6">
+      {/* Top Header & Break-Even Banner */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+        <div className="flex items-start sm:items-center gap-3.5">
+          <div className="h-11 w-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 shadow-xs shrink-0">
+            <Calculator size={22} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                Upmetrics™ Dynamic Financial Simulator
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
+                Upmetrics™ Interactive Financial Simulator
               </h3>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                LIVE MODELER
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-orange-100 text-orange-700 border border-orange-200">
+                AUTOMATIC REAL-TIME CALCULATOR
               </span>
             </div>
-            <p className="text-xs text-slate-500">
-              Drag the pricing slider to forecast MRR, ARR, and compute real-time break-even customer metrics.
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              Select or slide the monthly amount and customer volume below. Revenue, margins, and break-even metrics recalculate automatically.
             </p>
           </div>
         </div>
 
         {/* Break-Even Highlight Badge */}
-        <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2.5 flex items-center gap-3 shadow-xs">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl px-4 py-3 flex items-center gap-3 shadow-xs shrink-0">
           <div>
             <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-800 font-bold block">
               Break-Even Threshold
             </span>
             <p className="text-xs text-emerald-950 font-medium">
               Only <span className="font-mono font-black text-emerald-700 text-sm">{breakEvenCustomers} customers</span> needed
-              to cover all cloud burn (${monthlyCloudBurn}/mo)
+              at ${safePrice}/mo to cover cloud burn (${monthlyCloudBurn}/mo)
             </p>
           </div>
         </div>
       </div>
 
-      {/* Interactive Slider Control */}
-      <div className="pt-6 pb-6 bg-slate-50/80 p-5 rounded-xl border border-slate-200/70 mt-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-          <div>
-            <span className="text-xs font-mono uppercase tracking-wider text-slate-500 font-bold flex items-center gap-1.5">
-              <Sliders size={13} className="text-orange-500" />
-              Monthly Price per Customer
-            </span>
-            <span className="text-[11px] text-slate-400">Standard SaaS seat or recurring subscription</span>
+      {/* Interactive Controls Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6">
+        {/* Control 1: Price / Amount Selection Bar */}
+        <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 shadow-2xs">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <span className="text-xs font-mono uppercase tracking-wider text-slate-600 font-bold flex items-center gap-1.5">
+                <Sliders size={14} className="text-orange-500" />
+                1. Select Monthly Amount / Price
+              </span>
+              <span className="text-[11px] text-slate-400 block mt-0.5">
+                Subscription price per user or customer
+              </span>
+            </div>
+
+            {/* Direct Number Input Box */}
+            <div className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-xl border border-orange-200 shadow-xs">
+              <span className="text-sm font-bold text-orange-600 font-mono">$</span>
+              <input
+                type="number"
+                min="1"
+                max="9999"
+                value={pricePerMonth}
+                onChange={(e) => setPricePerMonth(Math.max(1, Number(e.target.value) || 1))}
+                className="w-16 font-mono font-black text-slate-900 text-base outline-none bg-transparent"
+              />
+              <span className="text-xs font-mono text-slate-400">/mo</span>
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {[19, 29, 49, 99, 149].map((val) => (
+          {/* Interactive Range Slider Bar */}
+          <div className="py-2">
+            <input
+              type="range"
+              min="5"
+              max="300"
+              step="1"
+              value={Math.min(300, safePrice)}
+              onChange={(e) => setPricePerMonth(Number(e.target.value))}
+              className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-500 focus:outline-none"
+            />
+            <div className="flex justify-between text-[10px] font-mono text-slate-400 mt-1.5">
+              <span>$5/mo (Micro)</span>
+              <span>$49/mo (Pro)</span>
+              <span>$149/mo (Team)</span>
+              <span>$300+/mo (Enterprise)</span>
+            </div>
+          </div>
+
+          {/* Preset Buttons Bar */}
+          <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-slate-200/60">
+            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold mr-1">Presets:</span>
+            {PRICE_PRESETS.map((val) => (
               <button
                 key={val}
+                type="button"
                 onClick={() => setPricePerMonth(val)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all ${
-                  pricePerMonth === val
+                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  safePrice === val
                     ? "bg-orange-500 text-white shadow-xs"
-                    : "bg-white text-slate-600 border border-slate-200 hover:border-orange-300"
+                    : "bg-white text-slate-600 border border-slate-200 hover:border-orange-300 hover:text-orange-600"
                 }`}
               >
                 ${val}
               </button>
             ))}
-            <div className="text-xl font-black font-mono text-orange-600 bg-white px-3 py-1 rounded-lg border border-orange-200 shadow-xs">
-              ${pricePerMonth}
-              <span className="text-xs font-normal text-slate-400">/mo</span>
-            </div>
           </div>
         </div>
 
-        <input
-          type="range"
-          min="5"
-          max="299"
-          step="1"
-          value={pricePerMonth}
-          onChange={(e) => setPricePerMonth(Number(e.target.value))}
-          className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-500"
-        />
-        <div className="flex justify-between text-[10px] font-mono text-slate-400 mt-1.5">
-          <span>$5/mo (Micro-SaaS)</span>
-          <span>$100/mo (Prosumer)</span>
-          <span>$299/mo (Mid-Market B2B)</span>
+        {/* Control 2: Customer Volume Selection Bar */}
+        <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 shadow-2xs">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <span className="text-xs font-mono uppercase tracking-wider text-slate-600 font-bold flex items-center gap-1.5">
+                <Users size={14} className="text-orange-500" />
+                2. Select Active Customers Volume
+              </span>
+              <span className="text-[11px] text-slate-400 block mt-0.5">
+                Paying customers / active accounts
+              </span>
+            </div>
+
+            {/* Direct Number Input Box */}
+            <div className="flex items-center gap-1 bg-white px-3 py-1.5 rounded-xl border border-orange-200 shadow-xs">
+              <input
+                type="number"
+                min="1"
+                max="100000"
+                value={customerCount}
+                onChange={(e) => setCustomerCount(Math.max(1, Number(e.target.value) || 1))}
+                className="w-20 font-mono font-black text-slate-900 text-base outline-none bg-transparent"
+              />
+              <span className="text-xs font-mono text-slate-400">users</span>
+            </div>
+          </div>
+
+          {/* Interactive Range Slider Bar */}
+          <div className="py-2">
+            <input
+              type="range"
+              min="10"
+              max="5000"
+              step="10"
+              value={Math.min(5000, safeCustomers)}
+              onChange={(e) => setCustomerCount(Number(e.target.value))}
+              className="w-full h-2.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-orange-500 focus:outline-none"
+            />
+            <div className="flex justify-between text-[10px] font-mono text-slate-400 mt-1.5">
+              <span>10</span>
+              <span>500 (PMF)</span>
+              <span>2,500</span>
+              <span>5,000+ (Scale)</span>
+            </div>
+          </div>
+
+          {/* Preset Buttons Bar */}
+          <div className="flex flex-wrap items-center gap-1.5 mt-3 pt-3 border-t border-slate-200/60">
+            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold mr-1">Tiers:</span>
+            {USER_PRESETS.map((val) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => setCustomerCount(val)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all cursor-pointer ${
+                  safeCustomers === val
+                    ? "bg-orange-500 text-white shadow-xs"
+                    : "bg-white text-slate-600 border border-slate-200 hover:border-orange-300 hover:text-orange-600"
+                }`}
+              >
+                {val.toLocaleString()}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Dynamic Projection Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 mt-5">
-        {TIERS.map((tier) => {
-          const mrr = tier.users * pricePerMonth;
-          const arr = mrr * 12;
-          const netProfitMonthly = mrr - monthlyCloudBurn;
-          const marginPercent = Math.max(0, Math.round((netProfitMonthly / mrr) * 100));
+      {/* Real-time Computed Metrics Display */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
+        {/* MRR Card */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-orange-50/60 border border-orange-200/80 shadow-2xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-mono font-bold text-orange-800 uppercase tracking-wider">
+              MRR (Monthly Recurring Revenue)
+            </span>
+            <span className="h-2 w-2 rounded-full bg-orange-500" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900 mt-2">
+            ${mrr.toLocaleString()}
+          </div>
+          <p className="text-[11px] font-mono text-orange-700 mt-1">
+            {safeCustomers.toLocaleString()} users × ${safePrice}/mo
+          </p>
+        </div>
 
-          return (
-            <div
-              key={tier.users}
-              className="p-4 rounded-xl bg-white border border-slate-200/80 hover:border-orange-300 transition-all shadow-xs"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-mono font-bold text-slate-900">
-                  {tier.users.toLocaleString()} Subscribers
-                </span>
-                <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200 font-semibold">
-                  {marginPercent}% Margin
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-400 font-mono mb-3">{tier.label}</p>
+        {/* ARR Card */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/60 border border-emerald-200/80 shadow-2xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-mono font-bold text-emerald-800 uppercase tracking-wider">
+              ARR (Annual Recurring Revenue)
+            </span>
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-600 mt-2">
+            ${arr.toLocaleString()}
+          </div>
+          <p className="text-[11px] font-mono text-emerald-700 mt-1">
+            Annualized 12-month run-rate
+          </p>
+        </div>
 
-              <div className="space-y-1.5 pt-2 border-t border-slate-100 font-mono">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-500">Monthly (MRR):</span>
-                  <span className="font-bold text-slate-900">${mrr.toLocaleString()}</span>
+        {/* Net Profit Card */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 shadow-2xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-mono font-bold text-slate-600 uppercase tracking-wider">
+              Net Monthly Profit
+            </span>
+            <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700">
+              {marginPercent}% Margin
+            </span>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900 mt-2">
+            ${netMonthlyProfit.toLocaleString()}
+          </div>
+          <p className="text-[11px] font-mono text-slate-500 mt-1">
+            After ${monthlyCloudBurn}/mo cloud burn
+          </p>
+        </div>
+
+        {/* LTV & CAC Card */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-amber-50/60 border border-amber-200/80 shadow-2xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-mono font-bold text-amber-800 uppercase tracking-wider">
+              LTV (Lifetime Value)
+            </span>
+            <span className="text-[10px] font-mono text-amber-700 font-semibold">5% churn</span>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-amber-900 mt-2">
+            ${estimatedLtv.toLocaleString()}
+          </div>
+          <p className="text-[11px] font-mono text-amber-700 mt-1">
+            Max target CAC (Customer Acquisition Cost): ${(estimatedLtv / 3).toFixed(0)}
+          </p>
+        </div>
+      </div>
+
+      {/* Visual Profit & Cost Allocation Bar */}
+      <div className="mt-6 p-4 rounded-2xl bg-slate-50 border border-slate-200/80">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2.5">
+          <span className="text-xs font-mono font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            Automatic Revenue Allocation & Net Margin Ratio
+          </span>
+          <div className="flex items-center gap-4 text-xs font-mono">
+            <span className="text-emerald-700 font-bold">
+              ● Net Profit: {marginPercent}% (${netMonthlyProfit.toLocaleString()})
+            </span>
+            <span className="text-slate-500">
+              ● Cloud Costs: {100 - marginPercent}% (${monthlyCloudBurn})
+            </span>
+          </div>
+        </div>
+
+        {/* Visual Stacked Progress Bar */}
+        <div className="h-3.5 w-full bg-slate-200 rounded-full overflow-hidden flex shadow-inner">
+          <div
+            className="h-full bg-emerald-500 transition-all duration-300"
+            style={{ width: `${marginPercent}%` }}
+            title={`Net Founder Profit: ${marginPercent}%`}
+          />
+          <div
+            className="h-full bg-slate-400 transition-all duration-300"
+            style={{ width: `${100 - marginPercent}%` }}
+            title={`Cloud Burn: ${100 - marginPercent}%`}
+          />
+        </div>
+      </div>
+
+      {/* ARR Milestones Targets */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+        <div className="p-3.5 rounded-xl bg-orange-50/40 border border-orange-200/60 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-orange-700 font-bold block">
+              $100,000 ARR Milestone Goal
+            </span>
+            <p className="text-xs text-slate-700 font-medium mt-0.5">
+              Requires <span className="font-mono font-bold text-orange-600">{customersTo100kArr.toLocaleString()} customers</span> at your selected ${safePrice}/mo
+            </p>
+          </div>
+          <span className="text-xs font-mono font-bold text-orange-600 bg-white px-2.5 py-1 rounded-lg border border-orange-200 shadow-2xs">
+            $8.3K MRR
+          </span>
+        </div>
+
+        <div className="p-3.5 rounded-xl bg-emerald-50/40 border border-emerald-200/60 flex items-center justify-between">
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 font-bold block">
+              $1,000,000 ARR Milestone Goal
+            </span>
+            <p className="text-xs text-slate-700 font-medium mt-0.5">
+              Requires <span className="font-mono font-bold text-emerald-700">{customersTo1mArr.toLocaleString()} customers</span> at your selected ${safePrice}/mo
+            </p>
+          </div>
+          <span className="text-xs font-mono font-bold text-emerald-700 bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-2xs">
+            $83.3K MRR
+          </span>
+        </div>
+      </div>
+
+      {/* Dynamic Benchmark Tiers Grid */}
+      <div className="mt-6 pt-5 border-t border-slate-100">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-mono font-bold text-slate-600 uppercase tracking-wider">
+            Benchmark Growth Milestones at ${safePrice}/mo
+          </span>
+          <span className="text-[11px] font-mono text-slate-400">
+            Automatically scales with your selected price
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {BENCHMARK_TIERS.map((tier) => {
+            const tierMrr = tier.users * safePrice;
+            const tierArr = tierMrr * 12;
+            const tierNetProfit = tierMrr - monthlyCloudBurn;
+            const tierMargin = Math.max(0, Math.round((tierNetProfit / tierMrr) * 100));
+
+            return (
+              <div
+                key={tier.users}
+                className="p-4 rounded-2xl bg-white border border-slate-200/80 hover:border-orange-300 transition-all shadow-xs"
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-mono font-bold text-slate-900">
+                    {tier.users.toLocaleString()} Subscribers
+                  </span>
+                  <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 font-semibold">
+                    {tierMargin}% Margin
+                  </span>
                 </div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-500">Annual (ARR):</span>
-                  <span className="font-bold text-emerald-600">${arr.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-[11px] text-slate-400 pt-1 border-t border-dashed border-slate-100">
-                  <span>Net Monthly Margin:</span>
-                  <span className="font-medium text-slate-600">${netProfitMonthly.toLocaleString()}</span>
+                <p className="text-[11px] text-slate-400 font-mono mb-3">{tier.label}</p>
+
+                <div className="space-y-1.5 pt-2 border-t border-slate-100 font-mono text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">MRR (Monthly):</span>
+                    <span className="font-bold text-slate-900">${tierMrr.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">ARR (Annual):</span>
+                    <span className="font-bold text-emerald-600">${tierArr.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-400 pt-1 border-t border-dashed border-slate-100">
+                    <span>Net Profit:</span>
+                    <span className="font-medium text-slate-700">${tierNetProfit.toLocaleString()}/mo</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
