@@ -7,7 +7,7 @@
 // toast, smooth module-switch transitions, staggered card entrance,
 // progress bar on Launch Checklist, and white + orange modern theme.
 // ---------------------------------------------------------------------------
-import { useState, memo, useCallback } from "react";
+import { useState, useEffect, memo, useCallback } from "react";
 import {
   Lightbulb,
   TrendingUp,
@@ -46,7 +46,6 @@ import {
   UpmetricsFinancialSimulator,
   FounderPalSwipeFile,
   ChatPrdDossierView,
-  StrategicOverviewHero,
 } from "./CompetitorUpgrades.jsx";
 
 // ---------------------------------------------------------------------------
@@ -112,7 +111,7 @@ const ACCENT_BAR = {
 const MODULES = [
   { id: "idea", label: "Module 1: Idea & Validation", subtitle: "Scorecard & Mom Test", icon: Lightbulb, accent: "orange" },
   { id: "frameworks", label: "Module 2: Strategic Frameworks", subtitle: "SWOT & Porter's Forces", icon: ShieldCheck, accent: "orange" },
-  { id: "market", label: "Module 3: Market & Sizing", subtitle: "TAM, SAM, SOM & ICP", icon: TrendingUp, accent: "orange" },
+  { id: "market", label: "Module 3: Market & Sizing", subtitle: "TAM, SAM, SOM & Viability", icon: TrendingUp, accent: "orange" },
   { id: "product", label: "Module 4: Product & Architecture", subtitle: "MVP Roadmap & Cloud Stack", icon: ListChecks, accent: "orange" },
   { id: "financials", label: "Module 5: Finances & Launch", subtitle: "Live Calculator & ARR Burn", icon: Rocket, accent: "orange" },
 ];
@@ -130,6 +129,43 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
     setToast(message);
     setTimeout(() => setToast(null), 2500);
   }, []);
+
+  const handleSelectModule = useCallback((moduleId) => {
+    setActiveModule(moduleId);
+    const element = document.getElementById(`module-${moduleId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, []);
+
+  // Scroll spy: observe sections and update activeModule as user scrolls vertically
+  useEffect(() => {
+    if (viewMode !== "dashboard") return;
+
+    const observerCallback = (entries) => {
+      const visibleEntries = entries.filter((e) => e.isIntersecting);
+      if (visibleEntries.length > 0) {
+        visibleEntries.sort(
+          (a, b) => Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top)
+        );
+        const id = visibleEntries[0].target.id.replace("module-", "");
+        setActiveModule(id);
+      }
+    };
+
+    const observer = new IntersectionObserver(observerCallback, {
+      root: null,
+      rootMargin: "-10% 0px -55% 0px",
+      threshold: [0, 0.1, 0.3],
+    });
+
+    MODULES.forEach((m) => {
+      const el = document.getElementById(`module-${m.id}`);
+      if (el) observer.observe(el);
+    });
+
+    return () => observer.disconnect();
+  }, [viewMode]);
 
   const handleExportPdf = useCallback(async () => {
     setExporting("pdf");
@@ -296,14 +332,6 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
         </div>
       </div>
 
-      {/* VenturusAI-grade Strategic Overview Hero: Market Sizing Bubbles & Viability Speedometer Gauge */}
-      <StrategicOverviewHero
-        marketSizing={marketSizing}
-        viabilityScorecard={viabilityScorecard}
-        ideaTitle={pitch?.elevatorPitch || originalIdea}
-        domain={ideaAnalysis?.domain}
-      />
-
       {viewMode === "prd" ? (
         <ChatPrdDossierView
           blueprint={blueprint}
@@ -319,7 +347,7 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
           <VerticalMobileNav
             modules={MODULES}
             activeModule={activeModule}
-            onSelectModule={setActiveModule}
+            onSelectModule={handleSelectModule}
           />
 
           <div className="md:flex md:gap-8 md:items-start">
@@ -336,7 +364,7 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
                         key={m.id}
                         module={m}
                         active={activeModule === m.id}
-                        onClick={() => setActiveModule(m.id)}
+                        onClick={() => handleSelectModule(m.id)}
                       />
                     ))}
                   </div>
@@ -369,56 +397,60 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
               </div>
             </aside>
 
-            {/* Active module content — `key` forces a remount on module change */}
-            <main className="flex-1 min-w-0">
-              <div key={activeModule} className="animate-fade-in">
-                {activeModule === "idea" && (
-                  <IdeaModule
-                    originalIdea={originalIdea}
-                    viabilityScorecard={viabilityScorecard}
-                    customerDiscovery={customerDiscovery}
-                    ideaAnalysis={ideaAnalysis}
-                    marketResearch={marketResearch}
-                    costEstimator={costEstimator}
-                  />
-                )}
-                {activeModule === "frameworks" && (
-                  <FrameworksModule
-                    swotAnalysis={swotAnalysis}
-                    portersFiveForces={portersFiveForces}
-                    ideaAnalysis={ideaAnalysis}
-                    marketResearch={marketResearch}
-                    competitorWeaknessAnalysis={competitorWeaknessAnalysis}
-                    customerPersona={customerPersona}
-                  />
-                )}
-                {activeModule === "market" && (
-                  <MarketModule
-                    marketSizing={marketSizing}
-                    marketResearch={marketResearch}
-                    competitorWeaknessAnalysis={competitorWeaknessAnalysis}
-                    customerPersona={customerPersona}
-                  />
-                )}
-                {activeModule === "product" && (
-                  <ProductModule
-                    productPlan={productPlan}
-                    technicalArchitecture={technicalArchitecture}
-                  />
-                )}
-                {(activeModule === "financials" || activeModule === "business" || activeModule === "launch") && (
-                  <FinancialsModule
-                    businessStrategy={businessStrategy}
-                    costEstimator={costEstimator}
-                    revenueSimulator={revenueSimulator}
-                    goToMarket={goToMarket}
-                    launchChecklist={launchChecklist}
-                    pitch={pitch}
-                    roadmap={roadmap}
-                    onToast={showToast}
-                  />
-                )}
-              </div>
+            {/* Continuous Vertical Report: All modules stacked vertically and scrollable */}
+            <main className="flex-1 min-w-0 space-y-14">
+              <section id="module-idea" className="scroll-mt-6">
+                <IdeaModule
+                  originalIdea={originalIdea}
+                  viabilityScorecard={viabilityScorecard}
+                  customerDiscovery={customerDiscovery}
+                  ideaAnalysis={ideaAnalysis}
+                  marketResearch={marketResearch}
+                  costEstimator={costEstimator}
+                />
+              </section>
+
+              <section id="module-frameworks" className="scroll-mt-6 pt-10 border-t border-slate-200/80">
+                <FrameworksModule
+                  swotAnalysis={swotAnalysis}
+                  portersFiveForces={portersFiveForces}
+                  ideaAnalysis={ideaAnalysis}
+                  marketResearch={marketResearch}
+                  competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                  customerPersona={customerPersona}
+                />
+              </section>
+
+              <section id="module-market" className="scroll-mt-6 pt-10 border-t border-slate-200/80">
+                <MarketModule
+                  marketSizing={marketSizing}
+                  marketResearch={marketResearch}
+                  competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                  customerPersona={customerPersona}
+                  viabilityScorecard={viabilityScorecard}
+                  ideaTitle={pitch?.elevatorPitch || originalIdea}
+                />
+              </section>
+
+              <section id="module-product" className="scroll-mt-6 pt-10 border-t border-slate-200/80">
+                <ProductModule
+                  productPlan={productPlan}
+                  technicalArchitecture={technicalArchitecture}
+                />
+              </section>
+
+              <section id="module-financials" className="scroll-mt-6 pt-10 border-t border-slate-200/80">
+                <FinancialsModule
+                  businessStrategy={businessStrategy}
+                  costEstimator={costEstimator}
+                  revenueSimulator={revenueSimulator}
+                  goToMarket={goToMarket}
+                  launchChecklist={launchChecklist}
+                  pitch={pitch}
+                  roadmap={roadmap}
+                  onToast={showToast}
+                />
+              </section>
             </main>
           </div>
         </>
@@ -790,18 +822,24 @@ function MarketModule({
   marketResearch,
   competitorWeaknessAnalysis,
   customerPersona,
+  viabilityScorecard,
+  ideaTitle,
 }) {
   return (
     <div className="space-y-6">
       <ModuleHeader
         icon={TrendingUp}
         title="Module 3: Market Intelligence & Sizing"
-        description="Bottom-up TAM/SAM/SOM financial sizing, competitor vulnerabilities, and customer persona."
+        description="Bottom-up TAM/SAM/SOM financial sizing, venture viability index, competitor vulnerabilities, and customer persona."
         accent="emerald"
       />
 
-      {/* Market Sizing Metrics (TAM / SAM / SOM) */}
-      <MarketSizingSection marketSizing={marketSizing} />
+      {/* Market Sizing & Viability Architecture (TAM/SAM/SOM + Viability Speedometer) */}
+      <MarketSizingSection
+        marketSizing={marketSizing}
+        viabilityScorecard={viabilityScorecard}
+        ideaTitle={ideaTitle}
+      />
 
       {/* Competitor Vulnerability Matrix */}
       {!isError(competitorWeaknessAnalysis) && competitorWeaknessAnalysis?.length > 0 && (

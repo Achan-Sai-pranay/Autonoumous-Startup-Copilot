@@ -379,11 +379,6 @@ export const VentureViabilityScorecard = memo(function VentureViabilityScorecard
         </div>
       </div>
 
-      {/* Speedometer Gauge Hero Embed */}
-      <div className="my-6">
-        <VenturusViabilityGaugeChart viabilityScorecard={viabilityScorecard} ideaTitle={originalIdea} />
-      </div>
-
       {/* Executive Thesis */}
       <div className="mt-5 p-4 rounded-2xl bg-orange-50/40 border border-orange-100">
         <p className="text-xs font-mono uppercase tracking-wider text-orange-800 font-bold mb-1 flex items-center gap-1.5">
@@ -803,6 +798,8 @@ export const PortersFiveForcesBreakdown = memo(function PortersFiveForcesBreakdo
 
 export const MarketSizingSection = memo(function MarketSizingSection({
   marketSizing,
+  viabilityScorecard,
+  ideaTitle,
 }) {
   const tam = marketSizing?.tam || {
     value: "$14.2B",
@@ -826,21 +823,22 @@ export const MarketSizingSection = memo(function MarketSizingSection({
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-900 tracking-tight">
-              Market Sizing Architecture
+              Market Sizing & Venture Viability Architecture
             </h3>
             <p className="text-xs text-slate-500">
-              TAM, SAM, and SOM bottom-up market sizing projections.
+              TAM, SAM, SOM bottom-up market sizing projections and institutional venture viability index.
             </p>
           </div>
         </div>
         <span className="text-[10px] font-mono uppercase bg-slate-50 text-slate-500 px-2 py-1 rounded border border-slate-200 font-bold hidden sm:inline-block">
-          Bottom-Up Financials
+          Bottom-Up Financials & Viability
         </span>
       </div>
 
-      {/* Signature 3-Circle Bubble Chart Embed */}
-      <div className="mb-6">
-        <VenturusMarketSizeBubbleChart marketSizing={marketSizing} ideaTitle="Target Market Sizing" />
+      {/* Signature VenturusAI Visuals: 3-Circle Market Sizing Bubbles & Viability Speedometer Gauge Side-by-Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <VenturusMarketSizeBubbleChart marketSizing={marketSizing} ideaTitle={ideaTitle || "Target Market"} />
+        <VenturusViabilityGaugeChart viabilityScorecard={viabilityScorecard} ideaTitle={ideaTitle || "this Venture"} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
