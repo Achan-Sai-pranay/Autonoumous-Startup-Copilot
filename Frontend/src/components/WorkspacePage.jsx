@@ -9,7 +9,7 @@
 // ---------------------------------------------------------------------------
 import { useState, useRef, useEffect, useMemo } from "react";
 import LoadingTimeline from "./LoadingTimeline.jsx";
-import BlueprintDashboard from "./BlueprintDashboard.jsx";
+import BlueprintDashboard, { BUSINESS_SECTIONS } from "./BlueprintDashboard.jsx";
 import { useSpeechToText } from "../hooks/useSpeechToText.js";
 import { downloadPdf } from "./exportBlueprint.js";
 import {
@@ -46,6 +46,13 @@ import {
   Clock,
   Briefcase,
   SlidersHorizontal,
+  LayoutGrid,
+  MessageSquare,
+  BookOpen,
+  Settings,
+  HelpCircle,
+  Home,
+  Crosshair,
 } from "lucide-react";
 
 const SUGGESTIONS = [
@@ -108,6 +115,11 @@ export default function WorkspacePage({
     return "startups";
   });
 
+  // Business Analysis navigation & viewMode for Blueprint
+  const [activeSection, setActiveSection] = useState("finances");
+  const [viewMode, setViewMode] = useState("dashboard"); // "dashboard" | "prd"
+  const [isBusinessOpen, setIsBusinessOpen] = useState(true);
+
   // Keep view updated if user generates a new blueprint or starts loading
   useEffect(() => {
     if (isLoading) {
@@ -149,6 +161,8 @@ export default function WorkspacePage({
       setBlueprint(entry.blueprint);
     }
     setActiveView("blueprint");
+    setActiveSection("finances");
+    setViewMode("dashboard");
     showToast(`Loaded "${entry.idea.slice(0, 30)}..."`);
   };
 
@@ -238,7 +252,7 @@ export default function WorkspacePage({
         </div>
 
         {/* Sidebar Navigation */}
-        <div className="flex-1 overflow-y-auto py-4 px-2.5 space-y-6 scrollbar-thin">
+        <div className="flex-1 overflow-y-auto py-4 px-2.5 space-y-5 scrollbar-thin">
           {/* Section 1: Platform */}
           <div>
             {sidebarOpen && (
@@ -254,12 +268,12 @@ export default function WorkspacePage({
                     ? "bg-orange-50 text-orange-600 border border-orange-200 shadow-xs"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent"
                 }`}
-                title="Your Startups"
+                title="Your ventures"
               >
                 <FolderKanban size={16} className={activeView === "startups" ? "text-orange-600" : "text-slate-400"} />
                 {sidebarOpen && (
                   <span className="flex-1 text-left flex items-center justify-between">
-                    <span>Your startups</span>
+                    <span>Your ventures</span>
                     <span className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
                       {historyCount}
                     </span>
@@ -274,44 +288,221 @@ export default function WorkspacePage({
                     ? "bg-orange-50 text-orange-600 border border-orange-200 shadow-xs"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent"
                 }`}
-                title="Analyze new startup"
+                title="Analyze new venture"
               >
                 <PlusCircle size={16} className={activeView === "new" ? "text-orange-600" : "text-slate-400"} />
-                {sidebarOpen && <span>Analyze new startup</span>}
+                {sidebarOpen && <span>Analyze new venture</span>}
               </button>
             </nav>
           </div>
 
-          {/* Section 2: Business Analysis (Active Startup) */}
-          {blueprint && (
+          {/* Section 2: Venture (Active Startup Analysis & Sections) */}
+          {(blueprint || (history && history.length > 0)) && (
             <div>
               {sidebarOpen && (
                 <div className="px-2 mb-1.5 flex items-center justify-between">
                   <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
-                    Active Startup
+                    Venture
                   </p>
-                  <span className="text-[9px] font-mono bg-orange-100 text-orange-700 px-1.5 py-0.2 rounded font-bold">
-                    Live
-                  </span>
+                  {blueprint && (
+                    <span className="text-[9px] font-mono bg-orange-100 text-orange-700 px-1.5 py-0.2 rounded font-bold">
+                      Live
+                    </span>
+                  )}
                 </div>
               )}
               <nav className="space-y-1">
+                {/* Dashboard Overview */}
                 <button
-                  onClick={() => setActiveView("blueprint")}
+                  onClick={() => {
+                    if (!blueprint && history.length > 0) {
+                      handleOpenStartup(history[0]);
+                    }
+                    setActiveView("blueprint");
+                    setActiveSection("dashboard");
+                    setViewMode("dashboard");
+                  }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    activeView === "blueprint"
-                      ? "bg-orange-50 text-orange-600 border border-orange-200 shadow-xs"
+                    activeView === "blueprint" && viewMode === "dashboard" && activeSection === "dashboard"
+                      ? "bg-slate-100 text-slate-900 font-bold border border-slate-200/80 shadow-2xs"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent"
                   }`}
+                  title="Dashboard"
                 >
-                  <LayoutDashboard size={16} className="text-orange-500" />
-                  {sidebarOpen && <span className="truncate">Startup Blueprint</span>}
+                  <LayoutGrid
+                    size={16}
+                    className={
+                      activeView === "blueprint" && viewMode === "dashboard" && activeSection === "dashboard"
+                        ? "text-slate-900"
+                        : "text-slate-400"
+                    }
+                  />
+                  {sidebarOpen && <span className="truncate">Dashboard</span>}
+                </button>
+
+                {/* Business Analysis Expandable Section with Vertical Ash Line */}
+                <div>
+                  <button
+                    onClick={() => {
+                      if (!sidebarOpen) setSidebarOpen(true);
+                      setIsBusinessOpen(!isBusinessOpen);
+                    }}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      activeView === "blueprint" && viewMode === "dashboard" && activeSection !== "dashboard"
+                        ? "text-slate-900 bg-slate-50"
+                        : "text-slate-700 hover:text-slate-900 hover:bg-slate-50"
+                    }`}
+                    title="Business analysis"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Briefcase size={16} className="text-slate-400" />
+                      {sidebarOpen && <span>Business analysis</span>}
+                    </div>
+                    {sidebarOpen && (
+                      <ChevronDown
+                        size={14}
+                        className={`text-slate-400 transition-transform duration-200 ${
+                          isBusinessOpen ? "rotate-180" : ""
+                        }`}
+                      />
+                    )}
+                  </button>
+
+                  {/* Indented Sub-sections with the SLIGHT ASH VERTICAL LINE */}
+                  {sidebarOpen && isBusinessOpen && (
+                    <div className="border-l-2 border-slate-200 ml-4 pl-3.5 space-y-1 my-1.5 animate-fade-in">
+                      {BUSINESS_SECTIONS.map((sec) => {
+                        const isActive =
+                          activeView === "blueprint" &&
+                          viewMode === "dashboard" &&
+                          activeSection === sec.id;
+                        return (
+                          <button
+                            key={sec.id}
+                            onClick={() => {
+                              if (!blueprint && history.length > 0) {
+                                handleOpenStartup(history[0]);
+                              }
+                              setActiveView("blueprint");
+                              setActiveSection(sec.id);
+                              setViewMode("dashboard");
+                            }}
+                            className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-colors cursor-pointer ${
+                              isActive
+                                ? "bg-slate-100 text-slate-900 font-semibold"
+                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium"
+                            }`}
+                          >
+                            {sec.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Ask the AI */}
+                <button
+                  onClick={() => {
+                    window.dispatchEvent(new CustomEvent("open-cofounder-chat"));
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-orange-600 hover:bg-orange-50/60 transition-colors cursor-pointer group"
+                  title="Ask the AI"
+                >
+                  <MessageSquare size={16} className="text-slate-400 group-hover:text-orange-500" />
+                  {sidebarOpen && <span>Ask the AI</span>}
+                </button>
+
+                {/* Pitch deck */}
+                <button
+                  onClick={() => {
+                    if (!blueprint && history.length > 0) {
+                      handleOpenStartup(history[0]);
+                    }
+                    setActiveView("blueprint");
+                    setViewMode(viewMode === "prd" ? "dashboard" : "prd");
+                  }}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                    activeView === "blueprint" && viewMode === "prd"
+                      ? "bg-slate-100 text-slate-900 font-bold border border-slate-200"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                  }`}
+                  title="Pitch deck"
+                >
+                  <FileText
+                    size={16}
+                    className={
+                      activeView === "blueprint" && viewMode === "prd"
+                        ? "text-slate-900"
+                        : "text-slate-400"
+                    }
+                  />
+                  {sidebarOpen && <span>Pitch deck</span>}
+                </button>
+
+                {/* Resources */}
+                <button
+                  onClick={async () => {
+                    const targetBlueprint = blueprint || history[0]?.blueprint;
+                    const targetIdea = idea || history[0]?.idea;
+                    if (targetBlueprint) {
+                      setExportingId("current");
+                      try {
+                        await downloadPdf(targetBlueprint, targetIdea);
+                        showToast("Executive PDF exported successfully");
+                      } catch (e) {
+                        showToast("PDF export failed");
+                      } finally {
+                        setExportingId(null);
+                      }
+                    } else {
+                      showToast("Select or analyze a venture first");
+                    }
+                  }}
+                  disabled={exportingId === "current"}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
+                  title="Resources"
+                >
+                  <BookOpen size={16} className="text-slate-400" />
+                  {sidebarOpen && (
+                    <span>{exportingId === "current" ? "Exporting PDF..." : "Resources"}</span>
+                  )}
                 </button>
               </nav>
             </div>
           )}
 
-          {/* Section 3: Tools & Resources */}
+          {/* Section 3: Lite Plan Quota Card */}
+          {sidebarOpen && (
+            <div className="pt-3 border-t border-slate-100 space-y-2.5">
+              <div className="flex items-center justify-between text-[11px] font-bold text-slate-900">
+                <span>Lite plan</span>
+                <span className="text-[10px] font-mono text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded font-bold">
+                  Active
+                </span>
+              </div>
+              <div>
+                <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                  <span>Standard reports</span>
+                  <span className="font-mono font-bold text-slate-700">10/10 left</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-orange-500 rounded-full w-full" />
+                </div>
+              </div>
+              <div>
+                <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
+                  <span>Premium reports</span>
+                  <span className="font-mono font-bold text-slate-700">20/22 left</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-purple-500 rounded-full w-[90%]" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Section 4: Tools */}
           <div>
             {sidebarOpen && (
               <p className="px-2 mb-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
@@ -322,11 +513,42 @@ export default function WorkspacePage({
               <button
                 onClick={onOpenHistory}
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
-                title="Open Vault"
+                title="Vault Archive"
               >
                 <History size={16} className="text-slate-400" />
                 {sidebarOpen && <span>Vault Archive</span>}
               </button>
+              {sidebarOpen && (
+                <>
+                  <button
+                    onClick={() => {
+                      if (history.length > 0) handleOpenStartup(history[0]);
+                      else showToast("No example ventures loaded yet");
+                    }}
+                    className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    <Sparkles size={14} className="text-slate-400" />
+                    <span>Example ventures</span>
+                  </button>
+                  <button
+                    onClick={() => showToast("Settings are configured for Founder mode")}
+                    className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Settings size={14} className="text-slate-400" />
+                      <span>Settings</span>
+                    </div>
+                    <span className="text-slate-400 text-[10px]">›</span>
+                  </button>
+                  <button
+                    onClick={() => showToast("Need assistance? Join our founder Discord.")}
+                    className="w-full flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
+                  >
+                    <HelpCircle size={14} className="text-slate-400" />
+                    <span>Help</span>
+                  </button>
+                </>
+              )}
             </nav>
           </div>
         </div>
@@ -801,29 +1023,41 @@ export default function WorkspacePage({
           {/* VIEW C: FULL BLUEPRINT DASHBOARD (Active Analyzed Venture) */}
           {activeView === "blueprint" && blueprint && (
             <div className="w-full max-w-7xl mx-auto animate-fade-in">
-              {/* Back to Startups breadcrumb bar */}
-              <div className="mb-4 flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-2xs">
-                <button
-                  onClick={() => setActiveView("startups")}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-orange-600 transition-colors cursor-pointer"
-                >
-                  <ArrowLeft size={14} />
-                  <span>Back to Your Startups</span>
-                </button>
+              {/* Clean Breadcrumb Bar Matching Screenshot */}
+              <div className="mb-4 flex items-center justify-between bg-white px-5 py-2.5 rounded-2xl border border-slate-200/80 shadow-2xs">
+                <div className="flex items-center gap-2 text-xs text-slate-500 font-medium truncate">
+                  <button
+                    onClick={() => setActiveView("startups")}
+                    className="hover:text-orange-600 transition-colors font-semibold cursor-pointer"
+                  >
+                    Platform
+                  </button>
+                  <ChevronRight size={13} className="text-slate-400 shrink-0" />
+                  <span className="text-slate-900 font-semibold truncate max-w-lg">
+                    {idea || "Venture Blueprint"}
+                  </span>
+                </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     onClick={handleStartNew}
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 transition-all cursor-pointer"
                   >
                     <PlusCircle size={13} />
-                    <span>Analyze New Startup</span>
+                    <span>Analyze New Venture</span>
                   </button>
                 </div>
               </div>
 
-              {/* Dashboard */}
-              <BlueprintDashboard blueprint={blueprint} originalIdea={idea} />
+              {/* Dashboard with synchronized section & viewMode */}
+              <BlueprintDashboard
+                blueprint={blueprint}
+                originalIdea={idea}
+                activeSection={activeSection}
+                setActiveSection={setActiveSection}
+                viewMode={viewMode}
+                setViewMode={setViewMode}
+              />
             </div>
           )}
         </main>

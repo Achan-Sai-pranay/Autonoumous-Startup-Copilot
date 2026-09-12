@@ -373,9 +373,9 @@ export const VentureViabilityScorecard = memo(function VentureViabilityScorecard
           </div>
         </div>
 
-        <div className="flex items-center gap-3 bg-emerald-50 px-3.5 py-2 rounded-2xl border border-emerald-200 shadow-2xs">
-          <span className="text-xs font-mono uppercase text-emerald-800 font-bold">Score:</span>
-          <span className="text-lg font-black font-mono text-emerald-700">{score}/100</span>
+        <div className="flex items-center gap-3 bg-orange-50 px-3.5 py-2 rounded-2xl border border-orange-200 shadow-2xs">
+          <span className="text-xs font-mono uppercase text-orange-800 font-bold">Score:</span>
+          <span className="text-lg font-black font-mono text-orange-600">{score}/100</span>
         </div>
       </div>
 
@@ -393,10 +393,10 @@ export const VentureViabilityScorecard = memo(function VentureViabilityScorecard
         <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-mono uppercase text-slate-500 font-bold">Market Demand</span>
-            <span className="text-xs font-mono font-bold text-emerald-600">{marketScore}/100</span>
+            <span className="text-xs font-mono font-bold text-orange-600">{marketScore}/100</span>
           </div>
           <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-            <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${marketScore}%` }} />
+            <div className="h-full bg-orange-500 rounded-full transition-all duration-500" style={{ width: `${marketScore}%` }} />
           </div>
           <span className="text-[10px] text-slate-400 block mt-2">Organic pull & ICP urgency</span>
         </div>

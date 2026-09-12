@@ -63,7 +63,7 @@ import {
 // ---------------------------------------------------------------------------
 // Business Analysis Sub-Sections (Indented under Business analysis with ash line)
 // ---------------------------------------------------------------------------
-const BUSINESS_SECTIONS = [
+export const BUSINESS_SECTIONS = [
   { id: "standard-analysis", label: "Standard analysis", title: "Standard Analysis" },
   { id: "path-to-mvp", label: "Path to an MVP", title: "Path to an MVP" },
   { id: "usp", label: "Unique selling points", title: "Unique Selling Points" },
@@ -73,11 +73,23 @@ const BUSINESS_SECTIONS = [
   { id: "competitive-analysis", label: "Competitive analysis", title: "Competitive Analysis" },
 ];
 
-export default function BlueprintDashboard({ blueprint, originalIdea }) {
-  // Defaults to "finances" matching user screenshot
-  const [activeSection, setActiveSection] = useState("finances");
-  const [isBusinessOpen, setIsBusinessOpen] = useState(true);
-  const [viewMode, setViewMode] = useState("dashboard"); // "dashboard" | "prd"
+export default function BlueprintDashboard({
+  blueprint,
+  originalIdea,
+  activeSection: controlledActiveSection,
+  setActiveSection: setControlledActiveSection,
+  viewMode: controlledViewMode,
+  setViewMode: setControlledViewMode,
+}) {
+  const [internalActiveSection, setInternalActiveSection] = useState("finances");
+  const activeSection =
+    controlledActiveSection !== undefined ? controlledActiveSection : internalActiveSection;
+  const setActiveSection = setControlledActiveSection || setInternalActiveSection;
+
+  const [internalViewMode, setInternalViewMode] = useState("dashboard");
+  const viewMode = controlledViewMode !== undefined ? controlledViewMode : internalViewMode;
+  const setViewMode = setControlledViewMode || setInternalViewMode;
+
   const [exporting, setExporting] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -213,202 +225,11 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
           onToast={showToast}
         />
       ) : (
-        <div className="md:flex md:gap-8 md:items-start">
-          {/* ------------------------------------------------------------- */}
-          {/* LEFT SIDEBAR (Matching Reference Screenshot) */}
-          {/* ------------------------------------------------------------- */}
-          <aside className="w-full md:w-64 shrink-0 mb-8 md:mb-0 sticky md:top-4 self-start max-h-[calc(100vh-4rem)] overflow-y-auto z-20 scrollbar-thin">
-            <div className="bg-white border border-slate-200/80 p-4 rounded-3xl space-y-6 shadow-xs">
-              {/* PLATFORM Category */}
-              <div>
-                <div className="px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold">
-                  Platform
-                </div>
-                <div className="space-y-0.5 mt-1">
-                  <button
-                    onClick={() => {
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                      showToast("Your ventures list");
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <Home size={15} className="text-slate-400" />
-                    <span>Your ventures</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                      showToast("Ready to analyze new venture");
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <Crosshair size={15} className="text-slate-400" />
-                    <span>Analyze new venture</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* VENTURE Category */}
-              <div>
-                <div className="px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold">
-                  Venture
-                </div>
-                <div className="space-y-0.5 mt-1">
-                  {/* Dashboard */}
-                  <button
-                    onClick={() => {
-                      setActiveSection("dashboard");
-                      setViewMode("dashboard");
-                    }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                      activeSection === "dashboard"
-                        ? "bg-slate-100 text-slate-900 font-bold"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                    }`}
-                  >
-                    <LayoutGrid
-                      size={15}
-                      className={activeSection === "dashboard" ? "text-slate-900" : "text-slate-400"}
-                    />
-                    <span>Dashboard</span>
-                  </button>
-
-                  {/* Business Analysis Expandable Section */}
-                  <div>
-                    <button
-                      onClick={() => setIsBusinessOpen(!isBusinessOpen)}
-                      className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Briefcase size={15} className="text-slate-400" />
-                        <span>Business analysis</span>
-                      </div>
-                      <ChevronDown
-                        size={14}
-                        className={`text-slate-400 transition-transform duration-200 ${
-                          isBusinessOpen ? "rotate-180" : ""
-                        }`}
-                      />
-                    </button>
-
-                    {/* Indented Sub-sections with the SLIGHT ASH VERTICAL LINE */}
-                    {isBusinessOpen && (
-                      <div className="border-l-2 border-slate-200 ml-4 pl-3.5 space-y-1 my-1.5 animate-fade-in">
-                        {BUSINESS_SECTIONS.map((sec) => {
-                          const isActive = activeSection === sec.id && viewMode === "dashboard";
-                          return (
-                            <button
-                              key={sec.id}
-                              onClick={() => {
-                                setActiveSection(sec.id);
-                                setViewMode("dashboard");
-                              }}
-                              className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-colors cursor-pointer ${
-                                isActive
-                                  ? "bg-slate-100 text-slate-900 font-semibold"
-                                  : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium"
-                              }`}
-                            >
-                              {sec.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Ask the AI */}
-                  <button
-                    onClick={() => {
-                      window.dispatchEvent(new CustomEvent("open-cofounder-chat"));
-                    }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-orange-600 hover:bg-orange-50/60 transition-colors cursor-pointer group"
-                  >
-                    <MessageSquare size={15} className="text-slate-400 group-hover:text-orange-500" />
-                    <span>Ask the AI</span>
-                  </button>
-
-                  {/* Pitch deck */}
-                  <button
-                    onClick={() => setViewMode(viewMode === "prd" ? "dashboard" : "prd")}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
-                      viewMode === "prd"
-                        ? "bg-slate-100 text-slate-900 font-bold"
-                        : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-                    }`}
-                  >
-                    <FileText
-                      size={15}
-                      className={viewMode === "prd" ? "text-slate-900" : "text-slate-400"}
-                    />
-                    <span>Pitch deck</span>
-                  </button>
-
-                  {/* Resources */}
-                  <button
-                    onClick={handleExportPdf}
-                    disabled={exporting === "pdf"}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
-                  >
-                    <BookOpen size={15} className="text-slate-400" />
-                    <span>Resources</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* LITE PLAN QUOTA PROGRESS BARS */}
-              <div className="pt-4 border-t border-slate-200/80 space-y-2.5">
-                <div className="flex items-center justify-between text-[11px] font-bold text-slate-900">
-                  <span>Lite plan</span>
-                  <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded font-bold">
-                    Active
-                  </span>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-                    <span>Standard reports</span>
-                    <span className="font-mono font-bold text-slate-700">10/10 left</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-emerald-500 rounded-full w-full" />
-                  </div>
-                </div>
-                <div>
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-                    <span>Premium reports</span>
-                    <span className="font-mono font-bold text-slate-700">20/22 left</span>
-                  </div>
-                  <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full bg-purple-500 rounded-full w-[90%]" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Sidebar Footer links */}
-              <div className="pt-3 border-t border-slate-100 space-y-1 text-slate-500 text-xs">
-                <button className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-50 text-left cursor-pointer">
-                  <Sparkles size={14} />
-                  <span>Example ventures</span>
-                </button>
-                <button className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-slate-50 text-left cursor-pointer">
-                  <div className="flex items-center gap-2">
-                    <Settings size={14} />
-                    <span>Settings</span>
-                  </div>
-                  <span className="text-slate-400 text-[10px]">›</span>
-                </button>
-                <button className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-50 text-left cursor-pointer">
-                  <HelpCircle size={14} />
-                  <span>Help</span>
-                </button>
-              </div>
-            </div>
-          </aside>
-
+        <div className="w-full">
           {/* ------------------------------------------------------------- */}
           {/* MAIN CONTENT AREA */}
           {/* ------------------------------------------------------------- */}
-          <main className="flex-1 min-w-0">
+          <main className="w-full min-w-0">
             {/* Top Venture Banner Card (Matching Screenshot Header) */}
             <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-6 sm:p-7 mb-7 shadow-md relative overflow-hidden">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
@@ -419,7 +240,7 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
                     </h1>
                     <button
                       onClick={() => showToast("Venture title is locked to analysis thesis")}
-                      className="h-7 w-7 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-xs"
+                      className="h-7 w-7 rounded-lg bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-xs"
                       title="Edit venture details"
                     >
                       <Edit2 size={13} />
@@ -427,7 +248,7 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
                   </div>
                   <div className="mt-3 flex items-center gap-2">
                     <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-slate-200 border border-white/10 backdrop-blur-sm">
-                      <Info size={13} className="text-purple-400" />
+                      <Info size={13} className="text-orange-400" />
                       <span>
                         Industry: <strong className="text-white">{industryDomain}</strong>
                       </span>
@@ -446,7 +267,7 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
               <div className="flex items-center gap-2">
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
                   <span>{currentSectionObj.title}</span>
-                  <span className="text-emerald-500 text-xl font-normal">★</span>
+                  <span className="text-orange-500 text-xl font-normal">★</span>
                 </h2>
               </div>
 
@@ -638,7 +459,7 @@ function HorizontalCardTrack({ children }) {
 function StatCard({
   title,
   icon: Icon,
-  iconColor = "text-emerald-500",
+  iconColor = "text-orange-500",
   stat,
   subtitle,
   children,
@@ -729,7 +550,7 @@ function FinancesSection({
         <StatCard
           title="Market Research"
           icon={BarChart3}
-          iconColor="text-emerald-500"
+          iconColor="text-orange-500"
           stat={tamValue}
           subtitle={tamSubtitle}
           detailsTitle="Market Research Details"
@@ -737,19 +558,19 @@ function FinancesSection({
         >
           <div className="space-y-2.5 text-xs text-slate-700">
             <div className="flex items-start gap-2">
-              <Users size={14} className="text-emerald-500 shrink-0 mt-0.5" />
+              <Users size={14} className="text-orange-500 shrink-0 mt-0.5" />
               <span>
                 <strong>Target:</strong> {targetUser}
               </span>
             </div>
             <div className="flex items-start gap-2">
-              <Target size={14} className="text-emerald-500 shrink-0 mt-0.5" />
+              <Target size={14} className="text-orange-500 shrink-0 mt-0.5" />
               <span>
                 <strong>Competitors:</strong> {competitors}
               </span>
             </div>
             <div className="flex items-start gap-2">
-              <Flame size={14} className="text-emerald-500 shrink-0 mt-0.5" />
+              <Flame size={14} className="text-orange-500 shrink-0 mt-0.5" />
               <span>
                 <strong>USP:</strong> {usp}
               </span>
@@ -761,7 +582,7 @@ function FinancesSection({
         <StatCard
           title="Startup Costs"
           icon={DollarSign}
-          iconColor="text-emerald-500"
+          iconColor="text-orange-500"
           stat={startupCostValue}
           subtitle="Estimated Total Startup Cost"
           detailsTitle="Startup Costs Breakdown"
@@ -796,7 +617,7 @@ function FinancesSection({
         <StatCard
           title="Revenue Projections"
           icon={TrendingUp}
-          iconColor="text-emerald-500"
+          iconColor="text-orange-500"
           stat={revenueValue}
           subtitle="Projected Annual Revenue"
           detailsTitle="Revenue Projections"
@@ -806,27 +627,27 @@ function FinancesSection({
           <div className="h-28 w-full relative flex items-center justify-center">
             <svg viewBox="0 0 240 80" className="w-full h-full overflow-visible">
               <defs>
-                <linearGradient id="revenueGreenGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-                  <stop offset="100%" stopColor="#10b981" stopOpacity="0.0" />
+                <linearGradient id="revenueOrangeGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#f97316" stopOpacity="0.25" />
+                  <stop offset="100%" stopColor="#f97316" stopOpacity="0.0" />
                 </linearGradient>
               </defs>
               <polygon
                 points="10,65 70,55 140,38 210,12 210,75 10,75"
-                fill="url(#revenueGreenGrad)"
+                fill="url(#revenueOrangeGrad)"
               />
               <polyline
                 fill="none"
-                stroke="#10b981"
+                stroke="#ea580c"
                 strokeWidth="2.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 points="10,65 70,55 140,38 210,12"
               />
-              <circle cx="10" cy="65" r="3.5" fill="#ffffff" stroke="#10b981" strokeWidth="2" />
-              <circle cx="70" cy="55" r="3.5" fill="#ffffff" stroke="#10b981" strokeWidth="2" />
-              <circle cx="140" cy="38" r="3.5" fill="#ffffff" stroke="#10b981" strokeWidth="2" />
-              <circle cx="210" cy="12" r="4.5" fill="#10b981" stroke="#ffffff" strokeWidth="2" />
+              <circle cx="10" cy="65" r="3.5" fill="#ffffff" stroke="#ea580c" strokeWidth="2" />
+              <circle cx="70" cy="55" r="3.5" fill="#ffffff" stroke="#ea580c" strokeWidth="2" />
+              <circle cx="140" cy="38" r="3.5" fill="#ffffff" stroke="#ea580c" strokeWidth="2" />
+              <circle cx="210" cy="12" r="4.5" fill="#ea580c" stroke="#ffffff" strokeWidth="2" />
               <text x="10" y="78" fontSize="8" fill="#94a3b8" fontFamily="monospace">
                 M1
               </text>
@@ -836,7 +657,7 @@ function FinancesSection({
               <text x="140" y="78" fontSize="8" fill="#94a3b8" fontFamily="monospace">
                 Y1
               </text>
-              <text x="200" y="78" fontSize="8" fill="#10b981" fontFamily="monospace" fontWeight="bold">
+              <text x="200" y="78" fontSize="8" fill="#ea580c" fontFamily="monospace" fontWeight="bold">
                 Y2
               </text>
             </svg>
@@ -847,7 +668,7 @@ function FinancesSection({
         <StatCard
           title="Operating Expenses"
           icon={Wallet}
-          iconColor="text-emerald-500"
+          iconColor="text-orange-500"
           stat="$54,500"
           subtitle="Monthly Operating Expenses"
           detailsTitle="Operating Expenses Breakdown"
@@ -873,7 +694,7 @@ function FinancesSection({
         <StatCard
           title="Breakeven Analysis"
           icon={BarChart3}
-          iconColor="text-emerald-500"
+          iconColor="text-orange-500"
           stat="500 subscriptions"
           subtitle="Monthly Breakeven Point"
           detailsTitle="Breakeven Rationale"
@@ -882,10 +703,10 @@ function FinancesSection({
           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-2">
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-500 font-mono">Progress to Target</span>
-              <span className="font-mono font-bold text-emerald-600">62% On Track</span>
+              <span className="font-mono font-bold text-orange-600">62% On Track</span>
             </div>
             <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-              <div className="h-full bg-emerald-500 rounded-full w-[62%]" />
+              <div className="h-full bg-orange-500 rounded-full w-[62%]" />
             </div>
             <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1">
               <span>Current: 310</span>
@@ -898,17 +719,17 @@ function FinancesSection({
         <StatCard
           title="Funding & Risks"
           icon={ShieldCheck}
-          iconColor="text-emerald-500"
+          iconColor="text-orange-500"
           stat="Funding Options:"
           subtitle="Capitalization Route"
           detailsTitle="Financing Strategy"
           detailsText="Recommended financing strategy prioritizes early customer revenue and angel capital to preserve equity and retain full product control."
         >
           <div className="flex flex-wrap gap-2 pt-1">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-800 border border-orange-200">
               <span>👼</span> Angel Investors
             </span>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-orange-50 text-orange-800 border border-orange-200">
               <span>💰</span> Personal Savings
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 border border-slate-200">
@@ -922,9 +743,9 @@ function FinancesSection({
       <div className="pt-2">
         <button
           onClick={() => setShowSimulator(!showSimulator)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-50 hover:bg-emerald-50 text-slate-700 hover:text-emerald-700 border border-slate-200 hover:border-emerald-200 transition-colors cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-slate-50 hover:bg-orange-50 text-slate-700 hover:text-orange-700 border border-slate-200 hover:border-orange-200 transition-colors cursor-pointer"
         >
-          <Sparkles size={14} className="text-emerald-600" />
+          <Sparkles size={14} className="text-orange-500" />
           <span>
             {showSimulator
               ? "Hide Live Simulator"
@@ -1011,7 +832,7 @@ function StandardAnalysisSection({
             </div>
             <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-emerald-500 rounded-full"
+                className="h-full bg-orange-500 rounded-full"
                 style={{ width: `${viabilityScorecard?.technicalFeasibilityScore ?? 82}%` }}
               />
             </div>
@@ -1148,7 +969,7 @@ function StandardAnalysisSection({
               <ul className="space-y-1.5">
                 {marketResearch.opportunities.map((opp, i) => (
                   <li key={i} className="flex items-start gap-2 text-slate-700">
-                    <span className="text-emerald-500 font-bold select-none">✓</span>
+                    <span className="text-orange-500 font-bold select-none">✓</span>
                     <span>{opp}</span>
                   </li>
                 ))}
@@ -1340,8 +1161,8 @@ function UniqueSellingPointsSection({
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-xs">
-            <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-100 space-y-1">
-              <span className="font-bold text-emerald-800 block">Strengths</span>
+            <div className="p-3 rounded-xl bg-orange-50/70 border border-orange-100 space-y-1">
+              <span className="font-bold text-orange-800 block">Strengths</span>
               <ul className="space-y-1 text-slate-700">
                 {(swotAnalysis?.strengths || []).map((s, i) => (
                   <li key={i} className="leading-snug">• {s}</li>
@@ -1475,7 +1296,7 @@ function CustomerPersonaSection({ customerPersona }) {
       <StatCard
         title="Customer Persona (ICP)"
         icon={Users}
-        iconColor="text-emerald-500"
+        iconColor="text-orange-500"
         stat={users[0] || "Target Founders"}
         subtitle="Primary Buyer Archetype"
         detailsTitle="Buyer Persona Story"
@@ -1487,7 +1308,7 @@ function CustomerPersonaSection({ customerPersona }) {
           </span>
           {users.map((u, i) => (
             <div key={i} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-700">
-              <span className="text-emerald-600 font-bold mr-1.5 font-mono">0{i + 1}.</span>
+              <span className="text-orange-600 font-bold mr-1.5 font-mono">0{i + 1}.</span>
               {u}
             </div>
           ))}
@@ -1521,7 +1342,7 @@ function CustomerPersonaSection({ customerPersona }) {
       <StatCard
         title="Buying Triggers"
         icon={Target}
-        iconColor="text-emerald-500"
+        iconColor="text-orange-500"
         stat="High Commercial Urgency"
         subtitle="Trigger Events for Purchase"
         detailsTitle="Conversion Strategy"
@@ -1672,7 +1493,7 @@ function CompetitiveAnalysisFullSection({
       {competitorWeaknessAnalysis?.length > 0 && (
         <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
           <h3 className="text-sm font-bold text-slate-900 mb-4 tracking-tight flex items-center gap-2">
-            <Crosshair size={16} className="text-emerald-500" />
+            <Crosshair size={16} className="text-orange-500" />
             <span>Competitor Vulnerability & Exploit Strategies</span>
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1693,7 +1514,7 @@ function CompetitiveAnalysisFullSection({
                   </p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-mono uppercase text-emerald-600 font-bold block mb-0.5">
+                  <span className="text-[10px] font-mono uppercase text-orange-600 font-bold block mb-0.5">
                     LaunchPilot Exploit Strategy
                   </span>
                   <p className="text-xs text-slate-800 leading-relaxed font-medium">
@@ -1746,7 +1567,7 @@ function DashboardOverviewSection({
           <div className="text-3xl sm:text-4xl font-black font-mono text-slate-900 my-1">
             {marketSizing?.tam?.value || "$14.2B"}
           </div>
-          <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+          <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200">
             High Growth
           </span>
         </div>
@@ -1755,7 +1576,7 @@ function DashboardOverviewSection({
           <span className="text-xs font-mono uppercase text-slate-400 block mb-1">
             Monthly Runway Budget
           </span>
-          <div className="text-3xl sm:text-4xl font-black font-mono text-emerald-600 my-1">
+          <div className="text-3xl sm:text-4xl font-black font-mono text-slate-900 my-1">
             {costEstimator?.estimatedMonthlyCost || "$50k-$70k"}
           </div>
           <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-50 text-slate-700 border border-slate-200">
