@@ -76,7 +76,7 @@ export function HeroMockupPreview({ onCtaClick }) {
           <div className="relative w-full max-w-4xl flex items-center justify-center">
             <img
               src="/images/banner.png"
-              alt="LaunchPilot AI Venture Report Preview"
+              alt="LaunchPilot AI Startup Report Preview"
               className="w-full md:w-[90%] rounded-xl shadow-lg border border-gray-200 object-cover transition-transform duration-500 group-hover:scale-[1.01]"
             />
             <img
@@ -193,7 +193,7 @@ export function StatsSection() {
     },
     {
       value: "201,296",
-      label: "Ventures analyzed",
+      label: "Startups analyzed",
       description:
         "Our platform generated comprehensive business reports, each offering tailored insights for decision-making and strategic planning.",
     },
@@ -516,12 +516,12 @@ export function PricingSection({ onSelectPlan }) {
       cta: "Get Started Free",
     },
     {
-      name: "Pro Venture",
+      name: "Pro Founder",
       price: annual ? "$15" : "$19",
       period: "per month",
       desc: "For serious entrepreneurs and operators building launch-ready companies.",
       features: [
-        "Unlimited Venture Blueprints",
+        "Unlimited Startup Blueprints",
         "All 12 Autonomous AI Co-Founders",
         "Financial & Revenue Simulators",
         "Executive PDF & Markdown Export",
@@ -535,9 +535,9 @@ export function PricingSection({ onSelectPlan }) {
       name: "Studio Enterprise",
       price: annual ? "$39" : "$49",
       period: "per month",
-      desc: "For incubators, accelerators, and agencies analyzing multiple ventures.",
+      desc: "For incubators, accelerators, and agencies analyzing multiple startups.",
       features: [
-        "Everything in Pro Venture",
+        "Everything in Pro Founder",
         "Unlimited Team Workspace Seats",
         "Custom Industry Agent Tuning",
         "Dedicated Founder Support & API",
@@ -894,7 +894,7 @@ export function FloatingChatWidget({ onSuggestionClick }) {
       <button
         onClick={() => setOpen((prev) => !prev)}
         className="w-12 h-12 rounded-full bg-orange-600 hover:bg-orange-700 text-white shadow-xl shadow-orange-600/30 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer"
-        title="AI Venture Assistant"
+        title="AI Startup Assistant"
       >
         {open ? <X size={20} /> : <MessageSquare size={20} />}
       </button>

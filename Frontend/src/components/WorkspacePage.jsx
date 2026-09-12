@@ -1,14 +1,17 @@
 // components/WorkspacePage.jsx
 // ---------------------------------------------------------------------------
-// Dedicated Autonomous Startup Copilot Workspace Page
-// Separates the deep working agent engine and blueprint dashboard from the
-// marketing landing page. Provides dedicated prompt deck, live 12-agent
-// timeline streaming, interactive synthesized blueprint tabs, and vault access.
+// VenturusAI-Identical Post-Login Studio Platform for LaunchPilot AI
+// Features:
+// 1. Collapsible Left Sidebar (Your Ventures, Analyze New, Business Analysis, Tools, User Footer)
+// 2. 'Your Ventures' Hub with user-isolated venture cards, KPIs, and search
+// 3. 'Analyze New Venture' Prompt Studio with live 12-agent streaming pipeline
+// 4. Interactive Synthesized Blueprint Dashboard with SWOT, Viability, and PDF Export
 // ---------------------------------------------------------------------------
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo } from "react";
 import LoadingTimeline from "./LoadingTimeline.jsx";
 import BlueprintDashboard from "./BlueprintDashboard.jsx";
 import { useSpeechToText } from "../hooks/useSpeechToText.js";
+import { downloadPdf } from "./exportBlueprint.js";
 import {
   ArrowLeft,
   Zap,
@@ -21,6 +24,28 @@ import {
   FileText,
   CheckCircle2,
   ChevronDown,
+  User,
+  LogOut,
+  PanelLeft,
+  PanelLeftClose,
+  FolderKanban,
+  LayoutDashboard,
+  Search,
+  Trash2,
+  ExternalLink,
+  ShieldCheck,
+  Layers,
+  Download,
+  Check,
+  Lightbulb,
+  TrendingUp,
+  ListChecks,
+  Landmark,
+  Rocket,
+  ChevronRight,
+  Clock,
+  Briefcase,
+  SlidersHorizontal,
 } from "lucide-react";
 
 const SUGGESTIONS = [
@@ -58,232 +83,769 @@ export default function WorkspacePage({
   setError,
   onBackToHome,
   onOpenHistory,
-  historyCount,
+  history = [],
+  historyCount = 0,
+  onLoadProject,
+  onDeleteProject,
   currentUser,
+  onOpenAuth,
+  onSignOut,
 }) {
   const inputRef = useRef(null);
-  const [showPromptTweak, setShowPromptTweak] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [exportingId, setExportingId] = useState(null);
+  const [toastMessage, setToastMessage] = useState(null);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const userDropdownRef = useRef(null);
+
+  // Active view inside the platform:
+  // "startups" (Your Startups hub) | "new" (Analyze new startup prompt) | "blueprint" (Viewing current blueprint)
+  const [activeView, setActiveView] = useState(() => {
+    if (blueprint) return "blueprint";
+    if (idea && idea.trim().length > 0) return "new";
+    if (history && history.length > 0) return "startups";
+    return "startups";
+  });
+
+  // Keep view updated if user generates a new blueprint or starts loading
+  useEffect(() => {
+    if (isLoading) {
+      setActiveView("new");
+    } else if (blueprint) {
+      setActiveView("blueprint");
+    }
+  }, [isLoading, blueprint]);
 
   useEffect(() => {
-    // Focus textarea on initial load if no blueprint exists
-    if (!blueprint && !isLoading) {
-      inputRef.current?.focus();
+    function handleClickOutside(e) {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target)) {
+        setUserDropdownOpen(false);
+      }
     }
-  }, [blueprint, isLoading]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const showToast = (msg) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 2500);
+  };
 
   const handleStartNew = () => {
     setBlueprint(null);
-    setShowPromptTweak(false);
+    setActiveView("new");
     setError("");
     setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
   };
 
+  const handleOpenStartup = (entry) => {
+    if (onLoadProject) {
+      onLoadProject(entry);
+    } else {
+      setIdea(entry.idea);
+      setBlueprint(entry.blueprint);
+    }
+    setActiveView("blueprint");
+    showToast(`Loaded "${entry.idea.slice(0, 30)}..."`);
+  };
+
+  const handleExportStartupPdf = async (e, entry) => {
+    e.stopPropagation();
+    setExportingId(entry.id);
+    try {
+      await downloadPdf(entry.blueprint, entry.idea);
+      showToast("PDF exported successfully");
+    } catch (err) {
+      console.error(err);
+      showToast("PDF export failed");
+    } finally {
+      setExportingId(null);
+    }
+  };
+
+  const handleDeleteStartup = (e, id) => {
+    e.stopPropagation();
+    if (window.confirm("Are you sure you want to delete this startup blueprint?")) {
+      onDeleteProject?.(id);
+      showToast("Startup removed from vault");
+      if (blueprint && history.length <= 1) {
+        setBlueprint(null);
+      }
+    }
+  };
+
+  // Filtered startups for current user
+  const filteredStartups = useMemo(() => {
+    if (!searchQuery.trim()) return history;
+    const q = searchQuery.toLowerCase();
+    return history.filter(
+      (v) =>
+        v.idea.toLowerCase().includes(q) ||
+        v.blueprint?.ideaAnalysis?.problem?.toLowerCase().includes(q) ||
+        v.blueprint?.ideaAnalysis?.goal?.toLowerCase().includes(q)
+    );
+  }, [history, searchQuery]);
+
+  // Average viability score
+  const avgViability = useMemo(() => {
+    if (!history.length) return "N/A";
+    const scores = history
+      .map((h) => h.blueprint?.ideaAnalysis?.viabilityScore || 88)
+      .filter(Boolean);
+    if (!scores.length) return "88%";
+    const sum = scores.reduce((a, b) => a + Number(b), 0);
+    return `${Math.round(sum / scores.length)}%`;
+  }, [history]);
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased">
-      {/* 1. Top Workspace Header */}
-      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-8 py-3 flex items-center justify-between shadow-2xs">
-        {/* Left: Back button + LP Brand */}
-        <div className="flex items-center gap-3 sm:gap-4">
-          <button
-            onClick={onBackToHome}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-slate-200 transition-all cursor-pointer"
-            title="Back to Landing Page"
-          >
-            <ArrowLeft size={14} />
-            <span className="hidden xs:inline">Back to Home</span>
-          </button>
-
-          <div className="h-4 w-px bg-slate-200 hidden xs:block" />
-
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-orange-600 flex items-center justify-center text-white font-bold text-xs shadow-xs">
+    <div className="h-screen w-full bg-slate-50 text-slate-900 flex font-sans selection:bg-orange-500 selection:text-white antialiased overflow-hidden">
+      {/* ------------------------------------------------------------------- */}
+      {/* 1. COLLAPSIBLE FROZEN SIDEBAR                                       */}
+      {/* ------------------------------------------------------------------- */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-slate-200 transition-all duration-300 ease-in-out ${
+          sidebarOpen ? "w-64" : "w-16"
+        } md:static md:translate-x-0 h-full shrink-0`}
+      >
+        {/* Workspace Brand Header */}
+        <div className="h-14 border-b border-slate-100 flex items-center justify-between px-3.5">
+          <div className="flex items-center gap-2.5 overflow-hidden">
+            <div className="h-8 w-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0">
               LP
             </div>
-            <span className="font-extrabold text-slate-900 text-base hidden sm:inline">
-              Launch<span className="text-orange-600">Pilot</span>
-            </span>
-            <span className="text-[11px] font-mono font-bold text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded ml-1">
-              Copilot Studio
-            </span>
+            {sidebarOpen && (
+              <div className="flex flex-col truncate">
+                <span className="font-extrabold text-sm tracking-tight text-slate-900 truncate">
+                  {currentUser?.name ? `${currentUser.name.split(" ")[0]}'s Studio` : "LaunchPilot"}
+                </span>
+                <span className="text-[10px] font-mono text-orange-600 font-semibold truncate">
+                  {currentUser?.plan || "Free Starter"}
+                </span>
+              </div>
+            )}
+          </div>
+
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors hidden md:inline-flex"
+            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+          >
+            {sidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeft size={16} />}
+          </button>
+        </div>
+
+        {/* Sidebar Navigation */}
+        <div className="flex-1 overflow-y-auto py-4 px-2.5 space-y-6 scrollbar-thin">
+          {/* Section 1: Platform */}
+          <div>
+            {sidebarOpen && (
+              <p className="px-2 mb-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                Platform
+              </p>
+            )}
+            <nav className="space-y-1">
+              <button
+                onClick={() => setActiveView("startups")}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  activeView === "startups"
+                    ? "bg-orange-50 text-orange-600 border border-orange-200 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent"
+                }`}
+                title="Your Startups"
+              >
+                <FolderKanban size={16} className={activeView === "startups" ? "text-orange-600" : "text-slate-400"} />
+                {sidebarOpen && (
+                  <span className="flex-1 text-left flex items-center justify-between">
+                    <span>Your startups</span>
+                    <span className="text-[10px] font-mono bg-slate-100 px-1.5 py-0.5 rounded text-slate-600">
+                      {historyCount}
+                    </span>
+                  </span>
+                )}
+              </button>
+
+              <button
+                onClick={handleStartNew}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  activeView === "new"
+                    ? "bg-orange-50 text-orange-600 border border-orange-200 shadow-xs"
+                    : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent"
+                }`}
+                title="Analyze new startup"
+              >
+                <PlusCircle size={16} className={activeView === "new" ? "text-orange-600" : "text-slate-400"} />
+                {sidebarOpen && <span>Analyze new startup</span>}
+              </button>
+            </nav>
+          </div>
+
+          {/* Section 2: Business Analysis (Active Startup) */}
+          {blueprint && (
+            <div>
+              {sidebarOpen && (
+                <div className="px-2 mb-1.5 flex items-center justify-between">
+                  <p className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                    Active Startup
+                  </p>
+                  <span className="text-[9px] font-mono bg-orange-100 text-orange-700 px-1.5 py-0.2 rounded font-bold">
+                    Live
+                  </span>
+                </div>
+              )}
+              <nav className="space-y-1">
+                <button
+                  onClick={() => setActiveView("blueprint")}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    activeView === "blueprint"
+                      ? "bg-orange-50 text-orange-600 border border-orange-200 shadow-xs"
+                      : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent"
+                  }`}
+                >
+                  <LayoutDashboard size={16} className="text-orange-500" />
+                  {sidebarOpen && <span className="truncate">Startup Blueprint</span>}
+                </button>
+              </nav>
+            </div>
+          )}
+
+          {/* Section 3: Tools & Resources */}
+          <div>
+            {sidebarOpen && (
+              <p className="px-2 mb-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                Tools
+              </p>
+            )}
+            <nav className="space-y-1">
+              <button
+                onClick={onOpenHistory}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+                title="Open Vault"
+              >
+                <History size={16} className="text-slate-400" />
+                {sidebarOpen && <span>Vault Archive</span>}
+              </button>
+              <button
+                onClick={onBackToHome}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-all cursor-pointer"
+                title="Return to Landing Page"
+              >
+                <ArrowLeft size={16} className="text-slate-400" />
+                {sidebarOpen && <span>Landing Page</span>}
+              </button>
+            </nav>
           </div>
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-2.5 sm:gap-3">
-          {blueprint && !isLoading && (
-            <button
-              onClick={handleStartNew}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 transition-all cursor-pointer"
-            >
-              <PlusCircle size={14} />
-              <span className="hidden sm:inline">New Blueprint</span>
-            </button>
-          )}
-
-          <button
-            onClick={onOpenHistory}
-            className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:border-orange-300 hover:text-orange-600 transition-all cursor-pointer shadow-2xs"
-            title="Open saved projects vault"
-          >
-            <History size={14} className="text-slate-500" />
-            <span className="hidden sm:inline">Vault</span>
-            {historyCount > 0 && (
-              <span className="ml-0.5 text-[10px] font-mono bg-orange-600 text-white rounded-full px-1.5 py-0.2 leading-none font-bold">
-                {historyCount}
-              </span>
-            )}
-          </button>
-
-          {currentUser && (
-            <div className="flex items-center gap-1.5 pl-1">
-              <img
-                src={currentUser.avatarUrl || "/images/avatar1.jpeg"}
-                alt={currentUser.name}
-                className="w-7 h-7 rounded-full border border-orange-200 object-cover"
-              />
+        {/* Sidebar Footer User Profile Card */}
+        <div className="p-3 border-t border-slate-100 bg-slate-50/50">
+          {currentUser ? (
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 truncate">
+                <img
+                  src={currentUser.avatarUrl || "/images/avatar1.jpeg"}
+                  alt={currentUser.name}
+                  className="w-7 h-7 rounded-full border border-orange-200 object-cover shrink-0"
+                />
+                {sidebarOpen && (
+                  <div className="truncate">
+                    <p className="text-xs font-bold text-slate-900 truncate">
+                      {currentUser.name || "Founder"}
+                    </p>
+                    <p className="text-[10px] text-slate-500 truncate">{currentUser.email}</p>
+                  </div>
+                )}
+              </div>
+              {sidebarOpen && (
+                <button
+                  onClick={onSignOut}
+                  className="text-slate-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors cursor-pointer shrink-0"
+                  title="Sign Out"
+                >
+                  <LogOut size={14} />
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => onOpenAuth?.("login")}
+                className="w-full py-1.5 px-3 rounded-lg text-xs font-semibold text-slate-700 hover:text-orange-600 border border-slate-200 bg-white transition-all cursor-pointer"
+              >
+                Sign In
+              </button>
             </div>
           )}
         </div>
-      </header>
+      </aside>
 
-      {/* 2. Workspace Body */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10 flex flex-col items-center">
-        {/* VIEW 1: Input & Synthesis View (when no blueprint or modifying) */}
-        {(!blueprint || showPromptTweak || isLoading) && (
-          <div className="w-full max-w-3xl animate-fade-in flex flex-col items-center">
-            <div className="text-center mb-6">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-orange-50 text-orange-600 border border-orange-200 mb-2">
-                <Sparkles size={13} />
-                Autonomous Startup Copilot
-              </span>
-              <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                Turn your startup concept into a full venture blueprint
-              </h1>
-              <p className="text-xs sm:text-base text-slate-500 mt-2 max-w-xl mx-auto leading-relaxed">
-                Describe your business idea, target market, or problem thesis. 12 autonomous AI
-                co-founders will synthesize financial models, technical PRDs, ICPs, and roadmaps.
-              </p>
-            </div>
+      {/* ------------------------------------------------------------------- */}
+      {/* 2. MAIN PLATFORM CONTENT AREA                                       */}
+      {/* ------------------------------------------------------------------- */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        {/* Top Header Bar */}
+        <header className="shrink-0 bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between shadow-2xs z-30">
+          {/* Left: Sidebar Toggle + Breadcrumb */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="md:hidden text-slate-600 hover:text-slate-900 p-1.5 rounded-lg hover:bg-slate-100"
+            >
+              <PanelLeft size={18} />
+            </button>
 
-            {/* Prompt Input Deck */}
-            <div className="w-full">
-              <WorkspaceInput
-                idea={idea}
-                setIdea={setIdea}
-                onGenerate={() => {
-                  setShowPromptTweak(false);
-                  onGenerate();
-                }}
-                isLoading={isLoading}
-                inputRef={inputRef}
-              />
+            <nav className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+              <button
+                onClick={() => setActiveView("startups")}
+                className="hover:text-slate-900 transition-colors"
+              >
+                Platform
+              </button>
+              <ChevronRight size={12} className="text-slate-300" />
+              {activeView === "startups" && (
+                <span className="font-semibold text-slate-900">Your Startups</span>
+              )}
+              {activeView === "new" && (
+                <span className="font-semibold text-slate-900">Analyze New Startup</span>
+              )}
+              {activeView === "blueprint" && (
+                <span className="font-semibold text-slate-900 truncate max-w-[160px] sm:max-w-xs">
+                  {idea ? idea.slice(0, 32) + "…" : "Startup Blueprint"}
+                </span>
+              )}
+            </nav>
+          </div>
 
-              {error && (
-                <div className="mt-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center justify-between animate-fade-in">
-                  <span>{error}</span>
-                  <button
-                    onClick={() => setError("")}
-                    className="text-red-500 hover:text-red-800 font-bold ml-2 cursor-pointer"
-                  >
-                    ✕
-                  </button>
+          {/* Right: Quick actions + User menu */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {activeView !== "new" && (
+              <button
+                onClick={handleStartNew}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 shadow-xs transition-all cursor-pointer active:scale-95"
+              >
+                <PlusCircle size={14} />
+                <span className="hidden sm:inline">New Startup</span>
+              </button>
+            )}
+
+            <button
+              onClick={onOpenHistory}
+              className="relative flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:border-orange-300 hover:text-orange-600 transition-all cursor-pointer shadow-2xs"
+              title="Open saved projects vault"
+            >
+              <History size={14} className="text-slate-500" />
+              <span className="hidden sm:inline">Vault</span>
+              {historyCount > 0 && (
+                <span className="ml-0.5 text-[10px] font-mono bg-orange-600 text-white rounded-full px-1.5 py-0.2 leading-none font-bold">
+                  {historyCount}
+                </span>
+              )}
+            </button>
+
+            {!currentUser ? (
+              <div className="flex items-center gap-1.5 border-l border-slate-200 pl-2">
+                <button
+                  onClick={() => onOpenAuth?.("login")}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-700 hover:text-orange-600 transition-colors"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => onOpenAuth?.("signup")}
+                  className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 transition-all"
+                >
+                  Sign Up
+                </button>
+              </div>
+            ) : (
+              <div className="relative border-l border-slate-200 pl-2" ref={userDropdownRef}>
+                <button
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:border-orange-300 transition-all cursor-pointer shadow-2xs"
+                >
+                  <img
+                    src={currentUser.avatarUrl || "/images/avatar1.jpeg"}
+                    alt={currentUser.name || "User"}
+                    className="w-5 h-5 rounded-full border border-orange-200 object-cover"
+                  />
+                  <span className="text-xs font-semibold text-slate-800 max-w-[80px] truncate hidden sm:inline">
+                    {currentUser.name || "Founder"}
+                  </span>
+                  <ChevronDown size={12} className="text-slate-400" />
+                </button>
+
+                {userDropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white border border-slate-200 shadow-xl py-2 z-50 animate-toast-in">
+                    <div className="px-4 py-2 border-b border-slate-100">
+                      <p className="text-xs font-bold text-slate-900 truncate">
+                        {currentUser.name || "Founder"}
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate">{currentUser.email}</p>
+                      <span className="inline-block mt-1 text-[10px] font-mono text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded font-semibold">
+                        {currentUser.plan || "Free Starter"}
+                      </span>
+                    </div>
+                    <div className="py-1">
+                      <button
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          setActiveView("startups");
+                        }}
+                        className="w-full px-4 py-2 text-left text-xs text-slate-700 hover:bg-orange-50 hover:text-orange-700 flex items-center gap-2 cursor-pointer"
+                      >
+                        <FolderKanban size={13} />
+                        <span>Your Startups ({historyCount})</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          onSignOut?.();
+                        }}
+                        className="w-full px-4 py-2 text-left text-xs text-red-600 hover:bg-red-50 flex items-center gap-2 cursor-pointer"
+                      >
+                        <LogOut size={13} />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </header>
+
+        {/* ------------------------------------------------------------------- */}
+        {/* 3. PLATFORM VIEW SWITCHER                                           */}
+        {/* ------------------------------------------------------------------- */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-8">
+          {/* VIEW A: "YOUR STARTUPS" DASHBOARD */}
+          {activeView === "startups" && (
+            <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
+              {/* Header & Metric Banner */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                    Your Startups
+                  </h1>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                    Manage, review, and export all startup concepts analyzed for this account.
+                  </p>
+                </div>
+
+                <button
+                  onClick={handleStartNew}
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs sm:text-sm font-bold shadow-md shadow-orange-500/20 transition-all cursor-pointer active:scale-95 self-start sm:self-auto"
+                >
+                  <Zap size={15} />
+                  <span>Analyze New Startup</span>
+                </button>
+              </div>
+
+              {/* KPI Stats Bar */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                    Startups Analyzed
+                  </span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-2xl sm:text-3xl font-black text-slate-900">
+                      {history.length}
+                    </span>
+                    <span className="text-xs text-slate-500">saved in vault</span>
+                  </div>
+                </div>
+
+                <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                    Avg. Viability Index
+                  </span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-2xl sm:text-3xl font-black text-orange-600">
+                      {avgViability}
+                    </span>
+                    <span className="text-xs text-slate-500">composite score</span>
+                  </div>
+                </div>
+
+                <div className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200/90 shadow-2xs">
+                  <span className="text-[11px] font-mono font-bold uppercase tracking-wider text-slate-400">
+                    Autonomous Co-Founders
+                  </span>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-2xl sm:text-3xl font-black text-emerald-600">12</span>
+                    <span className="text-xs text-slate-500">AI agents ready</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Search & Filter Bar */}
+              {history.length > 0 && (
+                <div className="relative">
+                  <Search size={16} className="absolute left-3.5 top-3 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search startups by idea, market, or problem statement…"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-xs sm:text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all shadow-2xs"
+                  />
                 </div>
               )}
 
-              {/* 12-Agent Live Streaming Timeline */}
-              {isLoading && <LoadingTimeline steps={agentSteps} />}
-
-              {/* Suggestions Cards (when idle) */}
-              {!isLoading && (
-                <div className="mt-8">
-                  <div className="flex items-center justify-between mb-3 px-1">
-                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider font-mono">
-                      Inspiration theses to test:
-                    </span>
-                    <span className="text-[11px] text-slate-400">Click to load instantly</span>
+              {/* Empty State when User has 0 Startups */}
+              {history.length === 0 ? (
+                <div className="bg-white rounded-3xl border border-slate-200/90 p-8 sm:p-14 text-center max-w-2xl mx-auto shadow-sm">
+                  <div className="h-16 w-16 rounded-2xl bg-orange-50 border border-orange-200 text-orange-600 flex items-center justify-center mx-auto mb-4">
+                    <Rocket size={28} />
                   </div>
+                  <h3 className="text-xl font-bold text-slate-900">
+                    No startups analyzed yet in this account
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-2 max-w-md mx-auto leading-relaxed">
+                    Your personal vault is ready. Describe any startup thesis to generate financial models,
+                    SWOT analysis, technical architecture, and PRDs in under 30 seconds.
+                  </p>
+                  <button
+                    onClick={handleStartNew}
+                    className="mt-6 inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-md shadow-orange-500/25 transition-all cursor-pointer active:scale-95"
+                  >
+                    <Zap size={16} />
+                    <span>Analyze Your First Startup</span>
+                  </button>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {SUGGESTIONS.map((s) => (
-                      <button
-                        key={s.label}
-                        type="button"
-                        onClick={() => {
-                          setIdea(s.text);
-                          inputRef.current?.focus();
-                        }}
-                        className="text-left p-3.5 rounded-xl bg-white hover:bg-orange-50/40 border border-slate-200 hover:border-orange-300 transition-all cursor-pointer shadow-2xs group flex flex-col justify-between"
+                  {/* Quick Starter Suggestions */}
+                  <div className="mt-10 pt-8 border-t border-slate-100 text-left">
+                    <p className="text-xs font-semibold text-slate-700 mb-3 flex items-center gap-1.5">
+                      <Sparkles size={13} className="text-orange-600" />
+                      <span>Or pick a high-impact thesis to test:</span>
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {SUGGESTIONS.slice(0, 4).map((s, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            setIdea(s.text);
+                            setActiveView("new");
+                          }}
+                          className="p-3 rounded-xl border border-slate-200 hover:border-orange-400 hover:bg-orange-50/50 text-left transition-all cursor-pointer group"
+                        >
+                          <span className="text-xs font-bold text-slate-900 group-hover:text-orange-700 block">
+                            {s.label}
+                          </span>
+                          <span className="text-[11px] text-slate-500 line-clamp-2 mt-0.5">
+                            {s.text}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                /* Grid of Saved Startups */
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {filteredStartups.map((item) => {
+                    const viability = item.blueprint?.ideaAnalysis?.viabilityScore || 89;
+                    const dateFormatted = new Date(item.createdAt).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      year: "numeric",
+                    });
+
+                    return (
+                      <div
+                        key={item.id}
+                        onClick={() => handleOpenStartup(item)}
+                        className="group bg-white rounded-2xl border border-slate-200/90 hover:border-orange-400 hover:shadow-lg transition-all duration-200 p-5 flex flex-col justify-between cursor-pointer shadow-xs"
                       >
                         <div>
+                          {/* Top Card Meta */}
+                          <div className="flex items-center justify-between gap-2 mb-3">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-mono text-slate-500">
+                              <Clock size={12} />
+                              <span>{dateFormatted}</span>
+                            </span>
+
+                            <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700">
+                              <ShieldCheck size={12} />
+                              <span>{viability}/100</span>
+                            </span>
+                          </div>
+
+                          {/* Startup Idea Title */}
+                          <h4 className="font-bold text-slate-900 text-sm sm:text-base line-clamp-2 group-hover:text-orange-600 transition-colors leading-snug">
+                            {item.idea}
+                          </h4>
+
+                          {/* Problem / Solution Excerpt */}
+                          <p className="text-xs text-slate-500 line-clamp-3 mt-2 leading-relaxed">
+                            {item.blueprint?.ideaAnalysis?.problem ||
+                              item.blueprint?.pitch?.elevatorPitch ||
+                              "12 autonomous AI co-founders synthesized this startup blueprint."}
+                          </p>
+                        </div>
+
+                        {/* Card Bottom Actions */}
+                        <div className="mt-5 pt-3.5 border-t border-slate-100 flex items-center justify-between">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenStartup(item)}
+                            className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors"
+                          >
+                            <span>Open Blueprint</span>
+                            <ChevronRight size={13} />
+                          </button>
+
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={(e) => handleExportStartupPdf(e, item)}
+                              disabled={exportingId === item.id}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                              title="Download PDF"
+                            >
+                              <Download size={14} className={exportingId === item.id ? "animate-bounce text-orange-600" : ""} />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => handleDeleteStartup(e, item.id)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors cursor-pointer"
+                              title="Delete startup"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* VIEW B: "ANALYZE NEW STARTUP" (Prompt Deck & 12 Co-Founders Studio) */}
+          {activeView === "new" && (
+            <div className="max-w-3xl mx-auto flex flex-col items-center animate-fade-in">
+              <div className="text-center mb-6 w-full">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-orange-50 text-orange-600 border border-orange-200 mb-2">
+                  <Sparkles size={13} />
+                  Analyze New Startup
+                </span>
+                <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+                  Synthesize Your Next Business Blueprint
+                </h1>
+                <p className="text-xs sm:text-base text-slate-500 mt-2 max-w-xl mx-auto leading-relaxed">
+                  Describe your idea, target customer, or unfair advantage. 12 autonomous AI co-founders
+                  will build your SWOT matrix, viability score, financial models, and tech PRD.
+                </p>
+              </div>
+
+              {/* Prompt Input Deck */}
+              <div className="w-full">
+                <WorkspaceInput
+                  idea={idea}
+                  setIdea={setIdea}
+                  onGenerate={onGenerate}
+                  isLoading={isLoading}
+                  inputRef={inputRef}
+                />
+
+                {/* Error Banner */}
+                {error && (
+                  <div className="mt-4 p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 flex items-center justify-between">
+                    <span>{error}</span>
+                    <button
+                      onClick={() => setError("")}
+                      className="text-red-500 hover:text-red-800 font-bold ml-2"
+                    >
+                      Dismiss
+                    </button>
+                  </div>
+                )}
+
+                {/* Live Timeline Streaming Animation */}
+                {isLoading && (
+                  <div className="mt-8 w-full bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm animate-fade-in">
+                    <LoadingTimeline steps={agentSteps} />
+                  </div>
+                )}
+
+                {/* Suggestion Cards */}
+                {!isLoading && (
+                  <div className="mt-8">
+                    <p className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-1.5">
+                      <Sparkles size={13} className="text-orange-600" />
+                      <span>Inspiration & Starter Concepts</span>
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {SUGGESTIONS.map((s, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setIdea(s.text)}
+                          className="p-3.5 rounded-2xl bg-white border border-slate-200/80 hover:border-orange-300 hover:bg-orange-50/40 text-left transition-all cursor-pointer shadow-2xs group"
+                        >
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-bold text-slate-900 group-hover:text-orange-600 transition-colors">
+                            <span className="text-xs font-bold text-slate-900 group-hover:text-orange-600">
                               {s.label}
                             </span>
-                            <span className="text-[10px] font-mono px-2 py-0.2 rounded bg-slate-100 text-slate-500">
+                            <span className="text-[10px] font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded font-medium">
                               {s.category}
                             </span>
                           </div>
                           <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
                             {s.text}
                           </p>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* VIEW 2: Complete Synthesized Blueprint Dashboard */}
-        {blueprint && !isLoading && (
-          <div className="w-full animate-fade-in">
-            {/* Top Prompt Banner with quick edit button */}
-            <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 shadow-sm mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-start gap-3">
-                <span className="p-2 rounded-xl bg-orange-50 border border-orange-200 text-orange-600 shrink-0 mt-0.5">
-                  <Sparkles size={16} />
-                </span>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.2 rounded">
-                      Synthesis Complete
-                    </span>
-                    <span className="text-xs text-slate-400 font-mono">12 Co-Founders Evaluated</span>
-                  </div>
-                  <p className="text-xs sm:text-sm font-medium text-slate-700 line-clamp-2 italic">
-                    "{idea}"
-                  </p>
+          {/* VIEW C: FULL BLUEPRINT DASHBOARD (Active Analyzed Venture) */}
+          {activeView === "blueprint" && blueprint && (
+            <div className="w-full max-w-7xl mx-auto animate-fade-in">
+              {/* Back to Startups breadcrumb bar */}
+              <div className="mb-4 flex items-center justify-between bg-white px-4 py-2.5 rounded-2xl border border-slate-200/80 shadow-2xs">
+                <button
+                  onClick={() => setActiveView("startups")}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 hover:text-orange-600 transition-colors cursor-pointer"
+                >
+                  <ArrowLeft size={14} />
+                  <span>Back to Your Startups</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleStartNew}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-orange-700 bg-orange-50 hover:bg-orange-100 border border-orange-200 transition-all cursor-pointer"
+                  >
+                    <PlusCircle size={13} />
+                    <span>Analyze New Startup</span>
+                  </button>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 shrink-0 self-end md:self-auto">
-                <button
-                  onClick={() => setShowPromptTweak((prev) => !prev)}
-                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 transition-all cursor-pointer"
-                >
-                  <RotateCcw size={13} />
-                  <span>{showPromptTweak ? "Hide Edit Box" : "Modify Idea"}</span>
-                </button>
-
-                <button
-                  onClick={handleStartNew}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 shadow-md shadow-orange-500/20 transition-all cursor-pointer"
-                >
-                  <PlusCircle size={13} />
-                  <span>New Thesis</span>
-                </button>
-              </div>
+              {/* Dashboard */}
+              <BlueprintDashboard blueprint={blueprint} originalIdea={idea} />
             </div>
+          )}
+        </main>
+      </div>
 
-            {/* Dashboard Container */}
-            <BlueprintDashboard blueprint={blueprint} originalIdea={idea} />
+      {/* Success Toast */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 animate-toast-in">
+          <div className="flex items-center gap-2.5 bg-slate-900 text-white text-xs px-4 py-3 rounded-2xl shadow-xl border border-slate-800">
+            <Check size={14} className="text-orange-400" />
+            <span className="font-medium">{toastMessage}</span>
           </div>
-        )}
-      </main>
+        </div>
+      )}
     </div>
   );
 }

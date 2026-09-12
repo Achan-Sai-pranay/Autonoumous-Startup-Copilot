@@ -68,10 +68,10 @@ export const VentureViabilityScorecard = memo(function VentureViabilityScorecard
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                VenturusAI™ Venture Viability Index
+                LaunchPilot™ Startup Viability Index
               </h3>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                VENTURE-GRADE
+                STARTUP-GRADE
               </span>
             </div>
             <p className="text-xs text-slate-500">
@@ -214,7 +214,7 @@ export const SwotAnalysisMatrix = memo(function SwotAnalysisMatrix({
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-900 tracking-tight">
-              VenturusAI™ 4-Quadrant Strategic SWOT Analysis
+              LaunchPilot™ 4-Quadrant Strategic SWOT Analysis
             </h3>
             <p className="text-xs text-slate-500">
               Rigorous strategic audit of competitive strengths, internal vulnerabilities, and market tailwinds.
@@ -552,7 +552,7 @@ export const FounderPalSwipeFile = memo(function FounderPalSwipeFile({ gtm, pitc
         subject: "Verbal Script",
         body:
           pitch?.elevatorPitch ||
-          "We help founders validate, architect, and launch high-conviction ventures in 90 seconds instead of 6 months.",
+          "We help founders validate, architect, and launch high-conviction startups in 90 seconds instead of 6 months.",
         tip: "Deliver with high conviction in under 45 seconds to leave room for partner Q&A.",
       },
     };

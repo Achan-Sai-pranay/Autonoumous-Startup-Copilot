@@ -24,7 +24,7 @@ import {
   FloatingChatWidget,
 } from "./components/MarketingSections.jsx";
 import { getHistory, saveToHistory, deleteFromHistory } from "./lib/projectHistory.js";
-import { getStoredUser, clearUserSession } from "./lib/authContext.js";
+import { getCurrentUser, logout } from "./lib/authContext.js";
 import { useSpeechToText } from "./hooks/useSpeechToText.js";
 import {
   History,
@@ -68,15 +68,31 @@ export default function App() {
   // --- Auth & Session State ------------------------------------------------
   const [currentUser, setCurrentUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState("login");
+
+  function handleOpenAuth(mode = "login") {
+    setAuthModalMode(mode);
+    setShowAuthModal(true);
+  }
 
   // --- Startup History & Saved Projects -----------------------------------
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
-    setHistory(getHistory());
-    setCurrentUser(getStoredUser());
+    getCurrentUser().then((user) => {
+      if (user) {
+        setCurrentUser(user);
+        setHistory(getHistory(user.id));
+      } else {
+        setHistory(getHistory(null));
+      }
+    });
   }, []);
+
+  useEffect(() => {
+    setHistory(getHistory(currentUser?.id));
+  }, [currentUser]);
 
   function navigateTo(view, updateHistory = true) {
     setCurrentView(view);
@@ -105,13 +121,8 @@ export default function App() {
   const generatorRef = useRef(null);
   const inputRef = useRef(null);
 
-  useEffect(() => {
-    setHistory(getHistory());
-    setCurrentUser(getStoredUser());
-  }, []);
-
   function handleOpenHistory() {
-    setHistory(getHistory());
+    setHistory(getHistory(currentUser?.id));
     setShowHistory(true);
   }
 
@@ -124,17 +135,23 @@ export default function App() {
   }
 
   function handleDeleteProject(id) {
-    setHistory(deleteFromHistory(id));
+    setHistory(deleteFromHistory(id, currentUser?.id));
   }
 
-  function handleSignOut() {
-    clearUserSession();
+  async function handleSignOut() {
+    await logout();
     setCurrentUser(null);
+    setBlueprint(null);
+    setIdea("");
+    setHistory(getHistory(null));
+    navigateTo("home");
   }
 
   function handleAuthSuccess(user) {
     setCurrentUser(user);
     setShowAuthModal(false);
+    setHistory(getHistory(user?.id));
+    navigateTo("workspace");
   }
 
   function handleLiveDemo() {
@@ -177,7 +194,7 @@ export default function App() {
         },
         onResult: (data) => {
           setBlueprint(data);
-          setHistory(saveToHistory(idea.trim(), data));
+          setHistory(saveToHistory(idea.trim(), data, currentUser?.id));
         },
         onError: (message) => setError(message),
       });
@@ -194,7 +211,7 @@ export default function App() {
   // --- VIEW 1: DEDICATED WORKSPACE & COPILOT PAGE (/app) ----------------------
   if (currentView === "workspace") {
     return (
-      <div className="relative min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased">
+      <div className="relative h-screen w-full bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased overflow-hidden">
         <WorkspacePage
           idea={idea}
           setIdea={setIdea}
@@ -207,8 +224,20 @@ export default function App() {
           setError={setError}
           onBackToHome={() => navigateTo("home")}
           onOpenHistory={handleOpenHistory}
+          history={history}
           historyCount={history.length}
+          onLoadProject={handleLoadProject}
+          onDeleteProject={handleDeleteProject}
           currentUser={currentUser}
+          onOpenAuth={handleOpenAuth}
+          onSignOut={handleSignOut}
+        />
+
+        <AuthModal
+          isOpen={showAuthModal}
+          initialMode={authModalMode}
+          onClose={() => setShowAuthModal(false)}
+          onLoginSuccess={handleAuthSuccess}
         />
 
         <HistoryPanel
@@ -235,7 +264,7 @@ export default function App() {
         onOpenHistory={handleOpenHistory}
         historyCount={history.length}
         currentUser={currentUser}
-        onOpenAuth={() => setShowAuthModal(true)}
+        onOpenAuth={handleOpenAuth}
         onSignOut={handleSignOut}
         onCtaClick={handleLiveDemo}
         onStartClick={() => navigateTo("workspace")}
@@ -278,6 +307,7 @@ export default function App() {
       {/* Modals & Overlays */}
       <AuthModal
         isOpen={showAuthModal}
+        initialMode={authModalMode}
         onClose={() => setShowAuthModal(false)}
         onLoginSuccess={handleAuthSuccess}
       />
@@ -440,12 +470,20 @@ function Navbar({
             )}
           </div>
         ) : (
-          <button
-            onClick={onStartClick}
-            className="inline-flex items-center justify-center rounded-lg text-sm font-semibold transition-all bg-orange-600 text-white shadow-xs hover:bg-orange-700 h-9 sm:h-10 px-3.5 sm:px-4 py-2 cursor-pointer active:scale-95"
-          >
-            <span>Start for free</span>
-          </button>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => onOpenAuth?.("login")}
+              className="text-xs sm:text-sm font-semibold text-gray-700 hover:text-orange-600 px-2.5 sm:px-3 py-2 rounded-lg transition-colors cursor-pointer"
+            >
+              Sign In
+            </button>
+            <button
+              onClick={() => onOpenAuth?.("signup")}
+              className="inline-flex items-center justify-center rounded-lg text-xs sm:text-sm font-semibold transition-all bg-orange-600 text-white shadow-xs hover:bg-orange-700 h-9 sm:h-10 px-3 sm:px-4 py-2 cursor-pointer active:scale-95"
+            >
+              <span>Create Account</span>
+            </button>
+          </div>
         )}
       </div>
     </header>

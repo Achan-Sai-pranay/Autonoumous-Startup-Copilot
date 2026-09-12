@@ -57,7 +57,7 @@ export default function LoadingTimeline({ steps }) {
             </span>
             <div>
               <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                12-Agent Venture Synthesis
+                12-Agent Startup Synthesis
                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-orange-100 text-orange-700 border border-orange-200">
                   LIVE
                 </span>
@@ -65,7 +65,7 @@ export default function LoadingTimeline({ steps }) {
               <p className="text-xs text-slate-500">
                 {runningStep
                   ? `Agent ${runningStepIndex + 1} of ${totalSteps}: ${runningStep.name}`
-                  : "Finalizing venture architecture..."}
+                  : "Finalizing startup architecture..."}
               </p>
             </div>
           </div>

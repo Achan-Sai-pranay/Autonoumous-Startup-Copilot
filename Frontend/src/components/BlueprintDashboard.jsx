@@ -177,7 +177,7 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
           <div className="space-y-2.5">
             <div className="flex flex-wrap items-center gap-2.5">
               <span className="px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider bg-orange-50 text-orange-600 border border-orange-200 font-bold">
-                Venture Brief #{(originalIdea.length % 900) + 100}
+                Startup Brief #{(originalIdea.length % 900) + 100}
               </span>
               <span className="text-slate-300 text-xs font-mono">•</span>
               <span className="text-xs font-mono text-slate-500 font-medium">
@@ -304,11 +304,11 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
           </nav>
 
           <div className="md:flex md:gap-8 md:items-start">
-            {/* Desktop: sidebar */}
-            <aside className="hidden md:block w-64 shrink-0 sticky top-24 self-start">
+            {/* Desktop: frozen / sticky modules sidebar */}
+            <aside className="hidden md:block w-64 shrink-0 sticky top-4 self-start max-h-[calc(100vh-5rem)] overflow-y-auto z-20 scrollbar-thin">
               <div className="bg-white border border-slate-200/80 p-2.5 rounded-2xl space-y-1 shadow-sm">
                 <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
-                  Venture Modules
+                  Co-Founder Modules
                 </div>
                 {MODULES.map((m) => (
                   <SidebarItem
