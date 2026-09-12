@@ -334,6 +334,10 @@ export default function BlueprintDashboard({
                   swotAnalysis={swotAnalysis}
                   portersFiveForces={portersFiveForces}
                   competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                  ideaAnalysis={ideaAnalysis}
+                  marketResearch={marketResearch}
+                  originalIdea={originalIdea}
+                  blueprint={blueprint}
                 />
               )}
 
@@ -1142,7 +1146,124 @@ function UniqueSellingPointsSection({
   swotAnalysis,
   portersFiveForces,
   competitorWeaknessAnalysis,
+  ideaAnalysis,
+  marketResearch,
+  originalIdea,
+  blueprint,
 }) {
+  const rawSwot =
+    swotAnalysis ||
+    blueprint?.swotAnalysis ||
+    blueprint?.swot ||
+    blueprint?.swot_analysis ||
+    blueprint?.strategicFrameworks?.swotAnalysis ||
+    blueprint?.ideaAnalysis?.swot ||
+    {};
+
+  const parseSwotList = (raw) => {
+    if (!raw) return [];
+    if (Array.isArray(raw)) {
+      return raw
+        .map((item) => {
+          if (typeof item === "string") return item.trim();
+          if (item && typeof item === "object") {
+            return item.text || item.point || item.title || item.description || "";
+          }
+          return String(item).trim();
+        })
+        .filter((s) => s && s.length > 0);
+    }
+    if (typeof raw === "string") {
+      return raw
+        .split(/\n|•|;/)
+        .map((s) => s.replace(/^\s*[-*\d.]+\s*/, "").trim())
+        .filter((s) => s.length > 1);
+    }
+    if (typeof raw === "object") {
+      return Object.values(raw)
+        .map((v) => (typeof v === "string" ? v.trim() : ""))
+        .filter((s) => s && s.length > 0);
+    }
+    return [];
+  };
+
+  const parsedStrengths = parseSwotList(
+    rawSwot.strengths || rawSwot.Strengths || rawSwot.strength || rawSwot.s
+  );
+  const parsedWeaknesses = parseSwotList(
+    rawSwot.weaknesses || rawSwot.Weaknesses || rawSwot.weakness || rawSwot.w
+  );
+  const parsedOpportunities = parseSwotList(
+    rawSwot.opportunities || rawSwot.Opportunities || rawSwot.opportunity || rawSwot.o
+  );
+  const parsedThreats = parseSwotList(
+    rawSwot.threats || rawSwot.Threats || rawSwot.threat || rawSwot.t
+  );
+
+  const strengths = useMemo(() => {
+    if (parsedStrengths.length > 0) return parsedStrengths;
+    const list = [];
+    if (ideaAnalysis?.feasibility) list.push(ideaAnalysis.feasibility);
+    if (competitorWeaknessAnalysis?.[0]?.suggestedDifferentiation) {
+      list.push(competitorWeaknessAnalysis[0].suggestedDifferentiation);
+    }
+    if (blueprint?.pitch?.elevatorPitch) {
+      list.push(blueprint.pitch.elevatorPitch);
+    }
+    list.push("Lean architecture footprint with low initial burn and high operational margin.");
+    list.push("Fast deployment velocity and specialized domain workflows compared to legacy tools.");
+    return list.slice(0, 3);
+  }, [parsedStrengths, ideaAnalysis, competitorWeaknessAnalysis, blueprint]);
+
+  const weaknesses = useMemo(() => {
+    if (parsedWeaknesses.length > 0) return parsedWeaknesses;
+    const list = [];
+    if (blueprint?.viabilityScorecard?.fatalRiskTraps?.length > 0) {
+      list.push(blueprint.viabilityScorecard.fatalRiskTraps[0]);
+    }
+    list.push("Initial cold-start distribution challenge and unproven organic search authority.");
+    list.push("Reliance on upstream foundation AI model API pricing and latency.");
+    list.push("Early lack of proprietary user behavioral dataset before first 1,000 active cohorts.");
+    return list.slice(0, 3);
+  }, [parsedWeaknesses, blueprint]);
+
+  const opportunities = useMemo(() => {
+    if (parsedOpportunities.length > 0) return parsedOpportunities;
+    const list = [];
+    if (marketResearch?.opportunities?.length > 0) {
+      list.push(...marketResearch.opportunities.slice(0, 2));
+    }
+    list.push("Expansion into enterprise self-hosted and compliance-hardened tiers.");
+    list.push("API ecosystem and developer plugins for high-retention workflow lock-in.");
+    return list.slice(0, 3);
+  }, [parsedOpportunities, marketResearch]);
+
+  const threats = useMemo(() => {
+    if (parsedThreats.length > 0) return parsedThreats;
+    const list = [];
+    list.push("Incumbent platforms releasing similar native features as zero-cost additions.");
+    list.push("Rapid shifts in foundation LLM model capabilities and commoditization.");
+    list.push("Rising customer acquisition costs (CAC) on traditional paid distribution channels.");
+    return list.slice(0, 3);
+  }, [parsedThreats]);
+
+  const competitiveRivalryObj =
+    portersFiveForces?.competitiveRivalry ||
+    blueprint?.portersFiveForces?.competitiveRivalry ||
+    {};
+  const threatOfSubstitutesObj =
+    portersFiveForces?.threatOfSubstitution ||
+    portersFiveForces?.threatOfSubstitutes ||
+    blueprint?.portersFiveForces?.threatOfSubstitution ||
+    blueprint?.portersFiveForces?.threatOfSubstitutes ||
+    {};
+  const threatOfNewEntryObj =
+    portersFiveForces?.threatOfNewEntrants ||
+    portersFiveForces?.threatOfNewEntry ||
+    blueprint?.portersFiveForces?.threatOfNewEntrants ||
+    blueprint?.portersFiveForces?.threatOfNewEntry ||
+    {};
+
   return (
     <HorizontalCardTrack>
       {/* Card 1: SWOT Analysis Matrix */}
@@ -1164,7 +1285,7 @@ function UniqueSellingPointsSection({
             <div className="p-3 rounded-xl bg-orange-50/70 border border-orange-100 space-y-1">
               <span className="font-bold text-orange-800 block">Strengths</span>
               <ul className="space-y-1 text-slate-700">
-                {(swotAnalysis?.strengths || []).map((s, i) => (
+                {strengths.map((s, i) => (
                   <li key={i} className="leading-snug">• {s}</li>
                 ))}
               </ul>
@@ -1172,7 +1293,7 @@ function UniqueSellingPointsSection({
             <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-100 space-y-1">
               <span className="font-bold text-rose-800 block">Weaknesses</span>
               <ul className="space-y-1 text-slate-700">
-                {(swotAnalysis?.weaknesses || []).map((w, i) => (
+                {weaknesses.map((w, i) => (
                   <li key={i} className="leading-snug">• {w}</li>
                 ))}
               </ul>
@@ -1180,7 +1301,7 @@ function UniqueSellingPointsSection({
             <div className="p-3 rounded-xl bg-sky-50/70 border border-sky-100 space-y-1">
               <span className="font-bold text-sky-800 block">Opportunities</span>
               <ul className="space-y-1 text-slate-700">
-                {(swotAnalysis?.opportunities || []).map((o, i) => (
+                {opportunities.map((o, i) => (
                   <li key={i} className="leading-snug">• {o}</li>
                 ))}
               </ul>
@@ -1188,7 +1309,7 @@ function UniqueSellingPointsSection({
             <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-100 space-y-1">
               <span className="font-bold text-amber-800 block">Threats</span>
               <ul className="space-y-1 text-slate-700">
-                {(swotAnalysis?.threats || []).map((t, i) => (
+                {threats.map((t, i) => (
                   <li key={i} className="leading-snug">• {t}</li>
                 ))}
               </ul>
@@ -1223,23 +1344,38 @@ function UniqueSellingPointsSection({
             <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
               <div className="flex justify-between font-bold mb-0.5">
                 <span>Competitive Rivalry</span>
-                <span className="text-orange-600 font-mono">{portersFiveForces?.competitiveRivalry?.intensity || "Moderate"}</span>
+                <span className="text-orange-600 font-mono">
+                  {competitiveRivalryObj.level || competitiveRivalryObj.intensity || "Moderate"}
+                </span>
               </div>
-              <p className="text-slate-600">{portersFiveForces?.competitiveRivalry?.analysis}</p>
+              <p className="text-slate-600">
+                {competitiveRivalryObj.analysis ||
+                  "High number of early-stage tools competing for founder attention, but low direct feature overlap."}
+              </p>
             </div>
             <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
               <div className="flex justify-between font-bold mb-0.5">
                 <span>Threat of Substitution</span>
-                <span className="text-orange-600 font-mono">{portersFiveForces?.threatOfSubstitution?.intensity || "Low"}</span>
+                <span className="text-orange-600 font-mono">
+                  {threatOfSubstitutesObj.level || threatOfSubstitutesObj.intensity || "Low"}
+                </span>
               </div>
-              <p className="text-slate-600">{portersFiveForces?.threatOfSubstitution?.analysis}</p>
+              <p className="text-slate-600">
+                {threatOfSubstitutesObj.analysis ||
+                  "Alternative manual workflows are slow and expensive, making specialized automation sticky."}
+              </p>
             </div>
             <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
               <div className="flex justify-between font-bold mb-0.5">
                 <span>Threat of New Entrants</span>
-                <span className="text-orange-600 font-mono">{portersFiveForces?.threatOfNewEntrants?.intensity || "Moderate"}</span>
+                <span className="text-orange-600 font-mono">
+                  {threatOfNewEntryObj.level || threatOfNewEntryObj.intensity || "Moderate"}
+                </span>
               </div>
-              <p className="text-slate-600">{portersFiveForces?.threatOfNewEntrants?.analysis}</p>
+              <p className="text-slate-600">
+                {threatOfNewEntryObj.analysis ||
+                  "Low barrier to basic wrappers, but high barrier to building deep proprietary domain intelligence."}
+              </p>
             </div>
           </div>
         </div>
