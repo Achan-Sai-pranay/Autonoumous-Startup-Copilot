@@ -308,8 +308,8 @@ export const StrategicOverviewHero = memo(function StrategicOverviewHero({
         )}
       </div>
 
-      {/* Side-by-Side Hero Cards: Market Sizing Bubbles & Viability Speedometer */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Vertical Hero Cards: Market Sizing Bubbles & Viability Speedometer */}
+      <div className="flex flex-col gap-6">
         <VenturusMarketSizeBubbleChart marketSizing={marketSizing} ideaTitle={ideaTitle} />
         <VenturusViabilityGaugeChart viabilityScorecard={viabilityScorecard} ideaTitle={ideaTitle} />
       </div>
@@ -535,7 +535,8 @@ export const LeanCustomerDiscoverySection = memo(function LeanCustomerDiscoveryS
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-100">
+      {/* Vertical Red Flags & WTP Signals */}
+      <div className="flex flex-col gap-4 pt-3 border-t border-slate-100">
         {/* Red Flags */}
         <div className="p-4 rounded-2xl bg-rose-50/40 border border-rose-200/70">
           <p className="text-xs font-mono uppercase tracking-wider text-rose-800 font-bold mb-2 flex items-center gap-1.5">
@@ -641,7 +642,8 @@ export const SwotAnalysisMatrix = memo(function SwotAnalysisMatrix({
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Vertical SWOT Analysis Dimensions */}
+      <div className="flex flex-col gap-4">
         {/* Strengths (Emerald) */}
         <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/80">
           <div className="flex items-center justify-between mb-2.5">
@@ -843,7 +845,8 @@ export const MarketSizingSection = memo(function MarketSizingSection({
         <VenturusMarketSizeBubbleChart marketSizing={marketSizing} ideaTitle="Target Market Sizing" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Vertical Market Sizing Cards (TAM / SAM / SOM) */}
+      <div className="flex flex-col gap-4">
         {/* TAM */}
         <div className="p-5 rounded-2xl bg-gradient-to-br from-orange-50/40 via-white to-white border border-orange-200/70 shadow-xs">
           <div className="flex items-center justify-between mb-1">
@@ -1227,8 +1230,8 @@ export const UpmetricsFinancialSimulator = memo(function UpmetricsFinancialSimul
         </div>
       </div>
 
-      {/* Interactive Controls Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6">
+      {/* Interactive Controls Area - Vertical Stacking */}
+      <div className="flex flex-col gap-5 mt-6">
         {/* Control 1: Price / Amount Selection Bar */}
         <div className="p-5 rounded-2xl bg-slate-50/80 border border-slate-200/80 shadow-2xs">
           <div className="flex items-center justify-between gap-3 mb-3">
@@ -1926,7 +1929,7 @@ ${productPlan?.mvpFeatures?.map((f) => `- ${f}`).join("\n") || "Core features"}
               Section 03 // Market Intelligence & Competitive Moat
             </span>
             <h4 className="text-lg font-bold text-slate-900">Competitors & Unfair Differentiation</h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex flex-col gap-4">
               <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                 <span className="text-xs font-mono font-bold text-slate-700 block mb-2">Identified Competitors</span>
                 <ul className="space-y-1 text-xs text-slate-600">
@@ -1953,7 +1956,7 @@ ${productPlan?.mvpFeatures?.map((f) => `- ${f}`).join("\n") || "Core features"}
             </span>
             <h4 className="text-lg font-bold text-slate-900">Target Persona & Core Pain Points</h4>
             <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">{customerPersona?.userProfile}</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div className="flex flex-col gap-4 pt-2">
               <div className="p-4 bg-indigo-50/40 rounded-xl border border-indigo-100">
                 <span className="text-xs font-mono font-bold text-indigo-900 block mb-2">Target Segments</span>
                 <ul className="space-y-1 text-xs text-slate-700">
