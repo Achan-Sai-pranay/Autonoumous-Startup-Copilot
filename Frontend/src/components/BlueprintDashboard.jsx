@@ -709,8 +709,7 @@ function IdeaModule({
       {/* Lean Customer Discovery ("Mom Test" Questions, Red Flags, WTP Signals) */}
       <LeanCustomerDiscoverySection customerDiscovery={customerDiscovery} />
 
-      {/* Vertical Cards Stack */}
-      <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <DashboardCard
           icon={Target}
           title="Startup Idea Thesis"
@@ -809,12 +808,12 @@ function MarketModule({
         <CompetitorWeaknessSection analysis={competitorWeaknessAnalysis} accent="emerald" delayIndex={0} />
       )}
 
-      {/* Customer Persona & Market Research in Vertical Sections */}
-      <div className="flex flex-col gap-6">
+      {/* Customer Persona & Market Research */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <DashboardCard
           icon={Users}
           title="Customer Persona (ICP)"
-          accent="orange"
+          accent="emerald"
           delayIndex={1}
           badge="ICP (Ideal Customer Profile)"
           credibility="High Intent"
@@ -823,9 +822,9 @@ function MarketModule({
             <ErrorNotice />
           ) : (
             <>
-              <ListField label="Target Users" items={customerPersona?.targetUsers} accent="orange" />
-              <ListField label="High-Friction Pain Points" items={customerPersona?.painPoints} accent="orange" />
-              <Field label="Narrative Buyer Story" value={customerPersona?.userProfile} accent="orange" />
+              <ListField label="Target Users" items={customerPersona?.targetUsers} accent="emerald" />
+              <ListField label="High-Friction Pain Points" items={customerPersona?.painPoints} accent="emerald" />
+              <Field label="Narrative Buyer Story" value={customerPersona?.userProfile} accent="emerald" />
             </>
           )}
         </DashboardCard>
@@ -833,7 +832,7 @@ function MarketModule({
         <DashboardCard
           icon={TrendingUp}
           title="Market Dynamics & Research"
-          accent="orange"
+          accent="emerald"
           delayIndex={2}
           badge="Landscape"
           credibility="92% Accuracy"
@@ -842,9 +841,9 @@ function MarketModule({
             <ErrorNotice />
           ) : (
             <>
-              <ListField label="Identified Competitors" items={marketResearch?.competitors} accent="orange" />
-              <ListField label="Market Opportunities" items={marketResearch?.opportunities} accent="orange" />
-              <Field label="Market Demand Dynamics" value={marketResearch?.marketDemand} accent="orange" />
+              <ListField label="Identified Competitors" items={marketResearch?.competitors} accent="emerald" />
+              <ListField label="Market Opportunities" items={marketResearch?.opportunities} accent="emerald" />
+              <Field label="Market Demand Dynamics" value={marketResearch?.marketDemand} accent="emerald" />
             </>
           )}
         </DashboardCard>
@@ -866,8 +865,7 @@ function ProductModule({ productPlan, technicalArchitecture }) {
         accent="sky"
       />
 
-      {/* Vertical Product & Architecture Stacking */}
-      <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <DashboardCard
           icon={ListChecks}
           title="Product Plan"
@@ -1336,8 +1334,7 @@ function CompetitorWeaknessSection({ analysis, accent = "emerald", delayIndex })
         </span>
         Competitor Vulnerability & Differentiation Matrix
       </h3>
-      {/* Vertical Competitor Vulnerability Cards */}
-      <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {analysis.map((c, i) => (
           <div
             key={i}
