@@ -40,7 +40,10 @@ import {
   Zap,
 } from "lucide-react";
 
-const API_URL = "http://localhost:5001/api/generate-blueprint";
+const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001/api/generate-blueprint";
+const API_URL = rawApiUrl.endsWith("/api/generate-blueprint")
+  ? rawApiUrl
+  : `${rawApiUrl.replace(/\/+$/, "")}/api/generate-blueprint`;
 
 function buildInitialSteps() {
   return AGENT_STEP_NAMES.map((name) => ({ name, status: "pending" }));

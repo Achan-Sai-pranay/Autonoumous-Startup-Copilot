@@ -1,4 +1,9 @@
 {
+  "name": "launchpilot",
+  "private": true,
+  "scripts": {
+    "build": "cd Frontend && npm install && npm run build"
+  },
   "dependencies": {
     "@splinetool/react-spline": "^4.1.0",
     "@splinetool/runtime": "^1.12.98"
