@@ -175,34 +175,25 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
     <div className="w-full max-w-7xl mx-auto mt-12 px-4 pb-24 animate-fade-in text-slate-900">
       {/* Executive Founder Brief Card */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 mb-8 border border-slate-200/90 shadow-sm">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-6 border-b border-slate-100">
-          <div className="space-y-2.5">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <span className="px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider bg-orange-50 text-orange-600 border border-orange-200 font-bold">
-                Startup Brief #{(originalIdea.length % 900) + 100}
-              </span>
-              <span className="text-slate-300 text-xs font-mono">•</span>
-              <span className="text-xs font-mono text-slate-500 font-medium">
-                Synthesized via 12 Autonomous Co-Founders
-              </span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight leading-snug">
-              {pitch?.elevatorPitch || originalIdea}
-            </h2>
-            <p className="text-sm text-slate-600 max-w-3xl leading-relaxed">
-              {pitch?.executiveSummary ||
-                ideaAnalysis?.problem ||
-                "Complete founder blueprint synthesized and ready for execution."}
-            </p>
+        {/* Top Header: Badge on Left, Action Toolbar on Right */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider bg-orange-50 text-orange-600 border border-orange-200 font-bold">
+              Startup Brief #{(originalIdea.length % 900) + 100}
+            </span>
+            <span className="text-slate-300 text-xs font-mono">•</span>
+            <span className="text-xs font-mono text-slate-500 font-medium">
+              Synthesized via 12 Autonomous Co-Founders
+            </span>
           </div>
 
           {/* Action toolbar */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start lg:self-center">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
             {/* ChatPRD View Switcher */}
             <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs">
               <button
                 onClick={() => setViewMode("dashboard")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   viewMode === "dashboard"
                     ? "bg-white text-orange-600 shadow-xs font-bold"
                     : "text-slate-600 hover:text-slate-900"
@@ -214,7 +205,7 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
               </button>
               <button
                 onClick={() => setViewMode("prd")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   viewMode === "prd"
                     ? "bg-white text-orange-600 shadow-xs font-bold"
                     : "text-slate-600 hover:text-slate-900"
@@ -228,7 +219,7 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
 
             <button
               onClick={handleCopySummary}
-              className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-50 border border-slate-200 text-slate-700 hover:text-orange-600 hover:border-orange-300 transition-all shadow-xs active:scale-95"
+              className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-50 border border-slate-200 text-slate-700 hover:text-orange-600 hover:border-orange-300 transition-all shadow-xs active:scale-95 cursor-pointer"
             >
               <Copy size={13} />
               <span>Copy Brief</span>
@@ -246,6 +237,18 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
               onClick={handleExportPdf}
             />
           </div>
+        </div>
+
+        {/* Main Headline & Summary (Full Horizontal Width) */}
+        <div className="pt-6 pb-2 space-y-3">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight leading-snug w-full">
+            {pitch?.elevatorPitch || originalIdea}
+          </h2>
+          <p className="text-sm sm:text-base text-slate-600 max-w-5xl leading-relaxed">
+            {pitch?.executiveSummary ||
+              ideaAnalysis?.problem ||
+              "Complete founder blueprint synthesized and ready for execution."}
+          </p>
         </div>
 
         {/* 4 Core Venture Metric Tiles */}

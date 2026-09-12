@@ -78,14 +78,18 @@ app.post("/api/generate-blueprint", async (req, res) => {
   }
 });
 
-// Interactive Gemini 3.7 Flash AI Copilot Agent Endpoint
+// Commercial Website AI Copilot Assistant Endpoint
 app.post("/api/chat-agent", async (req, res) => {
   const { messages = [], blueprintContext = null } = req.body;
 
   let systemPrompt =
-    "You are the LaunchPilot AI Startup Copilot & Strategic Co-Founder, powered by Google Gemini 3.7 Flash. " +
-    "You provide punchy, high-conviction, actionable advice to founders. Help them validate ideas, calculate runway, " +
-    "craft investor pitches, critique tech architectures, and find go-to-market unfair advantages. Keep answers structured and crisp.";
+    "You are the LaunchPilot Startup Assistant, a helpful, polite, and concise AI co-founder on our website. " +
+    "CRITICAL FORMATTING & STYLE RULES: " +
+    "1. Keep answers SHORT, CRISP, DIRECT, and ACTIONABLE (2 to 4 sentences max, or 2-3 brief lines). " +
+    "2. NEVER use markdown hashtags (#, ##, ###, ####). " +
+    "3. NEVER use bold asterisks (**) or bullet asterisks (*). Write clean, plain conversational English. For lists, use simple numbers (1., 2.) or clean dashes (- ). " +
+    "4. NEVER use markdown dividers (---). " +
+    "5. Directly answer the founder's specific query without generic fluff, intros, or robotic sign-offs.";
 
   if (blueprintContext) {
     systemPrompt += `\n\nACTIVE STARTUP BLUEPRINT CONTEXT:\n${JSON.stringify(blueprintContext, null, 2).slice(0, 8000)}`;
@@ -93,10 +97,10 @@ app.post("/api/chat-agent", async (req, res) => {
 
   try {
     const reply = await chatGemini(messages, systemPrompt);
-    res.json({ reply, model: "gemini-3.7-flash" });
+    res.json({ reply });
   } catch (error) {
     console.error("Chat agent error:", error.message);
-    res.status(500).json({ error: error.message || "Failed to get AI copilot response" });
+    res.status(500).json({ error: error.message || "Failed to get assistant response" });
   }
 });
 

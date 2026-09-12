@@ -1,30 +1,40 @@
 // components/AiCopilotAgent.jsx
 // ---------------------------------------------------------------------------
-// Autonomous AI Startup Copilot Widget powered by Google Gemini 3.7 Flash
+// Minimal Commercial Website Chatbot for LaunchPilot AI
 // Features:
-// 1. Persistent floating widget with Gemini 3.7 Flash badge & glowing pulse
-// 2. Real-time streaming/REST conversation with /api/chat-agent
-// 3. Full awareness of active startup blueprint context (swot, tech, unit economics)
-// 4. Quick strategic starter prompts (Moat critique, pricing, growth hacks, risk audit)
-// 5. Clean markdown formatting, copy-to-clipboard, and conversation clear
+// 1. Sleek, minimal commercial chat widget (Intercom/Crisp inspired)
+// 2. Crisp, conversational answers without hashtags, asterisks, or markdown clutter
+// 3. Status indicator ("Online"), 3-dot typing indicator, and quick inquiry pills
+// 4. Awareness of active startup blueprint context
 // ---------------------------------------------------------------------------
 import { useState, useRef, useEffect } from "react";
 import {
-  Bot,
-  Sparkles,
+  MessageSquare,
   Send,
   X,
   ChevronDown,
   Copy,
   Check,
   RotateCcw,
-  Zap,
   ShieldCheck,
   TrendingUp,
   DollarSign,
   AlertTriangle,
   Lightbulb,
+  Zap,
 } from "lucide-react";
+
+// Strip raw markdown symbols (###, **, *, ---) to keep commercial chatbot output clean and readable
+function cleanChatText(text) {
+  if (!text) return "";
+  return text
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/\*(.*?)\*/g, "$1")
+    .replace(/^---+\s*$/gm, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 export default function AiCopilotAgent({ blueprint = null, originalIdea = "" }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,11 +47,11 @@ export default function AiCopilotAgent({ blueprint = null, originalIdea = "" }) 
   const initialMessage = blueprint
     ? {
         role: "assistant",
-        text: `Hey founder! I've loaded your blueprint for **"${originalIdea.slice(0, 40)}..."**. Ask me anything—critique your moat, simulate pricing changes, draft investor emails, or analyze competitors with Gemini 3.7 Flash.`,
+        text: `Hi! I have loaded your startup brief. How can I help you refine your business idea, pricing, or strategy today?`,
       }
     : {
         role: "assistant",
-        text: "Hey! I'm your **LaunchPilot AI Startup Copilot**, powered by **Google Gemini 3.7 Flash**. What startup idea or strategic challenge are you tackling today?",
+        text: "Hi there! I'm your LaunchPilot startup assistant. What business idea or challenge can I help you with today?",
       };
 
   const [messages, setMessages] = useState([initialMessage]);
@@ -67,15 +77,43 @@ export default function AiCopilotAgent({ blueprint = null, originalIdea = "" }) 
 
   const quickPrompts = blueprint
     ? [
-        { label: "Critique my moat", icon: ShieldCheck, query: "Critique my startup moat and defensibility based on the active blueprint. Where am I most vulnerable to copycats?" },
-        { label: "How should I price this?", icon: DollarSign, query: "Based on our target persona and competitor benchmarks, what pricing tiers and pricing psychology will maximize early ARR?" },
-        { label: "3 GTM growth hacks", icon: TrendingUp, query: "Give me 3 unconventional, zero-cost growth hacks to get the first 100 paying B2B customers for this startup." },
-        { label: "Top 3 fatal risks", icon: AlertTriangle, query: "What are the 3 most fatal assumptions or risks in this business model, and how can I de-risk them in the next 14 days?" },
+        {
+          label: "Critique my moat",
+          icon: ShieldCheck,
+          query: "Critique our startup moat and defensibility based on the brief. Where are we most vulnerable to competitors?",
+        },
+        {
+          label: "Pricing advice",
+          icon: DollarSign,
+          query: "What pricing model and pricing tiers would you recommend for this startup to maximize early revenue?",
+        },
+        {
+          label: "Growth tactics",
+          icon: TrendingUp,
+          query: "What are 3 practical, low-cost ways to acquire our first 100 paying customers?",
+        },
+        {
+          label: "Top fatal risks",
+          icon: AlertTriangle,
+          query: "What are the biggest risks in this business model, and how should we de-risk them?",
+        },
       ]
     : [
-        { label: "Test a B2B SaaS thesis", icon: Zap, query: "Help me brainstorm an unfair-advantage B2B AI SaaS thesis for enterprise procurement or workflow automation." },
-        { label: "Validate my market size", icon: TrendingUp, query: "How should I calculate TAM, SAM, and SOM for an AI-native developer infrastructure tool?" },
-        { label: "High-margin niches", icon: Lightbulb, query: "What are 3 underserved, high-margin software niches with low venture-capital saturation right now?" },
+        {
+          label: "Brainstorm SaaS idea",
+          icon: Zap,
+          query: "Give me 2 underserved B2B software problems that a small team could build and monetize quickly.",
+        },
+        {
+          label: "Market sizing tip",
+          icon: TrendingUp,
+          query: "How can I realistically estimate TAM and SAM for a niche SaaS product?",
+        },
+        {
+          label: "Validate customer demand",
+          icon: Lightbulb,
+          query: "What are the best questions to ask potential customers in discovery interviews?",
+        },
       ];
 
   const handleSendMessage = async (textToSend = input) => {
@@ -92,7 +130,7 @@ export default function AiCopilotAgent({ blueprint = null, originalIdea = "" }) 
       const baseUrl = rawApiUrl.replace(/\/api\/generate-blueprint\/?$/, "");
       const chatEndpoint = `${baseUrl}/api/chat-agent`;
 
-      // Extract blueprint context if available
+      // Context from active blueprint
       const blueprintContext = blueprint
         ? {
             idea: originalIdea,
@@ -126,20 +164,24 @@ export default function AiCopilotAgent({ blueprint = null, originalIdea = "" }) 
       const data = await response.json();
       if (data.error) throw new Error(data.error);
 
+      const cleanedReply = cleanChatText(
+        data.reply || "I analyzed your question. Feel free to ask if you want more details on strategy or execution."
+      );
+
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          text: data.reply || "I analyzed your query. Let me know if you need deeper financial or architectural modeling.",
+          text: cleanedReply,
         },
       ]);
     } catch (err) {
-      console.error("AI Copilot request error:", err);
+      console.error("AI assistant request error:", err);
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
-          text: "I experienced a brief connection hiccup. Please try asking again in a moment.",
+          text: "I experienced a momentary connection issue. Please try asking again in a moment.",
         },
       ]);
     } finally {
@@ -159,50 +201,50 @@ export default function AiCopilotAgent({ blueprint = null, originalIdea = "" }) 
 
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end pointer-events-none">
-      {/* Expanded Chat Drawer */}
+      {/* Expanded Commercial Chat Drawer */}
       {isOpen && (
-        <div className="pointer-events-auto mb-3 w-[92vw] sm:w-[410px] h-[540px] max-h-[82vh] bg-white rounded-3xl border border-slate-200/90 shadow-2xl flex flex-col overflow-hidden animate-toast-in text-slate-900">
+        <div className="pointer-events-auto mb-3 w-[92vw] sm:w-[390px] h-[520px] max-h-[82vh] bg-white rounded-3xl border border-slate-200 shadow-2xl flex flex-col overflow-hidden animate-toast-in text-slate-900">
           {/* Header */}
-          <div className="px-4 py-3.5 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between shadow-xs">
-            <div className="flex items-center gap-2.5">
-              <div className="h-8 w-8 rounded-xl bg-orange-500/20 border border-orange-400/30 flex items-center justify-center text-orange-400 shadow-xs">
-                <Bot size={18} />
+          <div className="px-4 py-3.5 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+            <div className="flex items-center gap-3">
+              <div className="relative flex items-center justify-center">
+                <div className="h-9 w-9 rounded-full bg-orange-600 flex items-center justify-center text-white shadow-xs">
+                  <MessageSquare size={17} />
+                </div>
+                <span className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-slate-900" />
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-xs font-bold tracking-tight">LaunchPilot Copilot</h3>
-                  <span className="flex items-center gap-1 text-[9px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-1.5 py-0.2 rounded-full">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                    LIVE
-                  </span>
+                <h3 className="text-xs sm:text-sm font-bold tracking-tight text-white">
+                  LaunchPilot Assistant
+                </h3>
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                  <span>Online • Ready to help</span>
                 </div>
-                <p className="text-[10px] font-mono text-orange-400/90">
-                  Powered by Google Gemini 3.7 Flash
-                </p>
               </div>
             </div>
 
             <div className="flex items-center gap-1">
               <button
                 onClick={handleResetChat}
-                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors"
-                title="Reset conversation"
+                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                title="New conversation"
               >
                 <RotateCcw size={14} />
               </button>
               <button
                 onClick={() => setIsOpen(false)}
-                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors"
-                title="Close drawer"
+                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Close chat"
               >
-                <ChevronDown size={17} />
+                <ChevronDown size={18} />
               </button>
             </div>
           </div>
 
-          {/* Active Blueprint Badge Strip */}
+          {/* Context pill if analyzing a startup */}
           {blueprint && (
-            <div className="px-4 py-1.5 bg-orange-50 border-b border-orange-100 flex items-center justify-between text-[11px] text-orange-800">
+            <div className="px-4 py-1.5 bg-orange-50/80 border-b border-orange-100 flex items-center justify-between text-[11px] text-orange-900">
               <span className="truncate font-medium">Context: {originalIdea.slice(0, 36)}…</span>
               <span className="font-mono text-[10px] font-bold text-orange-600 shrink-0 ml-2">
                 ACTIVE
@@ -210,28 +252,30 @@ export default function AiCopilotAgent({ blueprint = null, originalIdea = "" }) 
             </div>
           )}
 
-          {/* Chat Messages Log */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3.5 scrollbar-thin bg-slate-50/50">
+          {/* Messages Log */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-thin bg-slate-50/60">
             {messages.map((m, idx) => {
               const isAi = m.role === "assistant" || m.role === "ai";
+              const formattedText = isAi ? cleanChatText(m.text) : m.text;
+
               return (
                 <div
                   key={idx}
                   className={`flex flex-col ${isAi ? "items-start" : "items-end"}`}
                 >
                   <div
-                    className={`relative group max-w-[88%] p-3.5 rounded-2xl text-xs leading-relaxed ${
+                    className={`relative group max-w-[88%] p-3 rounded-2xl text-xs sm:text-[13px] leading-relaxed ${
                       isAi
-                        ? "bg-white border border-slate-200/90 text-slate-800 shadow-2xs whitespace-pre-wrap"
-                        : "bg-orange-600 text-white rounded-br-xs shadow-xs font-medium"
+                        ? "bg-white border border-slate-200/80 text-slate-800 shadow-2xs rounded-tl-xs whitespace-pre-wrap font-normal"
+                        : "bg-slate-900 text-white rounded-tr-xs shadow-xs font-medium"
                     }`}
                   >
-                    {m.text}
+                    {formattedText}
 
                     {isAi && (
                       <button
-                        onClick={() => handleCopyText(m.text, idx)}
-                        className="absolute -bottom-2 right-2 opacity-0 group-hover:opacity-100 bg-white border border-slate-200 p-1 rounded-md text-slate-500 hover:text-orange-600 shadow-xs transition-opacity"
+                        onClick={() => handleCopyText(formattedText, idx)}
+                        className="absolute -bottom-2 right-2 opacity-0 group-hover:opacity-100 bg-white border border-slate-200 p-1 rounded-md text-slate-400 hover:text-orange-600 shadow-xs transition-opacity cursor-pointer"
                         title="Copy message"
                       >
                         {copiedIndex === idx ? <Check size={11} className="text-emerald-600" /> : <Copy size={11} />}
@@ -242,22 +286,19 @@ export default function AiCopilotAgent({ blueprint = null, originalIdea = "" }) 
               );
             })}
 
+            {/* 3-Dot Bouncing Typing Indicator */}
             {loading && (
-              <div className="flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-2xl w-fit shadow-2xs">
-                <span className="w-2 h-2 rounded-full bg-orange-500 animate-ping" />
-                <span className="text-xs text-slate-500 font-mono">
-                  Gemini 3.7 Flash thinking…
-                </span>
+              <div className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white border border-slate-200 rounded-2xl rounded-tl-xs w-fit shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "0ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "150ms" }} />
+                <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-bounce" style={{ animationDelay: "300ms" }} />
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Strategic Starter Prompts */}
+          {/* Quick Starter Pills */}
           <div className="px-3 py-2 border-t border-slate-100 bg-white">
-            <p className="text-[10px] font-mono uppercase text-slate-400 font-bold mb-1.5">
-              Quick Inquiries
-            </p>
             <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none">
               {quickPrompts.map((qp, i) => {
                 const Icon = qp.icon;
@@ -265,7 +306,7 @@ export default function AiCopilotAgent({ blueprint = null, originalIdea = "" }) 
                   <button
                     key={i}
                     onClick={() => handleSendMessage(qp.query)}
-                    className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-50 hover:bg-orange-50 text-slate-700 hover:text-orange-700 border border-slate-200 hover:border-orange-300 transition-all cursor-pointer whitespace-nowrap active:scale-95"
+                    className="shrink-0 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium bg-slate-100 hover:bg-orange-50 text-slate-700 hover:text-orange-700 border border-slate-200/80 hover:border-orange-300 transition-all cursor-pointer whitespace-nowrap active:scale-95"
                   >
                     <Icon size={12} className="text-orange-600" />
                     <span>{qp.label}</span>
@@ -275,7 +316,7 @@ export default function AiCopilotAgent({ blueprint = null, originalIdea = "" }) 
             </div>
           </div>
 
-          {/* Input Box */}
+          {/* Chat Input Field */}
           <div className="p-3 border-t border-slate-200 bg-white flex items-center gap-2">
             <input
               ref={inputRef}
@@ -288,42 +329,42 @@ export default function AiCopilotAgent({ blueprint = null, originalIdea = "" }) 
                   handleSendMessage();
                 }
               }}
-              placeholder={blueprint ? "Ask about your startup or request a pivot..." : "Ask your startup copilot..."}
+              placeholder="Ask a question..."
               disabled={loading}
-              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+              className="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-xs sm:text-[13px] text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
             />
 
             <button
               onClick={() => handleSendMessage()}
               disabled={!input.trim() || loading}
-              className="p-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 disabled:opacity-50 text-white transition-all shadow-xs active:scale-95 cursor-pointer disabled:cursor-not-allowed"
+              className="h-8 w-8 rounded-full bg-orange-600 hover:bg-orange-700 disabled:opacity-40 text-white flex items-center justify-center transition-all shadow-xs active:scale-95 cursor-pointer shrink-0 disabled:cursor-not-allowed"
               title="Send message"
             >
-              <Send size={14} />
+              <Send size={13} />
             </button>
           </div>
         </div>
       )}
 
-      {/* Floating Trigger Button */}
+      {/* Floating Commercial Website Chat Launcher */}
       <button
         onClick={() => setIsOpen((prev) => !prev)}
         className="pointer-events-auto flex items-center gap-2.5 px-4 py-3 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-2xl border border-slate-700 transition-all hover:scale-105 active:scale-95 cursor-pointer group"
+        aria-label="Open support chat"
       >
         <div className="relative flex items-center justify-center">
-          <div className="h-7 w-7 rounded-full bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center text-white shadow-xs">
-            <Bot size={16} />
+          <div className="h-7 w-7 rounded-full bg-orange-600 flex items-center justify-center text-white shadow-xs">
+            {isOpen ? <X size={15} /> : <MessageSquare size={15} />}
           </div>
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-slate-900 animate-pulse" />
+          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-slate-900" />
         </div>
 
         <div className="flex flex-col items-start text-left">
-          <span className="text-xs font-bold tracking-tight text-white flex items-center gap-1.5">
-            AI Copilot
-            <Sparkles size={11} className="text-orange-400" />
+          <span className="text-xs font-bold tracking-tight text-white">
+            {isOpen ? "Close Chat" : "Chat with us"}
           </span>
-          <span className="text-[9px] font-mono text-slate-400 group-hover:text-orange-300 transition-colors">
-            Gemini 3.7 Flash
+          <span className="text-[10px] text-slate-400 font-medium">
+            Ask our Assistant
           </span>
         </div>
       </button>
