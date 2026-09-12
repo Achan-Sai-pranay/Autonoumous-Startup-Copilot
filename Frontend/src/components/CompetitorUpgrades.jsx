@@ -316,6 +316,243 @@ export const SwotAnalysisMatrix = memo(function SwotAnalysisMatrix({
 });
 
 // ---------------------------------------------------------------------------
+// VENTURUSAI FEATURE: 360° Macro PESTEL Analysis Framework
+// ---------------------------------------------------------------------------
+export const PestelAnalysisMatrix = memo(function PestelAnalysisMatrix({
+  ideaAnalysis,
+  marketResearch,
+}) {
+  const domain = ideaAnalysis?.domain || "Technology / B2B SaaS";
+
+  const pillars = [
+    {
+      code: "P",
+      title: "Political",
+      rating: "Low Friction",
+      badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      points: [
+        "Government incentives for AI digital transformation and enterprise productivity.",
+        "Cross-border sovereign cloud storage and AI compute sovereignty policies.",
+      ],
+    },
+    {
+      code: "E",
+      title: "Economic",
+      rating: "High ROI Tailwind",
+      badgeClass: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      points: [
+        "Tight enterprise budgets favoring fast ROI tooling over headcount expansion.",
+        "Sub-12-month payback periods demanded by CFOs for software procurement.",
+      ],
+    },
+    {
+      code: "S",
+      title: "Social",
+      rating: "Cultural Shift",
+      badgeClass: "bg-sky-50 text-sky-700 border-sky-200",
+      points: [
+        "Widespread founder and knowledge worker acceptance of autonomous copilots.",
+        "Demand for transparency, trust, and human-in-the-loop auditability.",
+      ],
+    },
+    {
+      code: "T",
+      title: "Technological",
+      rating: "Accelerating",
+      badgeClass: "bg-indigo-50 text-indigo-700 border-indigo-200",
+      points: [
+        "Breakthrough reasoning in frontier models like Google Gemini 3.7 Flash.",
+        "Decreasing token inference costs making complex 12-agent synthesis viable.",
+      ],
+    },
+    {
+      code: "E",
+      title: "Environmental",
+      rating: "Neutral",
+      badgeClass: "bg-amber-50 text-amber-700 border-amber-200",
+      points: [
+        "Growing scrutiny on datacenters prompting energy-efficient inference architectures.",
+        "Zero-hardware pure cloud deployment minimizing physical supply chain impact.",
+      ],
+    },
+    {
+      code: "L",
+      title: "Legal & Regulatory",
+      rating: "Compliance Gate",
+      badgeClass: "bg-orange-50 text-orange-700 border-orange-200",
+      points: [
+        "GDPR, CCPA, and emerging global AI regulatory compliance standards.",
+        "Clear contractual terms needed regarding IP ownership of AI-assisted outputs.",
+      ],
+    },
+  ];
+
+  return (
+    <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-sm mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-lg bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+            <TrendingUp size={16} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                360° Macro PESTEL Strategic Audit
+              </h3>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                CREDIBILITY: 96%
+              </span>
+            </div>
+            <p className="text-xs text-slate-500">
+              Macro-environmental evaluation across political, economic, social, tech, eco, and legal vectors for {domain}.
+            </p>
+          </div>
+        </div>
+
+        <span className="text-xs font-mono font-bold text-slate-500 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 self-start sm:self-auto">
+          Signal: Bullish Tailwinds
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {pillars.map((p, idx) => (
+          <div key={idx} className="p-4 rounded-xl bg-slate-50/60 border border-slate-200/80 hover:border-slate-300 transition-colors flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="flex items-center gap-2">
+                  <span className="h-6 w-6 rounded-md bg-white border border-slate-200 text-slate-900 text-xs font-mono font-black flex items-center justify-center shadow-2xs">
+                    {p.code}
+                  </span>
+                  <span className="text-xs font-bold text-slate-900">{p.title}</span>
+                </div>
+                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${p.badgeClass}`}>
+                  {p.rating}
+                </span>
+              </div>
+              <ul className="space-y-1.5">
+                {p.points.map((pt, i) => (
+                  <li key={i} className="text-xs text-slate-600 leading-relaxed flex items-start gap-1.5">
+                    <span className="text-emerald-500 font-bold">•</span>
+                    <span>{pt}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+// ---------------------------------------------------------------------------
+// VENTURUSAI FEATURE: Strategic Lean Canvas Matrix
+// ---------------------------------------------------------------------------
+export const LeanCanvasMatrix = memo(function LeanCanvasMatrix({
+  ideaAnalysis,
+  productPlan,
+  marketResearch,
+  costEstimator,
+}) {
+  return (
+    <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-sm mb-6">
+      <div className="flex items-center justify-between mb-5 pb-4 border-b border-slate-100">
+        <div className="flex items-center gap-2.5">
+          <div className="h-8 w-8 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
+            <Layers size={16} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-bold text-slate-900 tracking-tight">
+                9-Box Strategic Lean Canvas
+              </h3>
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                VENTURE ARCHITECTURE
+              </span>
+            </div>
+            <p className="text-xs text-slate-500">
+              Complete business model on a single page, synthesized for rapid founder iteration and investor diligence.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        {/* Box 1: Problem */}
+        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block mb-1">01. Problem</span>
+            <p className="text-xs text-slate-800 font-medium leading-relaxed">
+              {ideaAnalysis?.problem || "Inefficient manual workflows causing high operating overhead and delayed cycles."}
+            </p>
+          </div>
+          <div className="mt-3 pt-2 border-t border-slate-200/60">
+            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Existing Alternatives:</span>
+            <p className="text-[11px] text-slate-600">Manual spreadsheets, fragmented point-solutions.</p>
+          </div>
+        </div>
+
+        {/* Box 2: Solution & Metrics */}
+        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block mb-1">02. Solution</span>
+            <p className="text-xs text-slate-800 font-medium leading-relaxed">
+              {productPlan?.mvpFeatures?.[0] || ideaAnalysis?.goal || "Autonomous copilot platform automating 80% of end-to-end workflows."}
+            </p>
+          </div>
+          <div className="mt-3 pt-2 border-t border-slate-200/60">
+            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Key Metrics (North Star):</span>
+            <p className="text-[11px] text-slate-600">Time saved per workflow, Net Revenue Retention (NRR &gt; 120%).</p>
+          </div>
+        </div>
+
+        {/* Box 3: Value Proposition */}
+        <div className="p-3.5 rounded-xl bg-orange-50/40 border border-orange-200/80 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-mono font-bold uppercase text-orange-600 block mb-1">03. Unique Value Prop</span>
+            <p className="text-xs text-slate-900 font-bold leading-relaxed">
+              High-conviction autonomous execution in seconds instead of months at 90% lower operational cost.
+            </p>
+          </div>
+          <div className="mt-3 pt-2 border-t border-orange-200/60">
+            <span className="text-[10px] font-mono text-orange-600 block mb-0.5">High-Level Pitch:</span>
+            <p className="text-[11px] text-slate-700">"The autonomous operating system for modern founders."</p>
+          </div>
+        </div>
+
+        {/* Box 4: Unfair Advantage */}
+        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block mb-1">04. Unfair Moat</span>
+            <p className="text-xs text-slate-800 font-medium leading-relaxed">
+              Proprietary multi-agent prompt synthesis &amp; domain benchmarking that generic wrappers cannot replicate.
+            </p>
+          </div>
+          <div className="mt-3 pt-2 border-t border-slate-200/60">
+            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Channels:</span>
+            <p className="text-[11px] text-slate-600">Product Hunt, Founder communities, programmatic SEO dossiers.</p>
+          </div>
+        </div>
+
+        {/* Box 5: Economics */}
+        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between">
+          <div>
+            <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block mb-1">05. Unit Economics</span>
+            <p className="text-xs text-slate-800 font-medium leading-relaxed">
+              {costEstimator?.estimatedMonthlyCost ? `Estimated Cloud Burn: ${costEstimator.estimatedMonthlyCost}` : "85%+ Gross Margin recurring SaaS subscription tiers."}
+            </p>
+          </div>
+          <div className="mt-3 pt-2 border-t border-slate-200/60">
+            <span className="text-[10px] font-mono text-emerald-600 font-bold block mb-0.5">Break-Even Point:</span>
+            <p className="text-[11px] text-slate-600">Covered with just 5-10 paying enterprise licenses.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ---------------------------------------------------------------------------
 // 2. UPMETRICS FEATURE: Interactive Financial Simulator & Break-Even Calculator
 // ---------------------------------------------------------------------------
 

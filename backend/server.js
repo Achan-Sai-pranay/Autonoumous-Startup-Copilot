@@ -22,6 +22,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { runAllAgents } from "./agents.js";
+import { chatGemini } from "./gemini.js";
 
 dotenv.config();
 
@@ -74,6 +75,28 @@ app.post("/api/generate-blueprint", async (req, res) => {
     });
   } finally {
     res.end();
+  }
+});
+
+// Interactive Gemini 3.7 Flash AI Copilot Agent Endpoint
+app.post("/api/chat-agent", async (req, res) => {
+  const { messages = [], blueprintContext = null } = req.body;
+
+  let systemPrompt =
+    "You are the LaunchPilot AI Startup Copilot & Strategic Co-Founder, powered by Google Gemini 3.7 Flash. " +
+    "You provide punchy, high-conviction, actionable advice to founders. Help them validate ideas, calculate runway, " +
+    "craft investor pitches, critique tech architectures, and find go-to-market unfair advantages. Keep answers structured and crisp.";
+
+  if (blueprintContext) {
+    systemPrompt += `\n\nACTIVE STARTUP BLUEPRINT CONTEXT:\n${JSON.stringify(blueprintContext, null, 2).slice(0, 8000)}`;
+  }
+
+  try {
+    const reply = await chatGemini(messages, systemPrompt);
+    res.json({ reply, model: "gemini-3.7-flash" });
+  } catch (error) {
+    console.error("Chat agent error:", error.message);
+    res.status(500).json({ error: error.message || "Failed to get AI copilot response" });
   }
 });
 

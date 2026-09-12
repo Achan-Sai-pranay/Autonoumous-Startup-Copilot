@@ -30,9 +30,8 @@
 
 import { jsonrepair } from "jsonrepair";
 
-const GEMINI_MODEL = "gemini-3.1-flash-lite";
-const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
-const GEMINI_STREAM_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:streamGenerateContent`;
+const PRIMARY_MODEL = process.env.GEMINI_MODEL || "gemini-3.7-flash";
+const FALLBACK_MODEL = "gemini-3.6-flash";
 
 const MAX_RETRIES = 3; // retries AFTER the first attempt (4 attempts total)
 const BASE_DELAY_MS = 1000; // 1s, then 2s, then 4s
@@ -56,12 +55,19 @@ export async function streamGemini(prompt, onChunk = () => {}) {
   }
 
   let lastError;
+  let currentModel = PRIMARY_MODEL;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
-      return await streamRequestOnce(prompt, apiKey, onChunk);
+      return await streamRequestOnce(prompt, apiKey, onChunk, currentModel);
     } catch (error) {
       lastError = error;
+
+      // If 503 capacity spike on 3.7, immediately switch to fallback model
+      if (error.message.includes("503") || error.message.includes("high demand")) {
+        console.warn(`[Gemini] ${currentModel} experiencing high demand (503). Switching to ${FALLBACK_MODEL}...`);
+        currentModel = FALLBACK_MODEL;
+      }
 
       const isLastAttempt = attempt === MAX_RETRIES;
       if (isLastAttempt) break;
@@ -79,8 +85,9 @@ export async function streamGemini(prompt, onChunk = () => {}) {
   throw lastError;
 }
 
-async function streamRequestOnce(prompt, apiKey, onChunk) {
-  const response = await fetch(`${GEMINI_STREAM_URL}?key=${apiKey}&alt=sse`, {
+async function streamRequestOnce(prompt, apiKey, onChunk, model = PRIMARY_MODEL) {
+  const streamUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent`;
+  const response = await fetch(`${streamUrl}?key=${apiKey}&alt=sse`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -321,4 +328,68 @@ function tryRepair(candidate) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Sends a conversational query to Google Gemini 3.7 Flash
+ * @param {Array<{role: string, text: string}>} messages
+ * @param {string} systemPrompt
+ * @returns {Promise<string>}
+ */
+export async function chatGemini(messages = [], systemPrompt = "") {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing GEMINI_API_KEY in environment");
+  }
+
+  const contents = [];
+  if (systemPrompt) {
+    contents.push({
+      role: "user",
+      parts: [{ text: `[SYSTEM CONTEXT & ROLE]: ${systemPrompt}` }],
+    });
+    contents.push({
+      role: "model",
+      parts: [{ text: "Understood. I am your LaunchPilot autonomous startup co-founder and AI strategic advisor powered by Gemini 3.7 Flash. How can I assist you with your startup?" }],
+    });
+  }
+
+  for (const m of messages) {
+    contents.push({
+      role: m.role === "assistant" || m.role === "model" || m.role === "ai" ? "model" : "user",
+      parts: [{ text: m.text || m.content || "" }],
+    });
+  }
+
+  const tryCall = async (modelName) => {
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 2048,
+        },
+      }),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Gemini (${modelName}) returned ${res.status}: ${errText}`);
+    }
+    const data = await res.json();
+    return data.candidates?.[0]?.content?.parts?.[0]?.text;
+  };
+
+  try {
+    const reply = await tryCall(PRIMARY_MODEL);
+    if (reply) return reply;
+  } catch (err) {
+    console.warn(`[Gemini Chat] ${PRIMARY_MODEL} failed: ${err.message}. Retrying with ${FALLBACK_MODEL}...`);
+  }
+
+  // Resilient fallback
+  const fallbackReply = await tryCall(FALLBACK_MODEL);
+  return fallbackReply || "I couldn't generate a response. Please try asking again.";
 }

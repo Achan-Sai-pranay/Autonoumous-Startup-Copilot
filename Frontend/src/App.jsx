@@ -11,6 +11,7 @@ import WorkspacePage from "./components/WorkspacePage.jsx";
 import SplineBackground from "./components/SplineBackground.jsx";
 import HistoryPanel from "./components/HistoryPanel.jsx";
 import AuthModal from "./components/AuthModal.jsx";
+import AiCopilotAgent from "./components/AiCopilotAgent.jsx";
 import {
   AnnouncementBanner,
   MarqueeLogos,
@@ -84,6 +85,11 @@ export default function App() {
       if (user) {
         setCurrentUser(user);
         setHistory(getHistory(user.id));
+        // Auto-navigate to dashboard if user has active session
+        setCurrentView("workspace");
+        if (typeof window !== "undefined") {
+          window.history.replaceState({ view: "workspace" }, "", "/app");
+        }
       } else {
         setHistory(getHistory(null));
       }
@@ -94,11 +100,13 @@ export default function App() {
     setHistory(getHistory(currentUser?.id));
   }, [currentUser]);
 
-  function navigateTo(view, updateHistory = true) {
+  function navigateTo(view, updateHistory = true, replace = false) {
     setCurrentView(view);
     if (updateHistory && typeof window !== "undefined") {
       const targetUrl = view === "workspace" ? "/app" : "/";
-      if (window.location.pathname !== targetUrl) {
+      if (replace) {
+        window.history.replaceState({ view }, "", targetUrl);
+      } else if (window.location.pathname !== targetUrl) {
         window.history.pushState({ view }, "", targetUrl);
       }
     }
@@ -107,6 +115,14 @@ export default function App() {
 
   useEffect(() => {
     function handlePopState(e) {
+      if (currentUser) {
+        // Authenticated user always stays inside workspace dashboard
+        setCurrentView("workspace");
+        if (typeof window !== "undefined" && window.location.pathname !== "/app") {
+          window.history.replaceState({ view: "workspace" }, "", "/app");
+        }
+        return;
+      }
       const view =
         e.state?.view ||
         (window.location.pathname === "/app" || window.location.hash === "#app"
@@ -116,7 +132,7 @@ export default function App() {
     }
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
+  }, [currentUser]);
 
   const generatorRef = useRef(null);
   const inputRef = useRef(null);
@@ -144,14 +160,14 @@ export default function App() {
     setBlueprint(null);
     setIdea("");
     setHistory(getHistory(null));
-    navigateTo("home");
+    navigateTo("home", true, true);
   }
 
   function handleAuthSuccess(user) {
     setCurrentUser(user);
     setShowAuthModal(false);
     setHistory(getHistory(user?.id));
-    navigateTo("workspace");
+    navigateTo("workspace", true, true);
   }
 
   function handleLiveDemo() {
@@ -233,6 +249,8 @@ export default function App() {
           onSignOut={handleSignOut}
         />
 
+        <AiCopilotAgent blueprint={blueprint} originalIdea={idea} />
+
         <AuthModal
           isOpen={showAuthModal}
           initialMode={authModalMode}
@@ -296,13 +314,8 @@ export default function App() {
       {/* 6. Full Clean Footer */}
       <FullFooter />
 
-      {/* 7. Floating AI Assistant Chat Widget */}
-      <FloatingChatWidget
-        onSuggestionClick={(text) => {
-          setIdea(text);
-          navigateTo("workspace");
-        }}
-      />
+      {/* 7. Floating Gemini 3.7 Flash AI Copilot Agent */}
+      <AiCopilotAgent blueprint={blueprint} originalIdea={idea} />
 
       {/* Modals & Overlays */}
       <AuthModal

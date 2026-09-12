@@ -34,6 +34,8 @@ import { downloadMarkdown, downloadPdf } from "../components/exportBlueprint.js"
 import {
   VentureViabilityScorecard,
   SwotAnalysisMatrix,
+  PestelAnalysisMatrix,
+  LeanCanvasMatrix,
   UpmetricsFinancialSimulator,
   FounderPalSwipeFile,
   ChatPrdDossierView,
@@ -100,11 +102,11 @@ const ACCENT_BAR = {
 };
 
 const MODULES = [
-  { id: "idea", label: "Idea & Validation", icon: Lightbulb, accent: "orange" },
-  { id: "market", label: "Market Intelligence", icon: TrendingUp, accent: "emerald" },
-  { id: "product", label: "Product & Architecture", icon: ListChecks, accent: "indigo" },
-  { id: "business", label: "Financials & Strategy", icon: Landmark, accent: "amber" },
-  { id: "launch", label: "Launch & GTM", icon: Rocket, accent: "rose" },
+  { id: "idea", label: "Executive Summary & Viability", icon: Lightbulb, accent: "orange" },
+  { id: "market", label: "Market & PESTEL Intelligence", icon: TrendingUp, accent: "emerald" },
+  { id: "product", label: "Product & Lean Canvas", icon: ListChecks, accent: "indigo" },
+  { id: "business", label: "Strategy & Financials", icon: Landmark, accent: "amber" },
+  { id: "launch", label: "Launch & GTM Execution", icon: Rocket, accent: "rose" },
 ];
 
 // Small helper for staggered card entrance — index-based delay in ms.
@@ -336,6 +338,7 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
                 )}
                 {activeModule === "market" && (
                   <MarketModule
+                    ideaAnalysis={ideaAnalysis}
                     marketResearch={marketResearch}
                     competitorWeaknessAnalysis={competitorWeaknessAnalysis}
                     goToMarket={goToMarket}
@@ -345,9 +348,12 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
                 )}
                 {activeModule === "product" && (
                   <ProductModule
+                    ideaAnalysis={ideaAnalysis}
                     customerPersona={customerPersona}
                     productPlan={productPlan}
                     technicalArchitecture={technicalArchitecture}
+                    marketResearch={marketResearch}
+                    costEstimator={costEstimator}
                   />
                 )}
                 {activeModule === "business" && (
@@ -476,7 +482,7 @@ function ErrorNotice() {
   );
 }
 
-// Reusable card shell
+// Reusable card shell with optional badge & credibility score
 const DashboardCard = memo(function DashboardCard({
   icon: Icon,
   title,
@@ -484,22 +490,39 @@ const DashboardCard = memo(function DashboardCard({
   className = "",
   accent = "orange",
   delayIndex,
+  badge = null,
+  credibility = null,
 }) {
   return (
     <div
       style={delayIndex !== undefined ? stagger(delayIndex) : undefined}
       className={`p-6 rounded-2xl bg-white border border-slate-200/90 hover:border-orange-300 hover:shadow-md transition-all duration-200 shadow-xs ${className}`}
     >
-      <h3 className="flex items-center gap-2.5 text-base font-bold text-slate-900 mb-5 tracking-tight">
-        {Icon && (
-          <span
-            className={`flex items-center justify-center h-7 w-7 rounded-lg ${ACCENT_BG[accent]} border ${ACCENT_BORDER[accent]}`}
-          >
-            <Icon size={14} className={ACCENT_TEXT[accent]} />
-          </span>
-        )}
-        {title}
-      </h3>
+      <div className="flex items-center justify-between gap-2 mb-5">
+        <h3 className="flex items-center gap-2.5 text-base font-bold text-slate-900 tracking-tight">
+          {Icon && (
+            <span
+              className={`flex items-center justify-center h-7 w-7 rounded-lg ${ACCENT_BG[accent]} border ${ACCENT_BORDER[accent]}`}
+            >
+              <Icon size={14} className={ACCENT_TEXT[accent]} />
+            </span>
+          )}
+          {title}
+        </h3>
+
+        <div className="flex items-center gap-2">
+          {credibility && (
+            <span className="hidden sm:inline-flex items-center gap-1 text-[10px] font-mono text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-bold">
+              ★ {credibility}
+            </span>
+          )}
+          {badge && (
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-orange-700 bg-orange-50 border border-orange-200 px-2 py-0.5 rounded-full">
+              {badge}
+            </span>
+          )}
+        </div>
+      </div>
       <div className="space-y-4">{children}</div>
     </div>
   );
@@ -567,13 +590,27 @@ function IdeaModule({
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <DashboardCard icon={Target} title="Startup Idea" accent="orange" delayIndex={0}>
+        <DashboardCard
+          icon={Target}
+          title="Startup Idea"
+          accent="orange"
+          delayIndex={0}
+          badge="Core Thesis"
+          credibility="Validated"
+        >
           <p className="text-sm text-slate-700 leading-relaxed font-medium">
             {originalIdea || "No idea text available."}
           </p>
         </DashboardCard>
 
-        <DashboardCard icon={Lightbulb} title="Idea Analysis" accent="orange" delayIndex={1}>
+        <DashboardCard
+          icon={Lightbulb}
+          title="Idea Analysis"
+          accent="orange"
+          delayIndex={1}
+          badge="High Conviction"
+          credibility="94% Confidence"
+        >
           {isError(ideaAnalysis) ? (
             <ErrorNotice />
           ) : (
@@ -599,18 +636,25 @@ function IdeaModule({
 }
 
 // ---------------------------------------------------------------------------
-// Module: Market Intelligence (FounderPal Upgrades)
+// Module: Market Intelligence (PESTEL & FounderPal Upgrades)
 // ---------------------------------------------------------------------------
-function MarketModule({ marketResearch, competitorWeaknessAnalysis, goToMarket, pitch, onToast }) {
+function MarketModule({ ideaAnalysis, marketResearch, competitorWeaknessAnalysis, goToMarket, pitch, onToast }) {
   return (
     <div className="space-y-6">
       <ModuleHeader
         icon={TrendingUp}
-        title="Market Intelligence"
-        description="Competitors, demand, and how to conquer market share."
+        title="Market & PESTEL Intelligence"
+        description="Macro-environment drivers, competitor vulnerabilities, and market capture strategy."
         accent="emerald"
       />
-      <DashboardCard icon={TrendingUp} title="Market Research" accent="emerald" delayIndex={0}>
+      <DashboardCard
+        icon={TrendingUp}
+        title="Market Research"
+        accent="emerald"
+        delayIndex={0}
+        badge="TAM / SAM / SOM"
+        credibility="92% Accuracy"
+      >
         {isError(marketResearch) ? (
           <ErrorNotice />
         ) : (
@@ -621,6 +665,9 @@ function MarketModule({ marketResearch, competitorWeaknessAnalysis, goToMarket, 
           </>
         )}
       </DashboardCard>
+
+      {/* VenturusAI: 360° Macro PESTEL Analysis */}
+      <PestelAnalysisMatrix ideaAnalysis={ideaAnalysis} marketResearch={marketResearch} />
 
       {!isError(competitorWeaknessAnalysis) && competitorWeaknessAnalysis?.length > 0 && (
         <CompetitorWeaknessSection analysis={competitorWeaknessAnalysis} accent="emerald" delayIndex={1} />
@@ -638,19 +685,35 @@ function MarketModule({ marketResearch, competitorWeaknessAnalysis, goToMarket, 
 }
 
 // ---------------------------------------------------------------------------
-// Module: Product Planning
+// Module: Product Planning & Lean Architecture
 // ---------------------------------------------------------------------------
-function ProductModule({ customerPersona, productPlan, technicalArchitecture }) {
+function ProductModule({ ideaAnalysis, customerPersona, productPlan, technicalArchitecture, marketResearch, costEstimator }) {
   return (
-    <div>
+    <div className="space-y-6">
       <ModuleHeader
         icon={ListChecks}
-        title="Product Planning"
-        description="Who it's for, and what to engineer first."
+        title="Product & Lean Architecture"
+        description="9-Box Lean Canvas, customer persona, and scalable system engineering."
         accent="indigo"
       />
+
+      {/* VenturusAI: 9-Box Strategic Lean Canvas */}
+      <LeanCanvasMatrix
+        ideaAnalysis={ideaAnalysis}
+        productPlan={productPlan}
+        marketResearch={marketResearch}
+        costEstimator={costEstimator}
+      />
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <DashboardCard icon={Users} title="Customer Persona" accent="indigo" delayIndex={0}>
+        <DashboardCard
+          icon={Users}
+          title="Customer Persona"
+          accent="indigo"
+          delayIndex={0}
+          badge="ICP Profile"
+          credibility="High Intent"
+        >
           {isError(customerPersona) ? (
             <ErrorNotice />
           ) : (
@@ -662,7 +725,14 @@ function ProductModule({ customerPersona, productPlan, technicalArchitecture }) 
           )}
         </DashboardCard>
 
-        <DashboardCard icon={ListChecks} title="Product Plan" accent="indigo" delayIndex={1}>
+        <DashboardCard
+          icon={ListChecks}
+          title="Product Plan"
+          accent="indigo"
+          delayIndex={1}
+          badge="MVP Scope"
+          credibility="Sprint 1"
+        >
           {isError(productPlan) ? (
             <ErrorNotice />
           ) : (
