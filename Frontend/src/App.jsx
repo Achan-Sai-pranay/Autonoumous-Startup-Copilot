@@ -7,6 +7,7 @@
 import { useState, useEffect, useRef } from "react";
 import LoadingTimeline, { AGENT_STEP_NAMES } from "./components/LoadingTimeline.jsx";
 import BlueprintDashboard from "./components/BlueprintDashboard.jsx";
+import WorkspacePage from "./components/WorkspacePage.jsx";
 import SplineBackground from "./components/SplineBackground.jsx";
 import HistoryPanel from "./components/HistoryPanel.jsx";
 import AuthModal from "./components/AuthModal.jsx";
@@ -47,6 +48,15 @@ function buildInitialSteps() {
 }
 
 export default function App() {
+  const [currentView, setCurrentView] = useState(() => {
+    if (typeof window !== "undefined") {
+      const path = window.location.pathname;
+      const hash = window.location.hash;
+      return path === "/app" || hash === "#app" ? "workspace" : "home";
+    }
+    return "home";
+  });
+
   const [idea, setIdea] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [blueprint, setBlueprint] = useState(null);
@@ -60,6 +70,35 @@ export default function App() {
   // --- Startup History & Saved Projects -----------------------------------
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+
+  useEffect(() => {
+    setHistory(getHistory());
+    setCurrentUser(getStoredUser());
+  }, []);
+
+  function navigateTo(view, updateHistory = true) {
+    setCurrentView(view);
+    if (updateHistory && typeof window !== "undefined") {
+      const targetUrl = view === "workspace" ? "/app" : "/";
+      if (window.location.pathname !== targetUrl) {
+        window.history.pushState({ view }, "", targetUrl);
+      }
+    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  useEffect(() => {
+    function handlePopState(e) {
+      const view =
+        e.state?.view ||
+        (window.location.pathname === "/app" || window.location.hash === "#app"
+          ? "workspace"
+          : "home");
+      setCurrentView(view);
+    }
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   const generatorRef = useRef(null);
   const inputRef = useRef(null);
@@ -79,9 +118,7 @@ export default function App() {
     setBlueprint(entry.blueprint);
     setError("");
     setShowHistory(false);
-    setTimeout(() => {
-      generatorRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
+    navigateTo("workspace");
   }
 
   function handleDeleteProject(id) {
@@ -98,26 +135,16 @@ export default function App() {
     setShowAuthModal(false);
   }
 
-  function scrollToGenerator(focus = true) {
-    generatorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-    if (focus) {
-      setTimeout(() => {
-        inputRef.current?.focus();
-      }, 400);
-    }
-  }
-
   function handleLiveDemo() {
     setIdea(
       "An AI-powered B2B platform that audits enterprise vendor contracts, flags compliance risks, and benchmarks pricing automatically."
     );
-    scrollToGenerator(true);
+    navigateTo("workspace");
   }
 
   async function handleGenerate() {
     if (!idea.trim()) {
       setError("Please describe your startup idea first.");
-      scrollToGenerator(true);
       return;
     }
 
@@ -162,12 +189,44 @@ export default function App() {
     }
   }
 
+  // --- VIEW 1: DEDICATED WORKSPACE & COPILOT PAGE (/app) ----------------------
+  if (currentView === "workspace") {
+    return (
+      <div className="relative min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased">
+        <WorkspacePage
+          idea={idea}
+          setIdea={setIdea}
+          onGenerate={handleGenerate}
+          isLoading={isLoading}
+          blueprint={blueprint}
+          setBlueprint={setBlueprint}
+          agentSteps={agentSteps}
+          error={error}
+          setError={setError}
+          onBackToHome={() => navigateTo("home")}
+          onOpenHistory={handleOpenHistory}
+          historyCount={history.length}
+          currentUser={currentUser}
+        />
+
+        <HistoryPanel
+          isOpen={showHistory}
+          onClose={() => setShowHistory(false)}
+          history={history}
+          onLoad={handleLoadProject}
+          onDelete={handleDeleteProject}
+        />
+      </div>
+    );
+  }
+
+  // --- VIEW 2: VENTURUSAI-IDENTICAL HOMEPAGE (/) -----------------------------
   return (
     <div className="relative min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased">
       <SplineBackground />
 
       {/* 1. Top Announcement Bar */}
-      <AnnouncementBanner onCtaClick={() => scrollToGenerator(true)} />
+      <AnnouncementBanner onCtaClick={() => navigateTo("workspace")} />
 
       {/* 2. Sticky Glass Navbar */}
       <Navbar
@@ -177,65 +236,20 @@ export default function App() {
         onOpenAuth={() => setShowAuthModal(true)}
         onSignOut={handleSignOut}
         onCtaClick={handleLiveDemo}
-        onStartClick={() => scrollToGenerator(true)}
+        onStartClick={() => navigateTo("workspace")}
       />
 
       <main className="relative z-10 flex-1 flex flex-col items-center w-full">
         {/* 3. VenturusAI Hero Section (Exact Match) */}
         <Hero
-          onStartClick={() => scrollToGenerator(true)}
+          onStartClick={() => navigateTo("workspace")}
           onDemoClick={handleLiveDemo}
         />
 
         {/* 4. Hero Dashboard Mockup Showcase */}
-        <HeroMockupPreview onCtaClick={() => scrollToGenerator(true)} />
+        <HeroMockupPreview onCtaClick={() => navigateTo("workspace")} />
 
-        {/* 5. Interactive Generator Input Deck - UNBLOCKED AGENT COPILOT */}
-        <div ref={generatorRef} id="generator" className="w-full max-w-3xl px-4 mt-2 mb-16 scroll-mt-20">
-          <div className="text-center mb-4">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-orange-50 text-orange-600 border border-orange-200">
-              <Sparkles size={13} />
-              Autonomous Startup Copilot
-            </span>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-2">
-              Turn your startup idea into a comprehensive venture blueprint
-            </h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Free & instant. No signup required. Evaluated by 12 Autonomous AI Co-Founders.
-            </p>
-          </div>
-
-          <IdeaInput
-            idea={idea}
-            setIdea={setIdea}
-            onGenerate={handleGenerate}
-            isLoading={isLoading}
-            inputRef={inputRef}
-          />
-
-          {error && (
-            <div className="mt-4 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center justify-between">
-              <span>{error}</span>
-              <button
-                onClick={() => setError("")}
-                className="text-red-500 hover:text-red-800 font-bold ml-2 cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-          )}
-
-          {isLoading && <LoadingTimeline steps={agentSteps} />}
-        </div>
-
-        {/* 6. Complete Synthesized Dashboard (when blueprint exists) */}
-        {blueprint && !isLoading && (
-          <div className="w-full border-t border-slate-200/80 bg-slate-50/40 py-8">
-            <BlueprintDashboard blueprint={blueprint} originalIdea={idea} />
-          </div>
-        )}
-
-        {/* 7. VenturusAI Marketing Sections */}
+        {/* 5. VenturusAI Marketing Sections Suite */}
         <div className="w-full">
           <MarqueeLogos />
           <div id="how-it-works">
@@ -243,22 +257,22 @@ export default function App() {
           </div>
           <FeaturesGrid />
           <div id="audience">
-            <AudienceTabs onSelectTab={() => scrollToGenerator(true)} />
+            <AudienceTabs onSelectTab={() => navigateTo("workspace")} />
           </div>
           <TestimonialsSection />
-          <PricingSection onSelectPlan={() => scrollToGenerator(true)} />
-          <FaqSection onCtaClick={() => scrollToGenerator(true)} />
+          <PricingSection onSelectPlan={() => navigateTo("workspace")} />
+          <FaqSection onCtaClick={() => navigateTo("workspace")} />
         </div>
       </main>
 
-      {/* 8. Full Clean Footer */}
+      {/* 6. Full Clean Footer */}
       <FullFooter />
 
-      {/* 9. Floating AI Assistant Chat Widget */}
+      {/* 7. Floating AI Assistant Chat Widget */}
       <FloatingChatWidget
         onSuggestionClick={(text) => {
           setIdea(text);
-          scrollToGenerator(true);
+          navigateTo("workspace");
         }}
       />
 
