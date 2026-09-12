@@ -13,7 +13,6 @@ import HistoryPanel from "./components/HistoryPanel.jsx";
 import AuthModal from "./components/AuthModal.jsx";
 import {
   AnnouncementBanner,
-  HeroMockupPreview,
   MarqueeLogos,
   StatsSection,
   FeaturesGrid,
@@ -246,10 +245,7 @@ export default function App() {
           onDemoClick={handleLiveDemo}
         />
 
-        {/* 4. Hero Dashboard Mockup Showcase */}
-        <HeroMockupPreview onCtaClick={() => navigateTo("workspace")} />
-
-        {/* 5. VenturusAI Marketing Sections Suite */}
+        {/* 4. VenturusAI Marketing Sections Suite */}
         <div className="w-full">
           <MarqueeLogos />
           <div id="how-it-works">
