@@ -102,21 +102,21 @@ export const VenturusViabilityGaugeChart = memo(function VenturusViabilityGaugeC
   const needlePolygon = `${tipX.toFixed(1)},${tipY.toFixed(1)} ${base1X.toFixed(1)},${base1Y.toFixed(1)} ${base2X.toFixed(1)},${base2Y.toFixed(1)}`;
 
   const cleanTitle = ideaTitle
-    ? ideaTitle.length > 32
-      ? ideaTitle.slice(0, 32) + "..."
+    ? ideaTitle.length > 55
+      ? ideaTitle.slice(0, 55) + "..."
       : ideaTitle
     : "this Venture";
 
   return (
-    <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between h-full">
+    <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between">
       {/* Chart Title matching screenshot */}
       <h3 className="text-base sm:text-lg font-bold text-slate-900 text-center tracking-tight mb-2">
         Viability for {cleanTitle}
       </h3>
 
       {/* SVG Semicircle Speedometer Gauge in White & Orange */}
-      <div className="relative flex flex-col items-center justify-center my-auto py-2">
-        <svg viewBox="0 0 320 185" className="w-full max-w-[280px] sm:max-w-[310px] overflow-visible">
+      <div className="relative flex flex-col items-center justify-center my-auto py-3">
+        <svg viewBox="0 0 320 185" className="w-full max-w-[320px] sm:max-w-[360px] overflow-visible">
           {/* Sector 1: Soft Warm Amber-Peach */}
           <path d={sector1Path} fill="#fdba74" className="hover:opacity-90 transition-opacity" />
           {/* Sector 2: Vibrant Orange */}
@@ -196,42 +196,42 @@ export const VenturusMarketSizeBubbleChart = memo(function VenturusMarketSizeBub
   };
 
   const cleanTitle = ideaTitle
-    ? ideaTitle.length > 32
-      ? ideaTitle.slice(0, 32) + "..."
+    ? ideaTitle.length > 55
+      ? ideaTitle.slice(0, 55) + "..."
       : ideaTitle
     : "this Venture";
 
   return (
-    <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between h-full">
+    <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between">
       {/* Chart Title matching screenshot */}
       <h3 className="text-base sm:text-lg font-bold text-slate-900 text-center tracking-tight mb-2">
         Market size estimations for {cleanTitle}
       </h3>
 
-      {/* 3 Overlapping Orange Bubble Circles */}
-      <div className="flex items-end justify-center -space-x-3 sm:-space-x-5 pt-5 pb-3 my-auto">
+      {/* 3 Overlapping Orange Bubble Circles — guaranteed round with shrink-0 & aspect-square */}
+      <div className="flex items-end justify-center -space-x-4 sm:-space-x-6 pt-6 pb-4 my-auto">
         {/* TAM Circle: Largest, Vibrant Brand Orange */}
-        <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white flex flex-col items-center justify-center shadow-lg shadow-orange-500/20 hover:scale-105 transition-transform duration-300 z-10 select-none text-center px-2 border-2 border-orange-400/40">
+        <div className="w-36 h-36 sm:w-44 sm:h-44 shrink-0 aspect-square rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white flex flex-col items-center justify-center shadow-lg shadow-orange-500/20 hover:scale-105 transition-transform duration-300 z-10 select-none text-center px-2 border-2 border-orange-400/40">
           <span className="text-2xl sm:text-3xl font-black font-mono tracking-tight leading-none">
             {tam.value}
           </span>
-          <span className="text-xs sm:text-sm font-extrabold tracking-wider mt-1 opacity-95">
+          <span className="text-xs sm:text-sm font-extrabold tracking-wider mt-1.5 opacity-95">
             TAM
           </span>
         </div>
 
         {/* SAM Circle: Medium, Warm Amber-Orange */}
-        <div className="w-26 h-26 sm:w-36 sm:h-36 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white flex flex-col items-center justify-center shadow-md shadow-orange-500/15 hover:scale-105 transition-transform duration-300 z-20 select-none text-center px-2 border-2 border-amber-300/40">
+        <div className="w-28 h-28 sm:w-36 sm:h-36 shrink-0 aspect-square rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white flex flex-col items-center justify-center shadow-md shadow-orange-500/15 hover:scale-105 transition-transform duration-300 z-20 select-none text-center px-2 border-2 border-amber-300/40">
           <span className="text-xl sm:text-2xl font-black font-mono tracking-tight leading-none">
             {sam.value}
           </span>
-          <span className="text-xs sm:text-sm font-extrabold tracking-wider mt-1 opacity-95">
+          <span className="text-xs sm:text-sm font-extrabold tracking-wider mt-1.5 opacity-95">
             SAM
           </span>
         </div>
 
         {/* SOM Circle: Smallest, Deep Terracotta Burnt Orange */}
-        <div className="w-22 h-22 sm:w-28 sm:h-28 rounded-full bg-gradient-to-br from-orange-800 to-amber-900 text-white flex flex-col items-center justify-center shadow-sm hover:scale-105 transition-transform duration-300 z-30 select-none text-center px-1 border-2 border-orange-700/40">
+        <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 aspect-square rounded-full bg-gradient-to-br from-orange-800 to-amber-900 text-white flex flex-col items-center justify-center shadow-sm hover:scale-105 transition-transform duration-300 z-30 select-none text-center px-1 border-2 border-orange-700/40">
           <span className="text-lg sm:text-xl font-black font-mono tracking-tight leading-none">
             {som.value}
           </span>
@@ -242,36 +242,36 @@ export const VenturusMarketSizeBubbleChart = memo(function VenturusMarketSizeBub
       </div>
 
       {/* Downward Stem Lines and Clean Explanatory Notes */}
-      <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-2 pt-2 border-t border-slate-100 text-center">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-4 pt-4 border-t border-slate-100 text-center">
         {/* TAM Stem + Note */}
         <div className="flex flex-col items-center">
-          <div className="w-0.5 h-7 sm:h-9 bg-orange-500" />
-          <span className="text-[10px] font-mono uppercase tracking-wider text-orange-600 font-bold mt-1.5 block">
+          <div className="w-0.5 h-6 sm:h-8 bg-orange-500 mb-1" />
+          <span className="text-[11px] font-mono uppercase tracking-wider text-orange-600 font-bold block">
             TAM (Total Addressable Market)
           </span>
-          <p className="text-[11px] sm:text-xs text-slate-600 mt-1 leading-snug font-sans">
+          <p className="text-xs text-slate-600 mt-1 leading-relaxed font-sans">
             {tam.description}
           </p>
         </div>
 
         {/* SAM Stem + Note */}
         <div className="flex flex-col items-center">
-          <div className="w-0.5 h-7 sm:h-9 bg-amber-500" />
-          <span className="text-[10px] font-mono uppercase tracking-wider text-amber-700 font-bold mt-1.5 block">
+          <div className="w-0.5 h-6 sm:h-8 bg-amber-500 mb-1" />
+          <span className="text-[11px] font-mono uppercase tracking-wider text-amber-700 font-bold block">
             SAM (Serviceable Available Market)
           </span>
-          <p className="text-[11px] sm:text-xs text-slate-600 mt-1 leading-snug font-sans">
+          <p className="text-xs text-slate-600 mt-1 leading-relaxed font-sans">
             {sam.description}
           </p>
         </div>
 
         {/* SOM Stem + Note */}
         <div className="flex flex-col items-center">
-          <div className="w-0.5 h-7 sm:h-9 bg-orange-800" />
-          <span className="text-[10px] font-mono uppercase tracking-wider text-orange-800 font-bold mt-1.5 block">
+          <div className="w-0.5 h-6 sm:h-8 bg-orange-800 mb-1" />
+          <span className="text-[11px] font-mono uppercase tracking-wider text-orange-800 font-bold block">
             SOM (Serviceable Obtainable Market)
           </span>
-          <p className="text-[11px] sm:text-xs text-slate-600 mt-1 leading-snug font-sans">
+          <p className="text-xs text-slate-600 mt-1 leading-relaxed font-sans">
             {som.description}
           </p>
         </div>
@@ -835,8 +835,8 @@ export const MarketSizingSection = memo(function MarketSizingSection({
         </span>
       </div>
 
-      {/* Signature VenturusAI Visuals: 3-Circle Market Sizing Bubbles & Viability Speedometer Gauge Side-by-Side */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      {/* Signature VenturusAI Visuals: 3-Circle Market Sizing Bubbles & Viability Speedometer Gauge Stacked Vertically */}
+      <div className="flex flex-col gap-6 mb-6">
         <VenturusMarketSizeBubbleChart marketSizing={marketSizing} ideaTitle={ideaTitle || "Target Market"} />
         <VenturusViabilityGaugeChart viabilityScorecard={viabilityScorecard} ideaTitle={ideaTitle || "this Venture"} />
       </div>
