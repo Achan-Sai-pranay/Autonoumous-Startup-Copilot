@@ -28,8 +28,16 @@ import {
   FileDown,
   FileText,
   Loader2,
+  LayoutGrid,
 } from "lucide-react";
 import { downloadMarkdown, downloadPdf } from "../components/exportBlueprint.js";
+import {
+  VentureViabilityScorecard,
+  SwotAnalysisMatrix,
+  UpmetricsFinancialSimulator,
+  FounderPalSwipeFile,
+  ChatPrdDossierView,
+} from "./CompetitorUpgrades.jsx";
 
 // ---------------------------------------------------------------------------
 // Accent system — tuned for White + Orange and crisp multi-module contrast
@@ -104,6 +112,7 @@ const stagger = (i, step = 60) => ({ animationDelay: `${i * step}ms` });
 
 export default function BlueprintDashboard({ blueprint, originalIdea }) {
   const [activeModule, setActiveModule] = useState("idea");
+  const [viewMode, setViewMode] = useState("dashboard"); // "dashboard" | "prd"
   const [exporting, setExporting] = useState(null); // null | "pdf" | "md"
   const [toast, setToast] = useState(null); // null | string
 
@@ -187,6 +196,34 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
 
           {/* Action toolbar */}
           <div className="flex flex-wrap items-center gap-2.5 shrink-0 self-start lg:self-center">
+            {/* ChatPRD View Switcher */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shadow-2xs">
+              <button
+                onClick={() => setViewMode("dashboard")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  viewMode === "dashboard"
+                    ? "bg-white text-orange-600 shadow-xs font-bold"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+                title="Modular Grid Cards"
+              >
+                <LayoutGrid size={13} />
+                <span>Dashboard</span>
+              </button>
+              <button
+                onClick={() => setViewMode("prd")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  viewMode === "prd"
+                    ? "bg-white text-orange-600 shadow-xs font-bold"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+                title="Continuous Notion-grade PRD Dossier"
+              >
+                <FileText size={13} />
+                <span>ChatPRD Dossier</span>
+              </button>
+            </div>
+
             <button
               onClick={handleCopySummary}
               className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-slate-50 border border-slate-200 text-slate-700 hover:text-orange-600 hover:border-orange-300 transition-all shadow-xs active:scale-95"
@@ -241,75 +278,97 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
         </div>
       </div>
 
-      {/* Mobile: horizontal scrollable tabs */}
-      <nav className="md:hidden -mx-4 px-4 mb-6 overflow-x-auto">
-        <div className="flex gap-2 w-max pb-2">
-          {MODULES.map((m) => (
-            <ModuleTabButton
-              key={m.id}
-              module={m}
-              active={activeModule === m.id}
-              onClick={() => setActiveModule(m.id)}
-            />
-          ))}
-        </div>
-      </nav>
-
-      <div className="md:flex md:gap-8 md:items-start">
-        {/* Desktop: sidebar */}
-        <aside className="hidden md:block w-64 shrink-0 sticky top-24 self-start">
-          <div className="bg-white border border-slate-200/80 p-2.5 rounded-2xl space-y-1 shadow-sm">
-            <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
-              Venture Modules
+      {viewMode === "prd" ? (
+        <ChatPrdDossierView
+          blueprint={blueprint}
+          originalIdea={originalIdea}
+          onSwitchToDashboard={() => setViewMode("dashboard")}
+          onExportPdf={handleExportPdf}
+          onExportMarkdown={handleExportMarkdown}
+          onToast={showToast}
+        />
+      ) : (
+        <>
+          {/* Mobile: horizontal scrollable tabs */}
+          <nav className="md:hidden -mx-4 px-4 mb-6 overflow-x-auto">
+            <div className="flex gap-2 w-max pb-2">
+              {MODULES.map((m) => (
+                <ModuleTabButton
+                  key={m.id}
+                  module={m}
+                  active={activeModule === m.id}
+                  onClick={() => setActiveModule(m.id)}
+                />
+              ))}
             </div>
-            {MODULES.map((m) => (
-              <SidebarItem
-                key={m.id}
-                module={m}
-                active={activeModule === m.id}
-                onClick={() => setActiveModule(m.id)}
-              />
-            ))}
-          </div>
-        </aside>
+          </nav>
 
-        {/* Active module content — `key` forces a remount on module change */}
-        <main className="flex-1 min-w-0">
-          <div key={activeModule} className="animate-fade-in">
-            {activeModule === "idea" && (
-              <IdeaModule originalIdea={originalIdea} ideaAnalysis={ideaAnalysis} />
-            )}
-            {activeModule === "market" && (
-              <MarketModule
-                marketResearch={marketResearch}
-                competitorWeaknessAnalysis={competitorWeaknessAnalysis}
-                goToMarket={goToMarket}
-              />
-            )}
-            {activeModule === "product" && (
-              <ProductModule
-                customerPersona={customerPersona}
-                productPlan={productPlan}
-                technicalArchitecture={technicalArchitecture}
-              />
-            )}
-            {activeModule === "business" && (
-              <BusinessModule
-                businessStrategy={businessStrategy}
-                costEstimator={costEstimator}
-                revenueSimulator={revenueSimulator}
-              />
-            )}
-            {activeModule === "launch" && (
-              <LaunchModule
-                launchChecklist={launchChecklist}
-                pitch={pitch}
-                roadmap={roadmap}
-              />
-            )}
+          <div className="md:flex md:gap-8 md:items-start">
+            {/* Desktop: sidebar */}
+            <aside className="hidden md:block w-64 shrink-0 sticky top-24 self-start">
+              <div className="bg-white border border-slate-200/80 p-2.5 rounded-2xl space-y-1 shadow-sm">
+                <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
+                  Venture Modules
+                </div>
+                {MODULES.map((m) => (
+                  <SidebarItem
+                    key={m.id}
+                    module={m}
+                    active={activeModule === m.id}
+                    onClick={() => setActiveModule(m.id)}
+                  />
+                ))}
+              </div>
+            </aside>
+
+            {/* Active module content — `key` forces a remount on module change */}
+            <main className="flex-1 min-w-0">
+              <div key={activeModule} className="animate-fade-in">
+                {activeModule === "idea" && (
+                  <IdeaModule
+                    originalIdea={originalIdea}
+                    ideaAnalysis={ideaAnalysis}
+                    marketResearch={marketResearch}
+                    costEstimator={costEstimator}
+                    competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                    customerPersona={customerPersona}
+                  />
+                )}
+                {activeModule === "market" && (
+                  <MarketModule
+                    marketResearch={marketResearch}
+                    competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                    goToMarket={goToMarket}
+                    pitch={pitch}
+                    onToast={showToast}
+                  />
+                )}
+                {activeModule === "product" && (
+                  <ProductModule
+                    customerPersona={customerPersona}
+                    productPlan={productPlan}
+                    technicalArchitecture={technicalArchitecture}
+                  />
+                )}
+                {activeModule === "business" && (
+                  <BusinessModule
+                    businessStrategy={businessStrategy}
+                    costEstimator={costEstimator}
+                    revenueSimulator={revenueSimulator}
+                  />
+                )}
+                {activeModule === "launch" && (
+                  <LaunchModule
+                    launchChecklist={launchChecklist}
+                    pitch={pitch}
+                    roadmap={roadmap}
+                  />
+                )}
+              </div>
+            </main>
           </div>
-        </main>
-      </div>
+        </>
+      )}
 
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 animate-toast-in">
@@ -480,17 +539,33 @@ const ListField = memo(function ListField({ label, items, accent = "orange" }) {
 });
 
 // ---------------------------------------------------------------------------
-// Module: Idea & Validation
+// Module: Idea & Validation (VenturusAI Upgrades)
 // ---------------------------------------------------------------------------
-function IdeaModule({ originalIdea, ideaAnalysis }) {
+function IdeaModule({
+  originalIdea,
+  ideaAnalysis,
+  marketResearch,
+  costEstimator,
+  competitorWeaknessAnalysis,
+  customerPersona,
+}) {
   return (
-    <div>
+    <div className="space-y-6">
       <ModuleHeader
         icon={Lightbulb}
         title="Idea & Validation"
         description="What you're building, and whether it holds up in the market."
         accent="orange"
       />
+
+      {/* VenturusAI: Venture Viability Index Scorecard */}
+      <VentureViabilityScorecard
+        ideaAnalysis={ideaAnalysis}
+        marketResearch={marketResearch}
+        costEstimator={costEstimator}
+        originalIdea={originalIdea}
+      />
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <DashboardCard icon={Target} title="Startup Idea" accent="orange" delayIndex={0}>
           <p className="text-sm text-slate-700 leading-relaxed font-medium">
@@ -511,14 +586,22 @@ function IdeaModule({ originalIdea, ideaAnalysis }) {
           )}
         </DashboardCard>
       </div>
+
+      {/* VenturusAI: 4-Quadrant Strategic SWOT Analysis Matrix */}
+      <SwotAnalysisMatrix
+        ideaAnalysis={ideaAnalysis}
+        marketResearch={marketResearch}
+        competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+        customerPersona={customerPersona}
+      />
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Module: Market Intelligence
+// Module: Market Intelligence (FounderPal Upgrades)
 // ---------------------------------------------------------------------------
-function MarketModule({ marketResearch, competitorWeaknessAnalysis, goToMarket }) {
+function MarketModule({ marketResearch, competitorWeaknessAnalysis, goToMarket, pitch, onToast }) {
   return (
     <div className="space-y-6">
       <ModuleHeader
@@ -544,7 +627,11 @@ function MarketModule({ marketResearch, competitorWeaknessAnalysis, goToMarket }
       )}
 
       {!isError(goToMarket) && goToMarket && (
-        <GoToMarketSection gtm={goToMarket} accent="emerald" delayIndex={2} />
+        <>
+          <GoToMarketSection gtm={goToMarket} accent="emerald" delayIndex={2} />
+          {/* FounderPal: 1-Click Outreach Swipe File */}
+          <FounderPalSwipeFile gtm={goToMarket} pitch={pitch} onToast={onToast} />
+        </>
       )}
     </div>
   );
@@ -613,7 +700,7 @@ function ProductModule({ customerPersona, productPlan, technicalArchitecture }) 
 }
 
 // ---------------------------------------------------------------------------
-// Module: Business Strategy
+// Module: Business Strategy (Upmetrics Upgrades)
 // ---------------------------------------------------------------------------
 function BusinessModule({ businessStrategy, costEstimator, revenueSimulator }) {
   return (
@@ -635,6 +722,9 @@ function BusinessModule({ businessStrategy, costEstimator, revenueSimulator }) {
           </>
         )}
       </DashboardCard>
+
+      {/* Upmetrics: Interactive Dynamic Financial Simulator & Break-Even Calculator */}
+      <UpmetricsFinancialSimulator costEstimator={costEstimator} revenueSimulator={revenueSimulator} />
 
       <CostRevenueSection cost={costEstimator} revenue={revenueSimulator} accent="amber" delayIndex={1} />
     </div>
