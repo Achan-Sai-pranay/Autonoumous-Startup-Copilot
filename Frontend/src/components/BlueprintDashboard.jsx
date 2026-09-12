@@ -110,11 +110,11 @@ const ACCENT_BAR = {
 };
 
 const MODULES = [
-  { id: "idea", label: "Module 1: Idea & Validation", icon: Lightbulb, accent: "orange" },
-  { id: "frameworks", label: "Module 2: Strategic Frameworks", icon: ShieldCheck, accent: "indigo" },
-  { id: "market", label: "Module 3: Market & Sizing", icon: TrendingUp, accent: "emerald" },
-  { id: "product", label: "Module 4: Product & Tech Architecture", icon: ListChecks, accent: "sky" },
-  { id: "financials", label: "Module 5: Financials & Launch Engine", icon: Rocket, accent: "amber" },
+  { id: "idea", label: "Module 1: Idea & Validation", subtitle: "Scorecard & Mom Test", icon: Lightbulb, accent: "orange" },
+  { id: "frameworks", label: "Module 2: Strategic Frameworks", subtitle: "SWOT & Porter's Forces", icon: ShieldCheck, accent: "orange" },
+  { id: "market", label: "Module 3: Market & Sizing", subtitle: "TAM, SAM, SOM & ICP", icon: TrendingUp, accent: "orange" },
+  { id: "product", label: "Module 4: Product & Architecture", subtitle: "MVP Roadmap & Cloud Stack", icon: ListChecks, accent: "orange" },
+  { id: "financials", label: "Module 5: Finances & Launch", subtitle: "Live Calculator & ARR Burn", icon: Rocket, accent: "orange" },
 ];
 
 // Small helper for staggered card entrance — index-based delay in ms.
@@ -315,35 +315,57 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
         />
       ) : (
         <>
-          {/* Mobile: horizontal scrollable tabs */}
-          <nav className="md:hidden -mx-4 px-4 mb-6 overflow-x-auto">
-            <div className="flex gap-2 w-max pb-2">
-              {MODULES.map((m) => (
-                <ModuleTabButton
-                  key={m.id}
-                  module={m}
-                  active={activeModule === m.id}
-                  onClick={() => setActiveModule(m.id)}
-                />
-              ))}
-            </div>
-          </nav>
+          {/* Mobile & Tablet: Vertical Section Selector (Zero horizontal scroll) */}
+          <VerticalMobileNav
+            modules={MODULES}
+            activeModule={activeModule}
+            onSelectModule={setActiveModule}
+          />
 
           <div className="md:flex md:gap-8 md:items-start">
-            {/* Desktop: frozen / sticky modules sidebar */}
+            {/* Desktop: frozen / sticky vertical modules sidebar matching VenturusAI */}
             <aside className="hidden md:block w-64 shrink-0 sticky top-4 self-start max-h-[calc(100vh-5rem)] overflow-y-auto z-20 scrollbar-thin">
-              <div className="bg-white border border-slate-200/80 p-2.5 rounded-2xl space-y-1 shadow-sm">
-                <div className="px-3 py-2 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
-                  Co-Founder Modules
+              <div className="bg-white border border-slate-200/80 p-3 rounded-2xl space-y-3 shadow-sm">
+                <div>
+                  <div className="px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
+                    Venture Sections
+                  </div>
+                  <div className="space-y-1 mt-1.5">
+                    {MODULES.map((m) => (
+                      <SidebarItem
+                        key={m.id}
+                        module={m}
+                        active={activeModule === m.id}
+                        onClick={() => setActiveModule(m.id)}
+                      />
+                    ))}
+                  </div>
                 </div>
-                {MODULES.map((m) => (
-                  <SidebarItem
-                    key={m.id}
-                    module={m}
-                    active={activeModule === m.id}
-                    onClick={() => setActiveModule(m.id)}
-                  />
-                ))}
+
+                {/* Ask Co-Founder AI Quick Action in Sidebar */}
+                <div className="pt-2.5 border-t border-slate-100">
+                  <div className="px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
+                    AI Co-Founder
+                  </div>
+                  <button
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent("open-cofounder-chat"));
+                    }}
+                    className="w-full mt-1 flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200 hover:bg-orange-100 hover:border-orange-300 transition-all shadow-2xs cursor-pointer group"
+                    title="Open live streaming Co-Founder advisor"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
+                      </span>
+                      <span>Ask Co-Founder AI</span>
+                    </div>
+                    <span className="text-xs font-mono text-orange-500 group-hover:translate-x-0.5 transition-transform">
+                      →
+                    </span>
+                  </button>
+                </div>
               </div>
             </aside>
 
@@ -434,41 +456,109 @@ function ExportButton({ icon: Icon, label, busy, onClick }) {
 // Navigation pieces
 // ---------------------------------------------------------------------------
 const SidebarItem = memo(function SidebarItem({ module, active, onClick }) {
-  const { icon: Icon, label, accent } = module;
+  const { icon: Icon, label, subtitle } = module;
   return (
     <button
       onClick={onClick}
-      className={`group w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all duration-150 ${
+      className={`group w-full flex items-start gap-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 cursor-pointer ${
         active
-          ? "bg-orange-50 text-orange-600 border border-orange-200 shadow-xs font-bold"
+          ? "bg-orange-50 text-orange-700 border border-orange-200/90 shadow-xs font-bold"
           : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 border border-transparent"
       }`}
     >
-      <Icon
-        size={16}
-        className={`transition-colors duration-150 ${
-          active ? ACCENT_TEXT[accent] : "text-slate-400 group-hover:text-slate-600"
+      <span
+        className={`flex items-center justify-center h-7 w-7 rounded-lg shrink-0 mt-0.5 transition-colors ${
+          active ? "bg-orange-500 text-white shadow-2xs" : "bg-slate-100 text-slate-400 group-hover:text-slate-600"
         }`}
-      />
-      <span>{label}</span>
+      >
+        <Icon size={15} />
+      </span>
+      <div className="min-w-0">
+        <p className={`text-xs leading-snug truncate ${active ? "font-bold text-orange-950" : "font-medium"}`}>
+          {label}
+        </p>
+        {subtitle && (
+          <p className="text-[10px] text-slate-400 font-mono leading-none mt-1 truncate">
+            {subtitle}
+          </p>
+        )}
+      </div>
     </button>
   );
 });
 
-const ModuleTabButton = memo(function ModuleTabButton({ module, active, onClick }) {
-  const { icon: Icon, label, accent } = module;
+const VerticalMobileNav = memo(function VerticalMobileNav({ modules, activeModule, onSelectModule }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const activeObj = modules.find((m) => m.id === activeModule) || modules[0];
+  const ActiveIcon = activeObj.icon;
+
   return (
-    <button
-      onClick={onClick}
-      className={`flex items-center gap-2 whitespace-nowrap px-3.5 py-2 rounded-xl text-xs font-medium border transition-all duration-150 ${
-        active
-          ? "bg-orange-500 text-white border-orange-500 shadow-xs font-bold"
-          : "bg-white border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-50"
-      }`}
-    >
-      <Icon size={14} className={active ? "text-white" : ACCENT_TEXT[accent]} />
-      <span>{label}</span>
-    </button>
+    <div className="md:hidden mb-6 bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+      {/* Active Section Bar with Dropdown Toggle */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between p-3.5 bg-white text-left cursor-pointer transition-colors hover:bg-slate-50/80"
+      >
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 shadow-2xs">
+            <ActiveIcon size={18} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono uppercase font-bold text-orange-600">Active Section</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-orange-500 animate-pulse" />
+            </div>
+            <p className="text-xs font-bold text-slate-900 leading-tight mt-0.5">{activeObj.label}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5 bg-slate-100 hover:bg-orange-100 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-700 transition-colors">
+          <span>{isExpanded ? "Close" : "Switch Section"}</span>
+          <span className={`transform transition-transform text-[10px] ${isExpanded ? "rotate-180" : ""}`}>▼</span>
+        </div>
+      </button>
+
+      {/* Vertical Sections Stack (Always vertically aligned, NO horizontal scroll) */}
+      {isExpanded && (
+        <div className="border-t border-slate-100 p-2.5 bg-slate-50/50 space-y-1.5 animate-fade-in">
+          <div className="px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold">
+            All Vertical Sections (Tap to switch)
+          </div>
+          {modules.map((m) => {
+            const { icon: Icon, label, subtitle, id } = m;
+            const isActive = activeModule === id;
+            return (
+              <button
+                key={id}
+                onClick={() => {
+                  onSelectModule(id);
+                  setIsExpanded(false);
+                }}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer ${
+                  isActive
+                    ? "bg-white border-2 border-orange-500 text-orange-700 shadow-xs font-bold"
+                    : "bg-white border border-slate-200/70 text-slate-700 hover:border-orange-200 hover:text-orange-600"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className={`flex items-center justify-center h-8 w-8 rounded-lg ${isActive ? "bg-orange-500 text-white" : "bg-slate-100 text-slate-500"}`}>
+                    <Icon size={15} />
+                  </span>
+                  <div>
+                    <p className="text-xs font-bold">{label}</p>
+                    {subtitle && <p className="text-[10px] text-slate-400 font-mono mt-0.5">{subtitle}</p>}
+                  </div>
+                </div>
+                {isActive && (
+                  <span className="text-xs font-mono font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-200">
+                    Active
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 });
 

@@ -201,6 +201,13 @@ export default function CoFounderChatDrawer({ blueprint = null, originalIdea = "
     }
   }, [messages, isStreaming, isOpen]);
 
+  // Listen for external open triggers (e.g. from sidebar)
+  useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
+    window.addEventListener("open-cofounder-chat", handleOpen);
+    return () => window.removeEventListener("open-cofounder-chat", handleOpen);
+  }, []);
+
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
@@ -345,6 +352,7 @@ export default function CoFounderChatDrawer({ blueprint = null, originalIdea = "
       {!isOpen && (
         <div className="fixed bottom-6 right-6 z-50 animate-bounce-gentle">
           <button
+            id="open-cofounder-chat-btn"
             onClick={() => setIsOpen(true)}
             className="group relative flex items-center gap-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-4 py-3 rounded-2xl shadow-xl shadow-orange-500/25 border border-orange-400/30 transition-all duration-200 active:scale-95 cursor-pointer"
             title="Open AI Co-Founder Chatbot"
