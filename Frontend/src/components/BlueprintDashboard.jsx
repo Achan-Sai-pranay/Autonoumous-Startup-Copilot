@@ -46,6 +46,7 @@ import {
   UpmetricsFinancialSimulator,
   FounderPalSwipeFile,
   ChatPrdDossierView,
+  StrategicOverviewHero,
 } from "./CompetitorUpgrades.jsx";
 
 // ---------------------------------------------------------------------------
@@ -294,6 +295,14 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
           </div>
         </div>
       </div>
+
+      {/* VenturusAI-grade Strategic Overview Hero: Market Sizing Bubbles & Viability Speedometer Gauge */}
+      <StrategicOverviewHero
+        marketSizing={marketSizing}
+        viabilityScorecard={viabilityScorecard}
+        ideaTitle={pitch?.elevatorPitch || originalIdea}
+        domain={ideaAnalysis?.domain}
+      />
 
       {viewMode === "prd" ? (
         <ChatPrdDossierView

@@ -39,9 +39,287 @@ import {
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// 1. VENTURUSAI & STRATEGIC SUITE: Scorecard, Mom Test, SWOT, Porter's & TAM/SAM/SOM
+// VENTURUSAI SIGNATURE CHARTS: Speedometer Gauge & 3-Circle Market Size Bubbles
 // ---------------------------------------------------------------------------
 
+function describeArcSector(cx, cy, r, R, startAngleDeg, endAngleDeg) {
+  const toRad = Math.PI / 180;
+  const startRad = startAngleDeg * toRad;
+  const endRad = endAngleDeg * toRad;
+
+  // Polar coordinates with 0 deg at left (-X), 90 deg at top (-Y), 180 deg at right (+X)
+  const x1 = cx - R * Math.cos(startRad);
+  const y1 = cy - R * Math.sin(startRad);
+  const x2 = cx - R * Math.cos(endRad);
+  const y2 = cy - R * Math.sin(endRad);
+
+  const x3 = cx - r * Math.cos(endRad);
+  const y3 = cy - r * Math.sin(endRad);
+  const x4 = cx - r * Math.cos(startRad);
+  const y4 = cy - r * Math.sin(startRad);
+
+  const largeArc = (endAngleDeg - startAngleDeg) > 180 ? 1 : 0;
+
+  return `M ${x1.toFixed(1)} ${y1.toFixed(1)} A ${R} ${R} 0 ${largeArc} 1 ${x2.toFixed(1)} ${y2.toFixed(1)} L ${x3.toFixed(1)} ${y3.toFixed(1)} A ${r} ${r} 0 ${largeArc} 0 ${x4.toFixed(1)} ${y4.toFixed(1)} Z`;
+}
+
+// ---------------------------------------------------------------------------
+// 1. VENTURUSAI VIABILITY SPEEDOMETER GAUGE CHART
+// ---------------------------------------------------------------------------
+export const VenturusViabilityGaugeChart = memo(function VenturusViabilityGaugeChart({
+  viabilityScorecard,
+  ideaTitle,
+}) {
+  const score = Math.max(0, Math.min(100, viabilityScorecard?.score ?? 84));
+  const marketScore = Math.max(0, Math.min(100, viabilityScorecard?.marketDemandScore ?? 88));
+  const techScore = Math.max(0, Math.min(100, viabilityScorecard?.technicalFeasibilityScore ?? 82));
+  const capitalScore = Math.max(0, Math.min(100, viabilityScorecard?.monetizationScore ?? 85));
+  const verdict = viabilityScorecard?.verdict || "Proceed";
+
+  // SVG Gauge geometry (viewBox 0 0 320 185)
+  const cx = 160;
+  const cy = 152;
+  const R = 125;
+  const r = 75;
+
+  // 3 Colored sectors from 0 deg (left) to 180 deg (right)
+  const sector1Path = describeArcSector(cx, cy, r, R, 3, 57);   // Dark Forest Green
+  const sector2Path = describeArcSector(cx, cy, r, R, 63, 117); // Medium Emerald
+  const sector3Path = describeArcSector(cx, cy, r, R, 123, 177); // Vibrant Bright Green
+
+  // Dynamic Needle coordinates
+  const needleAngleDeg = (score / 100) * 180;
+  const needleRad = needleAngleDeg * (Math.PI / 180);
+  const tipLength = R - 8;
+  const tipX = cx - tipLength * Math.cos(needleRad);
+  const tipY = cy - tipLength * Math.sin(needleRad);
+
+  const perpRad = needleRad + Math.PI / 2;
+  const base1X = cx - 7 * Math.cos(perpRad);
+  const base1Y = cy - 7 * Math.sin(perpRad);
+  const base2X = cx + 7 * Math.cos(perpRad);
+  const base2Y = cy + 7 * Math.sin(perpRad);
+  const needlePolygon = `${tipX.toFixed(1)},${tipY.toFixed(1)} ${base1X.toFixed(1)},${base1Y.toFixed(1)} ${base2X.toFixed(1)},${base2Y.toFixed(1)}`;
+
+  const cleanTitle = ideaTitle
+    ? ideaTitle.length > 32
+      ? ideaTitle.slice(0, 32) + "..."
+      : ideaTitle
+    : "this Venture";
+
+  return (
+    <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between h-full">
+      {/* Chart Title matching screenshot */}
+      <h3 className="text-base sm:text-lg font-bold text-slate-900 text-center tracking-tight mb-2">
+        Viability for {cleanTitle}
+      </h3>
+
+      {/* SVG Semicircle Speedometer Gauge */}
+      <div className="relative flex flex-col items-center justify-center my-auto py-2">
+        <svg viewBox="0 0 320 185" className="w-full max-w-[280px] sm:max-w-[310px] overflow-visible">
+          {/* Sector 1: Dark Forest Green */}
+          <path d={sector1Path} fill="#14532d" className="hover:opacity-90 transition-opacity" />
+          {/* Sector 2: Medium Green */}
+          <path d={sector2Path} fill="#16a34a" className="hover:opacity-90 transition-opacity" />
+          {/* Sector 3: Bright Vibrant Green */}
+          <path d={sector3Path} fill="#22c55e" className="hover:opacity-90 transition-opacity" />
+
+          {/* Dynamic Needle in Royal Purple */}
+          <polygon points={needlePolygon} fill="#7c3aed" className="transition-all duration-700 ease-out drop-shadow-md" />
+
+          {/* Pivot Center Cap */}
+          <circle cx={cx} cy={cy} r={14} fill="#0f172a" />
+          <circle cx={cx} cy={cy} r={6} fill="#a855f7" />
+        </svg>
+
+        {/* Center Score Readout */}
+        <div className="flex items-center justify-center gap-2 mt-1">
+          <span className="text-3xl font-black font-mono text-slate-900 leading-none">
+            {score}
+          </span>
+          <span className="text-xs font-mono text-slate-400 font-semibold">/ 100</span>
+          <span
+            className={`ml-2 px-2.5 py-0.5 rounded-full text-xs font-mono font-bold border ${
+              verdict === "Proceed"
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : verdict === "Pivot Recommended"
+                ? "bg-rose-50 text-rose-700 border-rose-200"
+                : "bg-amber-50 text-amber-700 border-amber-200"
+            }`}
+          >
+            {verdict}
+          </span>
+        </div>
+      </div>
+
+      {/* Footer Thesis matching screenshot */}
+      <div className="mt-4 pt-3 border-t border-slate-100 text-center">
+        <p className="text-xs text-slate-500 leading-relaxed font-sans max-w-md mx-auto">
+          The viability score is a proprietary composite rating based on Market Demand ({marketScore}/100), Technical Feasibility ({techScore}/100), and Monetization Readiness ({capitalScore}/100).
+        </p>
+
+        {/* 3 Micro Sub-Score Badges */}
+        <div className="flex flex-wrap items-center justify-center gap-2 mt-3">
+          <span className="px-2.5 py-1 rounded-xl text-[11px] font-mono bg-emerald-50 text-emerald-800 border border-emerald-200 font-semibold">
+            Demand: <strong>{marketScore}%</strong>
+          </span>
+          <span className="px-2.5 py-1 rounded-xl text-[11px] font-mono bg-indigo-50 text-indigo-800 border border-indigo-200 font-semibold">
+            Tech: <strong>{techScore}%</strong>
+          </span>
+          <span className="px-2.5 py-1 rounded-xl text-[11px] font-mono bg-amber-50 text-amber-800 border border-amber-200 font-semibold">
+            Monetization: <strong>{capitalScore}%</strong>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ---------------------------------------------------------------------------
+// 2. VENTURUSAI 3-CIRCLE BUBBLE MARKET SIZING CHART
+// ---------------------------------------------------------------------------
+export const VenturusMarketSizeBubbleChart = memo(function VenturusMarketSizeBubbleChart({
+  marketSizing,
+  ideaTitle,
+}) {
+  const tam = marketSizing?.tam || {
+    value: "258M",
+    description: "Million potential customers globally across the total market",
+  };
+  const sam = marketSizing?.sam || {
+    value: "51M",
+    description: "Million potential customers in primary language and beachhead ICP",
+  };
+  const som = marketSizing?.som || {
+    value: "13M",
+    description: "Million potential customers in initial beachhead target regions",
+  };
+
+  const cleanTitle = ideaTitle
+    ? ideaTitle.length > 32
+      ? ideaTitle.slice(0, 32) + "..."
+      : ideaTitle
+    : "this Venture";
+
+  return (
+    <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between h-full">
+      {/* Chart Title matching screenshot */}
+      <h3 className="text-base sm:text-lg font-bold text-slate-900 text-center tracking-tight mb-2">
+        Market size estimations for {cleanTitle}
+      </h3>
+
+      {/* 3 Overlapping Green Bubble Circles */}
+      <div className="flex items-end justify-center -space-x-3 sm:-space-x-5 pt-5 pb-3 my-auto">
+        {/* TAM Circle: Largest, Bright Green */}
+        <div className="w-32 h-32 sm:w-44 sm:h-44 rounded-full bg-[#22c55e] text-white flex flex-col items-center justify-center shadow-lg hover:scale-105 transition-transform duration-300 z-10 select-none text-center px-2">
+          <span className="text-2xl sm:text-3xl font-black font-mono tracking-tight leading-none">
+            {tam.value}
+          </span>
+          <span className="text-xs sm:text-sm font-extrabold tracking-wider mt-1 opacity-95">
+            TAM
+          </span>
+        </div>
+
+        {/* SAM Circle: Medium, Rich Green */}
+        <div className="w-26 h-26 sm:w-36 sm:h-36 rounded-full bg-[#16a34a] text-white flex flex-col items-center justify-center shadow-md hover:scale-105 transition-transform duration-300 z-20 select-none text-center px-2">
+          <span className="text-xl sm:text-2xl font-black font-mono tracking-tight leading-none">
+            {sam.value}
+          </span>
+          <span className="text-xs sm:text-sm font-extrabold tracking-wider mt-1 opacity-95">
+            SAM
+          </span>
+        </div>
+
+        {/* SOM Circle: Smallest, Deep Forest Green */}
+        <div className="w-22 h-22 sm:w-28 sm:h-28 rounded-full bg-[#14532d] text-white flex flex-col items-center justify-center shadow-sm hover:scale-105 transition-transform duration-300 z-30 select-none text-center px-1">
+          <span className="text-lg sm:text-xl font-black font-mono tracking-tight leading-none">
+            {som.value}
+          </span>
+          <span className="text-[11px] sm:text-xs font-extrabold tracking-wider mt-1 opacity-95">
+            SOM
+          </span>
+        </div>
+      </div>
+
+      {/* Downward Stem Lines and Clean Explanatory Notes */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-2 pt-2 border-t border-slate-100 text-center">
+        {/* TAM Stem + Note */}
+        <div className="flex flex-col items-center">
+          <div className="w-0.5 h-7 sm:h-9 bg-[#22c55e]" />
+          <span className="text-[10px] font-mono uppercase tracking-wider text-[#16a34a] font-bold mt-1.5 block">
+            TAM (Total Addressable Market)
+          </span>
+          <p className="text-[11px] sm:text-xs text-slate-600 mt-1 leading-snug font-sans">
+            {tam.description}
+          </p>
+        </div>
+
+        {/* SAM Stem + Note */}
+        <div className="flex flex-col items-center">
+          <div className="w-0.5 h-7 sm:h-9 bg-[#16a34a]" />
+          <span className="text-[10px] font-mono uppercase tracking-wider text-[#15803d] font-bold mt-1.5 block">
+            SAM (Serviceable Available Market)
+          </span>
+          <p className="text-[11px] sm:text-xs text-slate-600 mt-1 leading-snug font-sans">
+            {sam.description}
+          </p>
+        </div>
+
+        {/* SOM Stem + Note */}
+        <div className="flex flex-col items-center">
+          <div className="w-0.5 h-7 sm:h-9 bg-[#14532d]" />
+          <span className="text-[10px] font-mono uppercase tracking-wider text-[#14532d] font-bold mt-1.5 block">
+            SOM (Serviceable Obtainable Market)
+          </span>
+          <p className="text-[11px] sm:text-xs text-slate-600 mt-1 leading-snug font-sans">
+            {som.description}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+});
+
+// ---------------------------------------------------------------------------
+// 3. STRATEGIC OVERVIEW HERO ROW (Overview with side-by-side charts)
+// ---------------------------------------------------------------------------
+export const StrategicOverviewHero = memo(function StrategicOverviewHero({
+  marketSizing,
+  viabilityScorecard,
+  ideaTitle,
+  domain,
+}) {
+  return (
+    <div className="mb-8 animate-fade-in">
+      {/* Overview Section Title matching screenshot */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-3">
+          <h2 className="text-2xl sm:text-3xl font-black text-[#15803d] tracking-tight">
+            Overview
+          </h2>
+          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            VENTURE INTELLIGENCE
+          </span>
+        </div>
+        {domain && (
+          <span className="text-xs font-mono text-slate-600 bg-white px-3.5 py-1.5 rounded-xl border border-slate-200 shadow-2xs self-start sm:self-auto">
+            Industry: <strong className="text-slate-900">{domain}</strong>
+          </span>
+        )}
+      </div>
+
+      {/* Side-by-Side Hero Cards: Market Sizing Bubbles & Viability Speedometer */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <VenturusMarketSizeBubbleChart marketSizing={marketSizing} ideaTitle={ideaTitle} />
+        <VenturusViabilityGaugeChart viabilityScorecard={viabilityScorecard} ideaTitle={ideaTitle} />
+      </div>
+    </div>
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Venture Viability Scorecard (Module 1 Component)
+// ---------------------------------------------------------------------------
 export const VentureViabilityScorecard = memo(function VentureViabilityScorecard({
   viabilityScorecard,
   ideaAnalysis,
@@ -64,16 +342,6 @@ export const VentureViabilityScorecard = memo(function VentureViabilityScorecard
     "Over-engineering secondary features prior to securing 10 committed paying pilot users.",
     "Relying on generic AI wrappers without building proprietary domain workflow defensibility.",
   ];
-
-  // Circular gauge calculations
-  const radius = 38;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (score / 100) * circumference;
-
-  const scoreColor =
-    score >= 80 ? "text-emerald-600" : score >= 60 ? "text-amber-600" : "text-rose-600";
-  const strokeColor =
-    score >= 80 ? "#059669" : score >= 60 ? "#d97706" : "#e11d48";
 
   const verdictBadge =
     verdict === "Proceed"
@@ -105,47 +373,15 @@ export const VentureViabilityScorecard = memo(function VentureViabilityScorecard
           </div>
         </div>
 
-        {/* Circular Gauge */}
-        <div className="flex items-center gap-4 self-start sm:self-center bg-slate-50/80 px-4 py-2.5 rounded-2xl border border-slate-200/80">
-          <div className="relative flex items-center justify-center w-14 h-14">
-            <svg className="w-14 h-14 transform -rotate-90" viewBox="0 0 96 96">
-              <circle
-                cx="48"
-                cy="48"
-                r={radius}
-                className="text-slate-200 stroke-current"
-                strokeWidth="8"
-                fill="transparent"
-              />
-              <circle
-                cx="48"
-                cy="48"
-                r={radius}
-                stroke={strokeColor}
-                strokeWidth="8"
-                strokeDasharray={circumference}
-                strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                fill="transparent"
-                className="transition-all duration-1000 ease-out"
-              />
-            </svg>
-            <div className="absolute flex flex-col items-center justify-center">
-              <span className={`text-base font-black font-mono leading-none ${scoreColor}`}>
-                {score}
-              </span>
-              <span className="text-[8px] font-mono text-slate-400">/100</span>
-            </div>
-          </div>
-          <div>
-            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-semibold">
-              Viability Index
-            </span>
-            <span className="text-xs font-bold text-slate-800">
-              {score >= 80 ? "High Conviction" : score >= 60 ? "Moderate Viability" : "High Risk"}
-            </span>
-          </div>
+        <div className="flex items-center gap-3 bg-emerald-50 px-3.5 py-2 rounded-2xl border border-emerald-200 shadow-2xs">
+          <span className="text-xs font-mono uppercase text-emerald-800 font-bold">Score:</span>
+          <span className="text-lg font-black font-mono text-emerald-700">{score}/100</span>
         </div>
+      </div>
+
+      {/* Speedometer Gauge Hero Embed */}
+      <div className="my-6">
+        <VenturusViabilityGaugeChart viabilityScorecard={viabilityScorecard} ideaTitle={originalIdea} />
       </div>
 
       {/* Executive Thesis */}
@@ -600,6 +836,11 @@ export const MarketSizingSection = memo(function MarketSizingSection({
         <span className="text-[10px] font-mono uppercase bg-slate-50 text-slate-500 px-2 py-1 rounded border border-slate-200 font-bold hidden sm:inline-block">
           Bottom-Up Financials
         </span>
+      </div>
+
+      {/* Signature 3-Circle Bubble Chart Embed */}
+      <div className="mb-6">
+        <VenturusMarketSizeBubbleChart marketSizing={marketSizing} ideaTitle="Target Market Sizing" />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
