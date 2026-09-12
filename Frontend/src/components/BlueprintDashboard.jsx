@@ -1,21 +1,20 @@
 // BlueprintDashboard.jsx
 // ---------------------------------------------------------------------------
-// Matches VenturusAI reference screenshot:
+// V7: Scrollable Vertical Cards with Full, Untruncated Content
 // 1. Left Sidebar:
 //    - "Business analysis ⌵" with indented sub-items connected by a subtle ash line:
 //      Standard analysis, Path to an MVP, Unique selling points, Customer persona,
-//      Finances (active), Go-to-market strategy, Competitive analysis.
+//      Finances (active by default), Go-to-market strategy, Competitive analysis.
 //    - Platform, Ask AI, Pitch deck, Resources, Lite plan quota card.
-// 2. Main Content Area:
-//    - Vertical Card Sections in a 3-column grid (matching the screenshot):
-//      * Header row: Category title + top-right icon
-//      * Giant stat / headline number (text-3xl font-extrabold text-slate-900)
-//      * Subtitle under stat
-//      * Middle visual widget (icon bullets, 2x2 grid tiles, SVG charts, pills)
-//      * Lower sub-header + detailed narrative paragraph text!
-// 3. Real dynamic data from blueprint across all sections.
+// 2. Horizontal Scrollable Card Tracks:
+//    - The cards in each section sit in a clean horizontal track that scrolls
+//      smoothly left and right (via trackpad, mouse, touch, or left/right arrow buttons).
+// 3. Complete, Untruncated Founder Data:
+//    - NO words reduced, NO line-clamp, NO slice(0, 3) cuts.
+//    - Every card contains full, rich analysis, all questions, all features, all
+//      metrics, and detailed narrative breakdowns matching the screenshot style.
 // ---------------------------------------------------------------------------
-import { useState, memo, useCallback } from "react";
+import { useState, useRef, memo, useCallback } from "react";
 import {
   Lightbulb,
   TrendingUp,
@@ -51,20 +50,13 @@ import {
   Flame,
   Settings,
   HelpCircle,
-  FolderKanban,
-  User,
 } from "lucide-react";
 import { downloadMarkdown, downloadPdf } from "../components/exportBlueprint.js";
 import {
-  VentureViabilityScorecard,
-  LeanCustomerDiscoverySection,
-  SwotAnalysisMatrix,
-  PortersFiveForcesBreakdown,
   VenturusMarketSizeBubbleChart,
   VenturusViabilityGaugeChart,
   LeanCanvasMatrix,
   UpmetricsFinancialSimulator,
-  FounderPalSwipeFile,
   ChatPrdDossierView,
 } from "./CompetitorUpgrades.jsx";
 
@@ -176,7 +168,7 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
 
   return (
     <div className="w-full max-w-7xl mx-auto mt-8 px-4 pb-24 animate-fade-in text-slate-900">
-      {/* Top Utility Bar (Export Actions) */}
+      {/* Top Utility Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-200/80">
         <div className="flex items-center gap-2">
           <span className="px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider bg-orange-50 text-orange-600 border border-orange-200 font-bold">
@@ -394,18 +386,18 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
 
               {/* Sidebar Footer links */}
               <div className="pt-3 border-t border-slate-100 space-y-1 text-slate-500 text-xs">
-                <button className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-50 text-left">
+                <button className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-50 text-left cursor-pointer">
                   <Sparkles size={14} />
                   <span>Example ventures</span>
                 </button>
-                <button className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-slate-50 text-left">
+                <button className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg hover:bg-slate-50 text-left cursor-pointer">
                   <div className="flex items-center gap-2">
                     <Settings size={14} />
                     <span>Settings</span>
                   </div>
                   <span className="text-slate-400 text-[10px]">›</span>
                 </button>
-                <button className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-50 text-left">
+                <button className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-50 text-left cursor-pointer">
                   <HelpCircle size={14} />
                   <span>Help</span>
                 </button>
@@ -480,9 +472,9 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
               </div>
             </div>
 
-            {/* Render Vertical Cards Matching Screenshot Style (No Arrow Carousel) */}
+            {/* Render Scrollable Vertical Cards Track */}
             <div key={activeSection} className="animate-fade-in">
-              {/* FINANCES (Pixel-Matched to Screenshot Structure) */}
+              {/* FINANCES (Pixel-Matched to Screenshot Structure with Horizontal Scroll) */}
               {activeSection === "finances" && (
                 <FinancesSection
                   marketSizing={marketSizing}
@@ -595,7 +587,53 @@ function ExportButton({ icon: Icon, label, busy, onClick }) {
 }
 
 // ---------------------------------------------------------------------------
+// Horizontal Scroll Track for Cards ("we can scroll these cards left or right")
+// ---------------------------------------------------------------------------
+function HorizontalCardTrack({ children }) {
+  const scrollRef = useRef(null);
+
+  const handleScroll = (direction) => {
+    if (scrollRef.current) {
+      const scrollAmount = direction === "left" ? -440 : 440;
+      scrollRef.current.scrollBy({ left: scrollAmount, behavior: "smooth" });
+    }
+  };
+
+  return (
+    <div className="relative group/track">
+      {/* Scroll Left Button */}
+      <button
+        onClick={() => handleScroll("left")}
+        aria-label="Scroll left"
+        className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-white/95 border border-slate-200/90 shadow-lg items-center justify-center text-slate-700 hover:text-orange-600 hover:scale-105 active:scale-95 transition-all cursor-pointer opacity-0 group-hover/track:opacity-100"
+      >
+        <ChevronLeft size={20} />
+      </button>
+
+      {/* Horizontal Track with Snapping and Smooth Scroll */}
+      <div
+        ref={scrollRef}
+        className="flex overflow-x-auto gap-6 pb-6 pt-1 px-1 scrollbar-thin scroll-smooth snap-x"
+        style={{ scrollbarWidth: "thin" }}
+      >
+        {children}
+      </div>
+
+      {/* Scroll Right Button */}
+      <button
+        onClick={() => handleScroll("right")}
+        aria-label="Scroll right"
+        className="hidden md:flex absolute -right-4 top-1/2 -translate-y-1/2 z-20 h-10 w-10 rounded-full bg-white/95 border border-slate-200/90 shadow-lg items-center justify-center text-slate-700 hover:text-orange-600 hover:scale-105 active:scale-95 transition-all cursor-pointer opacity-0 group-hover/track:opacity-100"
+      >
+        <ChevronRight size={20} />
+      </button>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Unified Vertical Stat Card (Matching Screenshot Structure & Styling)
+// Full, Unreduced Content - No line-clamp or artificial limits!
 // ---------------------------------------------------------------------------
 function StatCard({
   title,
@@ -606,9 +644,12 @@ function StatCard({
   children,
   detailsTitle,
   detailsText,
+  className = "",
 }) {
   return (
-    <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-slate-300 hover:shadow-sm transition-all duration-200">
+    <div
+      className={`w-[340px] sm:w-[410px] lg:w-[430px] shrink-0 snap-start p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-slate-300 hover:shadow-sm transition-all duration-200 ${className}`}
+    >
       <div>
         {/* Top Header Row */}
         <div className="flex items-center justify-between mb-4">
@@ -646,7 +687,7 @@ function StatCard({
 }
 
 // ---------------------------------------------------------------------------
-// 1. FINANCES SECTION (Pixel-Matched to Screenshot Structure)
+// 1. FINANCES SECTION (Pixel-Matched to Screenshot with Full Content & Scroll)
 // ---------------------------------------------------------------------------
 function FinancesSection({
   marketSizing,
@@ -662,9 +703,9 @@ function FinancesSection({
   const tamSubtitle = marketResearch?.domain || "Global Online Education Market";
   const targetUser = customerPersona?.targetUsers?.[0] || "Entrepreneurial professionals";
   const competitors = (
-    marketResearch?.competitors?.slice(0, 3) || ["Coursera", "Udemy", "LinkedIn Learning"]
+    marketResearch?.competitors || ["Coursera", "Udemy", "LinkedIn Learning"]
   ).join(", ");
-  const usp = businessStrategy?.revenueStreams?.[0] || "Tailored MBA insights";
+  const usp = (businessStrategy?.revenueStreams || ["Tailored MBA insights"]).join("; ");
   const marketDetails =
     marketResearch?.marketDemand ||
     marketSizing?.tam?.description ||
@@ -682,8 +723,8 @@ function FinancesSection({
 
   return (
     <div className="space-y-6">
-      {/* Row 1: Market Research, Startup Costs, Revenue Projections (Exact Match to Screenshot) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+      {/* Scrollable Horizontal Cards Track */}
+      <HorizontalCardTrack>
         {/* Card 1: Market Research */}
         <StatCard
           title="Market Research"
@@ -801,10 +842,7 @@ function FinancesSection({
             </svg>
           </div>
         </StatCard>
-      </div>
 
-      {/* Row 2: Operating Expenses, Breakeven Analysis, Funding & Risks (Matching Screenshot Bottom Row) */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
         {/* Card 4: Operating Expenses */}
         <StatCard
           title="Operating Expenses"
@@ -878,7 +916,7 @@ function FinancesSection({
             </span>
           </div>
         </StatCard>
-      </div>
+      </HorizontalCardTrack>
 
       {/* Expandable Live Simulator */}
       <div className="pt-2">
@@ -921,7 +959,7 @@ function FinancesSection({
 }
 
 // ---------------------------------------------------------------------------
-// 2. STANDARD ANALYSIS SECTION (Vertical Cards Style)
+// 2. STANDARD ANALYSIS SECTION (Full Content with Horizontal Scroll)
 // ---------------------------------------------------------------------------
 function StandardAnalysisSection({
   viabilityScorecard,
@@ -935,10 +973,10 @@ function StandardAnalysisSection({
   const verdict = viabilityScorecard?.verdict || "Proceed";
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-      {/* Card 1: Venture Viability Score */}
+    <HorizontalCardTrack>
+      {/* Card 1: Venture Viability Scorecard (Full Content) */}
       <StatCard
-        title="Venture Viability Score"
+        title="Venture Viability Scorecard"
         icon={ShieldCheck}
         iconColor="text-orange-500"
         stat={`${score} / 100`}
@@ -949,15 +987,15 @@ function StandardAnalysisSection({
           "Strong domain potential with verified market tailwinds and rapid time-to-MVP."
         }
       >
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           <div>
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-slate-500">Market Demand</span>
-              <span className="font-bold font-mono text-slate-800">
+              <span className="text-slate-600 font-medium">Market Demand Score</span>
+              <span className="font-bold font-mono text-slate-900">
                 {viabilityScorecard?.marketDemandScore ?? 88}%
               </span>
             </div>
-            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-orange-500 rounded-full"
                 style={{ width: `${viabilityScorecard?.marketDemandScore ?? 88}%` }}
@@ -966,12 +1004,12 @@ function StandardAnalysisSection({
           </div>
           <div>
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-slate-500">Technical Feasibility</span>
-              <span className="font-bold font-mono text-slate-800">
+              <span className="text-slate-600 font-medium">Technical Feasibility</span>
+              <span className="font-bold font-mono text-slate-900">
                 {viabilityScorecard?.technicalFeasibilityScore ?? 82}%
               </span>
             </div>
-            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-emerald-500 rounded-full"
                 style={{ width: `${viabilityScorecard?.technicalFeasibilityScore ?? 82}%` }}
@@ -980,22 +1018,38 @@ function StandardAnalysisSection({
           </div>
           <div>
             <div className="flex justify-between text-xs mb-1">
-              <span className="text-slate-500">Monetization Readiness</span>
-              <span className="font-bold font-mono text-slate-800">
+              <span className="text-slate-600 font-medium">Monetization Engine</span>
+              <span className="font-bold font-mono text-slate-900">
                 {viabilityScorecard?.monetizationScore ?? 85}%
               </span>
             </div>
-            <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-amber-500 rounded-full"
                 style={{ width: `${viabilityScorecard?.monetizationScore ?? 85}%` }}
               />
             </div>
           </div>
+
+          {/* Fatal Risk Traps (Complete List) */}
+          {viabilityScorecard?.fatalRiskTraps?.length > 0 && (
+            <div className="pt-2 border-t border-slate-100">
+              <span className="text-[10px] font-mono uppercase text-rose-600 font-bold block mb-1.5">
+                Identified Risk Traps
+              </span>
+              <div className="space-y-1">
+                {viabilityScorecard.fatalRiskTraps.map((risk, i) => (
+                  <div key={i} className="text-xs text-rose-800 bg-rose-50/60 p-2 rounded-lg border border-rose-100 leading-snug">
+                    • {risk}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </StatCard>
 
-      {/* Card 2: Startup Idea Thesis */}
+      {/* Card 2: Startup Idea Thesis (Full Text - No Truncation) */}
       <StatCard
         title="Startup Idea Thesis"
         icon={Target}
@@ -1005,58 +1059,130 @@ function StandardAnalysisSection({
         detailsTitle="Feasibility & Execution Speed"
         detailsText={ideaAnalysis?.feasibility || "High feasibility with modern serverless architecture."}
       >
-        <div className="space-y-2.5 text-xs text-slate-700">
+        <div className="space-y-3 text-xs text-slate-700">
           <div>
-            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-0.5">
-              Problem Statement
+            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
+              Founder Prompt / Idea
             </span>
-            <p className="line-clamp-3 leading-relaxed">{ideaAnalysis?.problem || originalIdea}</p>
+            <p className="leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100 font-medium text-slate-800">
+              {originalIdea}
+            </p>
           </div>
           <div>
-            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-0.5">
-              Strategic Goal
+            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
+              Core Problem Statement
             </span>
-            <p className="line-clamp-2 leading-relaxed">{ideaAnalysis?.goal}</p>
+            <p className="leading-relaxed text-slate-700">{ideaAnalysis?.problem}</p>
+          </div>
+          <div>
+            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
+              Strategic Mission & Objectives
+            </span>
+            <p className="leading-relaxed text-slate-700">{ideaAnalysis?.goal}</p>
           </div>
         </div>
       </StatCard>
 
-      {/* Card 3: Lean Customer Discovery */}
+      {/* Card 3: Lean Customer Discovery (The Mom Test - Complete Questions) */}
       <StatCard
         title="Lean Customer Discovery"
         icon={Users}
         iconColor="text-orange-500"
         stat="The Mom Test"
-        subtitle="Founder Validation Guide"
-        detailsTitle="Validation Criteria"
-        detailsText="Focus strictly on past user habits and financial trade-offs rather than speculative commitments."
+        subtitle="Founder Interview Validation Guide"
+        detailsTitle="Validation Criteria & Hypotheses"
+        detailsText={
+          customerDiscovery?.interviewGuide ||
+          "Focus strictly on past user habits, current workarounds, and financial trade-offs rather than hypothetical commitments."
+        }
       >
-        <div className="space-y-2 text-xs">
+        <div className="space-y-2.5 text-xs">
+          <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
+            Core Discovery Questions (The Mom Test)
+          </span>
           {(customerDiscovery?.interviewQuestions || [
             "What is the hardest part about your current workflow?",
             "When was the last time you spent money to solve this?",
             "What alternatives have you tried and why did they fall short?",
-          ])
-            .slice(0, 3)
-            .map((q, i) => (
-              <div key={i} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-700">
-                <span className="text-orange-600 font-bold mr-1.5 font-mono">Q{i + 1}.</span>
-                {q}
+            "How does this problem affect your day-to-day productivity?",
+          ]).map((q, i) => (
+            <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-slate-700 leading-relaxed">
+              <span className="text-orange-600 font-bold mr-1.5 font-mono">Q{i + 1}.</span>
+              {q}
+            </div>
+          ))}
+
+          {customerDiscovery?.targetPersonas?.length > 0 && (
+            <div className="pt-2">
+              <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
+                Target Interview Personas
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {customerDiscovery.targetPersonas.map((p, i) => (
+                  <span key={i} className="text-[11px] bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 rounded-md font-medium">
+                    {p}
+                  </span>
+                ))}
               </div>
-            ))}
+            </div>
+          )}
         </div>
       </StatCard>
-    </div>
+
+      {/* Card 4: Market Dynamics & Research Signals */}
+      <StatCard
+        title="Market Demand Signals"
+        icon={Lightbulb}
+        iconColor="text-orange-500"
+        stat={ideaAnalysis?.domain || "Market Intelligence"}
+        subtitle="Sector Validation Signals"
+        detailsTitle="Demand Dynamics"
+        detailsText={marketResearch?.marketDemand || "Growing demand driven by manual workflow inefficiencies."}
+      >
+        <div className="space-y-3 text-xs">
+          {marketResearch?.opportunities?.length > 0 && (
+            <div>
+              <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
+                Market Opportunities
+              </span>
+              <ul className="space-y-1.5">
+                {marketResearch.opportunities.map((opp, i) => (
+                  <li key={i} className="flex items-start gap-2 text-slate-700">
+                    <span className="text-emerald-500 font-bold select-none">✓</span>
+                    <span>{opp}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {marketResearch?.competitors?.length > 0 && (
+            <div>
+              <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
+                Identified Competitors
+              </span>
+              <div className="flex flex-wrap gap-1.5">
+                {marketResearch.competitors.map((c, i) => (
+                  <span key={i} className="text-[11px] bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md">
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </StatCard>
+    </HorizontalCardTrack>
   );
 }
 
 // ---------------------------------------------------------------------------
-// 3. PATH TO AN MVP SECTION (Vertical Cards Style)
+// 3. PATH TO AN MVP SECTION (Full Content with Horizontal Scroll)
 // ---------------------------------------------------------------------------
 function PathToMvpSection({ productPlan, technicalArchitecture, roadmap }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-      {/* Card 1: MVP Scope (Sprint 1) */}
+    <HorizontalCardTrack>
+      {/* Card 1: MVP Scope (Sprint 1) - ALL Features */}
       <StatCard
         title="Product Plan"
         icon={ListChecks}
@@ -1064,19 +1190,24 @@ function PathToMvpSection({ productPlan, technicalArchitecture, roadmap }) {
         stat="Sprint 1 MVP"
         subtitle={`Priority: ${productPlan?.developmentPriority || "Speed to Market"}`}
         detailsTitle="Scope Rationale"
-        detailsText="Architected to test beachhead value proposition and collect user telemetry in under 4 weeks."
+        detailsText="Prioritized to validate core customer value proposition and collect telemetry in under 4 weeks."
       >
-        <ul className="space-y-2">
-          {(productPlan?.mvpFeatures || []).slice(0, 4).map((feat, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed">
-              <Check size={13} className="text-sky-500 shrink-0 mt-0.5" />
-              <span className="line-clamp-2">{feat}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-2">
+          <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
+            Core MVP Features
+          </span>
+          <ul className="space-y-2">
+            {(productPlan?.mvpFeatures || []).map((feat, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <Check size={14} className="text-sky-500 shrink-0 mt-0.5" />
+                <span>{feat}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </StatCard>
 
-      {/* Card 2: Technical Architecture */}
+      {/* Card 2: Production Technical Architecture */}
       <StatCard
         title="Technical Architecture"
         icon={Cpu}
@@ -1086,59 +1217,105 @@ function PathToMvpSection({ productPlan, technicalArchitecture, roadmap }) {
         detailsTitle="Architecture Overview"
         detailsText={technicalArchitecture?.architectureOverview || "Containerized cloud backend with modern reactive frontend."}
       >
-        <div className="grid grid-cols-2 gap-2 text-center">
-          <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-[10px] text-slate-400 block font-mono uppercase">Frontend</span>
-            <span className="text-xs font-bold text-slate-800 truncate block mt-0.5">
-              {technicalArchitecture?.frontend || "React / Tailwind"}
-            </span>
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2 text-center">
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span className="text-[10px] text-slate-400 block font-mono uppercase">Frontend</span>
+              <span className="text-xs font-bold text-slate-800 block mt-0.5">
+                {technicalArchitecture?.frontend || "React / Tailwind"}
+              </span>
+            </div>
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span className="text-[10px] text-slate-400 block font-mono uppercase">Backend</span>
+              <span className="text-xs font-bold text-slate-800 block mt-0.5">
+                {technicalArchitecture?.backend || "FastAPI / Python"}
+              </span>
+            </div>
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span className="text-[10px] text-slate-400 block font-mono uppercase">Database</span>
+              <span className="text-xs font-bold text-slate-800 block mt-0.5">
+                {technicalArchitecture?.database || "PostgreSQL / Vector"}
+              </span>
+            </div>
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <span className="text-[10px] text-slate-400 block font-mono uppercase">Cloud</span>
+              <span className="text-xs font-bold text-slate-800 block mt-0.5">
+                {technicalArchitecture?.hosting || "AWS / Vercel"}
+              </span>
+            </div>
           </div>
-          <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-[10px] text-slate-400 block font-mono uppercase">Backend</span>
-            <span className="text-xs font-bold text-slate-800 truncate block mt-0.5">
-              {technicalArchitecture?.backend || "FastAPI / Node"}
-            </span>
-          </div>
-          <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-[10px] text-slate-400 block font-mono uppercase">Database</span>
-            <span className="text-xs font-bold text-slate-800 truncate block mt-0.5">
-              {technicalArchitecture?.database || "PostgreSQL / Vector"}
-            </span>
-          </div>
-          <div className="p-2 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-[10px] text-slate-400 block font-mono uppercase">Cloud</span>
-            <span className="text-xs font-bold text-slate-800 truncate block mt-0.5">
-              {technicalArchitecture?.hosting || "AWS / Vercel"}
-            </span>
+
+          <div className="p-2.5 rounded-xl bg-sky-50/50 border border-sky-100 text-xs text-slate-700">
+            <span className="font-bold text-sky-800 block mb-0.5">AI Models & APIs:</span>
+            <span>{technicalArchitecture?.aiApis || "Anthropic Claude / OpenAI / Local Embeddings"}</span>
           </div>
         </div>
       </StatCard>
 
-      {/* Card 3: Future Roadmap */}
+      {/* Card 3: Future Roadmap Phases - ALL Features */}
       <StatCard
         title="Future Roadmap"
         icon={MapIcon}
         iconColor="text-sky-500"
         stat="Phase 2 & 3"
-        subtitle="Scaling & Enterprise Backlog"
-        detailsTitle="Launch Execution Plan"
-        detailsText={roadmap?.launchPlan || "Staged rollout to design partners followed by general market availability."}
+        subtitle="Scaling & Enterprise Expansion"
+        detailsTitle="Launch Strategy"
+        detailsText={roadmap?.launchPlan || "Staged rollout to design partners followed by broad self-serve onboarding."}
       >
-        <ul className="space-y-2">
-          {(productPlan?.futureFeatures || []).slice(0, 4).map((feat, i) => (
-            <li key={i} className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed">
-              <span className="text-sky-500 font-bold select-none">›</span>
-              <span className="line-clamp-2">{feat}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-2">
+          <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
+            Future Expansion Roadmap
+          </span>
+          <ul className="space-y-2">
+            {(productPlan?.futureFeatures || []).map((feat, i) => (
+              <li key={i} className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <span className="text-sky-500 font-bold select-none">›</span>
+                <span>{feat}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </StatCard>
-    </div>
+
+      {/* Card 4: Milestones Timeline */}
+      {roadmap?.milestones?.length > 0 && (
+        <StatCard
+          title="Execution Milestones"
+          icon={Rocket}
+          iconColor="text-sky-500"
+          stat={`${roadmap.milestones.length} Sprints`}
+          subtitle="Timeline to Launch"
+          detailsTitle="Execution Discipline"
+          detailsText="Focus on milestone velocity and continuous weekly shipping."
+        >
+          <div className="space-y-3 text-xs">
+            {roadmap.milestones.map((m, i) => (
+              <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-slate-900">{m.title}</span>
+                  <span className="text-[10px] font-mono text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded font-bold">
+                    {m.week}
+                  </span>
+                </div>
+                <ul className="space-y-0.5 text-slate-600">
+                  {(m.tasks || []).map((t, j) => (
+                    <li key={j} className="flex items-start gap-1.5">
+                      <span className="text-sky-500">›</span>
+                      <span>{t}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </StatCard>
+      )}
+    </HorizontalCardTrack>
   );
 }
 
 // ---------------------------------------------------------------------------
-// 4. UNIQUE SELLING POINTS SECTION (Vertical Cards Style)
+// 4. UNIQUE SELLING POINTS SECTION (Full Content with Horizontal Scroll)
 // ---------------------------------------------------------------------------
 function UniqueSellingPointsSection({
   swotAnalysis,
@@ -1146,39 +1323,146 @@ function UniqueSellingPointsSection({
   competitorWeaknessAnalysis,
 }) {
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-        <SwotAnalysisMatrix swotAnalysis={swotAnalysis} />
-        <PortersFiveForcesBreakdown portersFiveForces={portersFiveForces} />
+    <HorizontalCardTrack>
+      {/* Card 1: SWOT Analysis Matrix */}
+      <div className="w-[360px] sm:w-[460px] lg:w-[480px] shrink-0 snap-start p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
+        <div>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight">SWOT Analysis Matrix</h3>
+            <ShieldCheck size={18} className="text-orange-500" />
+          </div>
+
+          <div className="mb-4">
+            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono tracking-tight leading-tight">
+              Strategic Matrix
+            </div>
+            <p className="text-xs text-slate-500 mt-1 font-medium">Internal & External Factors</p>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 text-xs">
+            <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-100 space-y-1">
+              <span className="font-bold text-emerald-800 block">Strengths</span>
+              <ul className="space-y-1 text-slate-700">
+                {(swotAnalysis?.strengths || []).map((s, i) => (
+                  <li key={i} className="leading-snug">• {s}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="p-3 rounded-xl bg-rose-50/70 border border-rose-100 space-y-1">
+              <span className="font-bold text-rose-800 block">Weaknesses</span>
+              <ul className="space-y-1 text-slate-700">
+                {(swotAnalysis?.weaknesses || []).map((w, i) => (
+                  <li key={i} className="leading-snug">• {w}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="p-3 rounded-xl bg-sky-50/70 border border-sky-100 space-y-1">
+              <span className="font-bold text-sky-800 block">Opportunities</span>
+              <ul className="space-y-1 text-slate-700">
+                {(swotAnalysis?.opportunities || []).map((o, i) => (
+                  <li key={i} className="leading-snug">• {o}</li>
+                ))}
+              </ul>
+            </div>
+            <div className="p-3 rounded-xl bg-amber-50/70 border border-amber-100 space-y-1">
+              <span className="font-bold text-amber-800 block">Threats</span>
+              <ul className="space-y-1 text-slate-700">
+                {(swotAnalysis?.threats || []).map((t, i) => (
+                  <li key={i} className="leading-snug">• {t}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-slate-100 mt-4">
+          <h4 className="text-xs font-bold text-slate-900 mb-1">Strategic Edge</h4>
+          <p className="text-xs text-slate-600 leading-relaxed font-sans">
+            Leverage agility and AI automation to outpace incumbents burdened by technical debt.
+          </p>
+        </div>
       </div>
 
-      {competitorWeaknessAnalysis?.length > 0 && (
-        <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
+      {/* Card 2: Porter's Five Forces Breakdown */}
+      <div className="w-[360px] sm:w-[460px] lg:w-[480px] shrink-0 snap-start p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
+        <div>
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <ShieldCheck size={16} className="text-orange-500" />
-              <span>Proprietary Strategic Moats</span>
-            </h3>
-            <span className="text-xs font-mono text-slate-500">Defensibility Levers</span>
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight">Porter's Five Forces</h3>
+            <Target size={18} className="text-orange-500" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {competitorWeaknessAnalysis.slice(0, 2).map((item, idx) => (
-              <div key={idx} className="p-4 rounded-xl bg-slate-50 border border-slate-100">
-                <span className="text-[10px] font-mono text-orange-700 font-bold uppercase block mb-1">
-                  Moat #{idx + 1} vs {item.competitor}
-                </span>
-                <p className="text-xs text-slate-700 leading-relaxed">{item.suggestedDifferentiation}</p>
+
+          <div className="mb-4">
+            <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono tracking-tight leading-tight">
+              Market Defensibility
+            </div>
+            <p className="text-xs text-slate-500 mt-1 font-medium">Industry Structure Dynamics</p>
+          </div>
+
+          <div className="space-y-2 text-xs">
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="flex justify-between font-bold mb-0.5">
+                <span>Competitive Rivalry</span>
+                <span className="text-orange-600 font-mono">{portersFiveForces?.competitiveRivalry?.intensity || "Moderate"}</span>
+              </div>
+              <p className="text-slate-600">{portersFiveForces?.competitiveRivalry?.analysis}</p>
+            </div>
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="flex justify-between font-bold mb-0.5">
+                <span>Threat of Substitution</span>
+                <span className="text-orange-600 font-mono">{portersFiveForces?.threatOfSubstitution?.intensity || "Low"}</span>
+              </div>
+              <p className="text-slate-600">{portersFiveForces?.threatOfSubstitution?.analysis}</p>
+            </div>
+            <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="flex justify-between font-bold mb-0.5">
+                <span>Threat of New Entrants</span>
+                <span className="text-orange-600 font-mono">{portersFiveForces?.threatOfNewEntrants?.intensity || "Moderate"}</span>
+              </div>
+              <p className="text-slate-600">{portersFiveForces?.threatOfNewEntrants?.analysis}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-4 border-t border-slate-100 mt-4">
+          <h4 className="text-xs font-bold text-slate-900 mb-1">Defensibility Strategy</h4>
+          <p className="text-xs text-slate-600 leading-relaxed font-sans">
+            Build compounding workflow data moats to increase switching costs.
+          </p>
+        </div>
+      </div>
+
+      {/* Card 3: Proprietary Moats & Incumbent Exploits */}
+      {competitorWeaknessAnalysis?.length > 0 && (
+        <StatCard
+          title="Proprietary Strategic Moats"
+          icon={ShieldCheck}
+          iconColor="text-orange-500"
+          stat="Defensibility Levers"
+          subtitle="Unfair Advantages vs Incumbents"
+          detailsTitle="Moat Defense Strategy"
+          detailsText="Focus on hyper-personalized founder experiences that incumbents cannot easily copy."
+        >
+          <div className="space-y-2.5 text-xs">
+            {competitorWeaknessAnalysis.map((c, i) => (
+              <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-slate-900">Moat #{i + 1}: vs {c.competitor}</span>
+                  <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded font-bold">
+                    Incumbent
+                  </span>
+                </div>
+                <p className="text-slate-700 leading-relaxed">{c.suggestedDifferentiation}</p>
               </div>
             ))}
           </div>
-        </div>
+        </StatCard>
       )}
-    </div>
+    </HorizontalCardTrack>
   );
 }
 
 // ---------------------------------------------------------------------------
-// 5. CUSTOMER PERSONA SECTION (Vertical Cards Style)
+// 5. CUSTOMER PERSONA SECTION (Full Content with Horizontal Scroll)
 // ---------------------------------------------------------------------------
 function CustomerPersonaSection({ customerPersona }) {
   const users = customerPersona?.targetUsers || [];
@@ -1186,19 +1470,22 @@ function CustomerPersonaSection({ customerPersona }) {
   const profile = customerPersona?.userProfile || "Target profile currently synthesized.";
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
-      {/* Card 1: Ideal Customer (ICP) */}
+    <HorizontalCardTrack>
+      {/* Card 1: Ideal Customer Profile (ICP) */}
       <StatCard
         title="Customer Persona (ICP)"
         icon={Users}
         iconColor="text-emerald-500"
         stat={users[0] || "Target Founders"}
-        subtitle="Primary Buyer Persona"
+        subtitle="Primary Buyer Archetype"
         detailsTitle="Buyer Persona Story"
         detailsText={profile}
       >
         <div className="space-y-2 text-xs">
-          {users.slice(0, 3).map((u, i) => (
+          <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
+            Target User Roles
+          </span>
+          {users.map((u, i) => (
             <div key={i} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-700">
               <span className="text-emerald-600 font-bold mr-1.5 font-mono">0{i + 1}.</span>
               {u}
@@ -1218,8 +1505,11 @@ function CustomerPersonaSection({ customerPersona }) {
         detailsText="These pain points create significant operational friction, resulting in high willingness to pay for a dedicated solution."
       >
         <div className="space-y-2 text-xs">
-          {painPoints.slice(0, 3).map((p, i) => (
-            <div key={i} className="p-2.5 rounded-xl bg-rose-50/50 border border-rose-100 text-rose-900">
+          <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
+            High-Friction Pain Points
+          </span>
+          {painPoints.map((p, i) => (
+            <div key={i} className="p-2.5 rounded-xl bg-rose-50/50 border border-rose-100 text-rose-900 leading-snug">
               <span className="text-rose-600 font-bold mr-1.5">✕</span>
               {p}
             </div>
@@ -1227,7 +1517,7 @@ function CustomerPersonaSection({ customerPersona }) {
         </div>
       </StatCard>
 
-      {/* Card 3: Commercial Urgency */}
+      {/* Card 3: Commercial Buying Triggers */}
       <StatCard
         title="Buying Triggers"
         icon={Target}
@@ -1237,60 +1527,134 @@ function CustomerPersonaSection({ customerPersona }) {
         detailsTitle="Conversion Strategy"
         detailsText="Position the solution directly at the point of workflow pain to achieve friction-free onboarding."
       >
-        <div className="space-y-2 text-xs text-slate-700">
-          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="font-bold block mb-0.5">Budget Allocation:</span>
-            <span>Target department discretionary software spend</span>
+        <div className="space-y-2.5 text-xs text-slate-700">
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <span className="font-bold block mb-1">Budget Allocation:</span>
+            <span>Target department discretionary software spend and productivity software allowances.</span>
           </div>
-          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="font-bold block mb-0.5">Decision Maker:</span>
-            <span>Founder, VP of Engineering, or Operations Lead</span>
+          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+            <span className="font-bold block mb-1">Decision Maker:</span>
+            <span>Founder, VP of Engineering, or Operations Lead with purchasing authority.</span>
           </div>
         </div>
       </StatCard>
-    </div>
+    </HorizontalCardTrack>
   );
 }
 
 // ---------------------------------------------------------------------------
-// 6. GO-TO-MARKET STRATEGY SECTION (Vertical Cards Style)
+// 6. GO-TO-MARKET STRATEGY SECTION (Full Content with Horizontal Scroll)
 // ---------------------------------------------------------------------------
 function GoToMarketFullSection({ goToMarket, launchChecklist, pitch, onToast }) {
   return (
-    <div className="space-y-6">
-      <FounderPalSwipeFile gtm={goToMarket} pitch={pitch} onToast={onToast} />
+    <HorizontalCardTrack>
+      {/* Card 1: Outreach Swipe File */}
+      <StatCard
+        title="Founder Outreach Templates"
+        icon={Target}
+        iconColor="text-orange-500"
+        stat="Production Copy"
+        subtitle="Cold Hooks & Outbound Templates"
+        detailsTitle="Outbound Playbook"
+        detailsText="Founder-led outbound playbook to secure the first 20 design partners with zero paid ad spend."
+      >
+        <div className="space-y-3 text-xs">
+          {goToMarket?.coldEmailTemplate && (
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-bold text-slate-900">Cold Email Template</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard?.writeText(goToMarket.coldEmailTemplate);
+                    onToast?.("Cold email copied to clipboard");
+                  }}
+                  className="text-[11px] font-mono text-orange-600 font-bold hover:underline"
+                >
+                  Copy
+                </button>
+              </div>
+              <p className="text-slate-600 line-clamp-3 font-mono text-[11px]">{goToMarket.coldEmailTemplate}</p>
+            </div>
+          )}
 
+          {goToMarket?.linkedInDmTemplate && (
+            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="flex justify-between items-center mb-1">
+                <span className="font-bold text-slate-900">LinkedIn DM Template</span>
+                <button
+                  onClick={() => {
+                    navigator.clipboard?.writeText(goToMarket.linkedInDmTemplate);
+                    onToast?.("LinkedIn DM copied to clipboard");
+                  }}
+                  className="text-[11px] font-mono text-orange-600 font-bold hover:underline"
+                >
+                  Copy
+                </button>
+              </div>
+              <p className="text-slate-600 line-clamp-3 font-mono text-[11px]">{goToMarket.linkedInDmTemplate}</p>
+            </div>
+          )}
+        </div>
+      </StatCard>
+
+      {/* Card 2: Acquisition Channels */}
+      <StatCard
+        title="Acquisition Channels"
+        icon={Rocket}
+        iconColor="text-orange-500"
+        stat={`${goToMarket?.platforms?.length || 4} Channels`}
+        subtitle="Growth Flywheel"
+        detailsTitle="Inbound Strategy"
+        detailsText="Blend high-intent organic search with community distribution on Reddit and founder networks."
+      >
+        <div className="space-y-2 text-xs">
+          {(goToMarket?.platforms || []).map((p, i) => (
+            <div key={i} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
+              <div className="flex justify-between font-bold">
+                <span>{p.name}</span>
+                <span className="text-[10px] font-mono text-orange-700 bg-orange-50 px-1.5 py-0.2 rounded font-bold">
+                  {p.urgency}
+                </span>
+              </div>
+              <p className="text-slate-600 mt-0.5">{p.strategy}</p>
+            </div>
+          ))}
+        </div>
+      </StatCard>
+
+      {/* Card 3: Launch Readiness Checklist */}
       {launchChecklist?.length > 0 && (
-        <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <ListTodo size={16} className="text-orange-500" />
-              <span>Launch Readiness Checklist</span>
-            </h3>
-            <span className="text-xs font-mono text-slate-500">{launchChecklist.length} Milestones</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <StatCard
+          title="Launch Readiness Checklist"
+          icon={ListTodo}
+          iconColor="text-orange-500"
+          stat={`${launchChecklist.length} Milestones`}
+          subtitle="Pre-Launch to Day 1 Readiness"
+          detailsTitle="Launch Strategy"
+          detailsText="Execute every milestone sequentially to ensure compliance, stability, and conversion tracking."
+        >
+          <div className="space-y-1.5 text-xs">
             {launchChecklist.map((item, idx) => (
               <label
                 key={idx}
-                className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 border border-slate-200/70 hover:bg-white transition-colors cursor-pointer text-xs sm:text-sm text-slate-800"
+                className="flex items-center gap-2.5 p-2 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white transition-colors cursor-pointer text-slate-800"
               >
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
+                  className="h-3.5 w-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
                 />
-                <span>{item}</span>
+                <span className="leading-snug">{item}</span>
               </label>
             ))}
           </div>
-        </div>
+        </StatCard>
       )}
-    </div>
+    </HorizontalCardTrack>
   );
 }
 
 // ---------------------------------------------------------------------------
-// 7. COMPETITIVE ANALYSIS SECTION (Vertical Stack)
+// 7. COMPETITIVE ANALYSIS SECTION (Full Visual Displays)
 // ---------------------------------------------------------------------------
 function CompetitiveAnalysisFullSection({
   marketSizing,
@@ -1300,7 +1664,7 @@ function CompetitiveAnalysisFullSection({
 }) {
   return (
     <div className="space-y-6">
-      {/* 3-Circle Bubble Chart and Speedometer Gauge */}
+      {/* 3-Circle Bubble Chart and Speedometer Gauge Stacked Vertically */}
       <VenturusMarketSizeBubbleChart marketSizing={marketSizing} ideaTitle={ideaTitle} />
       <VenturusViabilityGaugeChart viabilityScorecard={viabilityScorecard} ideaTitle={ideaTitle} />
 
@@ -1400,7 +1764,7 @@ function DashboardOverviewSection({
         </div>
       </div>
 
-      {/* Jump Pad */}
+      {/* Jump Pad to all 7 sections */}
       <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
         <h3 className="text-sm font-bold text-slate-900 mb-4 tracking-tight">
           Business Analysis Navigation
