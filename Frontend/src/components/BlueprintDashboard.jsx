@@ -7,7 +7,7 @@
 // toast, smooth module-switch transitions, staggered card entrance,
 // progress bar on Launch Checklist, and white + orange modern theme.
 // ---------------------------------------------------------------------------
-import { useState, useEffect, memo, useCallback } from "react";
+import { useState, useEffect, useRef, memo, useCallback } from "react";
 import {
   Lightbulb,
   TrendingUp,
@@ -33,6 +33,8 @@ import {
   DollarSign,
   Layers,
   Flame,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { downloadMarkdown, downloadPdf } from "../components/exportBlueprint.js";
 import {
@@ -132,40 +134,7 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
 
   const handleSelectModule = useCallback((moduleId) => {
     setActiveModule(moduleId);
-    const element = document.getElementById(`module-${moduleId}`);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
   }, []);
-
-  // Scroll spy: observe sections and update activeModule as user scrolls vertically
-  useEffect(() => {
-    if (viewMode !== "dashboard") return;
-
-    const observerCallback = (entries) => {
-      const visibleEntries = entries.filter((e) => e.isIntersecting);
-      if (visibleEntries.length > 0) {
-        visibleEntries.sort(
-          (a, b) => Math.abs(a.boundingClientRect.top) - Math.abs(b.boundingClientRect.top)
-        );
-        const id = visibleEntries[0].target.id.replace("module-", "");
-        setActiveModule(id);
-      }
-    };
-
-    const observer = new IntersectionObserver(observerCallback, {
-      root: null,
-      rootMargin: "-10% 0px -55% 0px",
-      threshold: [0, 0.1, 0.3],
-    });
-
-    MODULES.forEach((m) => {
-      const el = document.getElementById(`module-${m.id}`);
-      if (el) observer.observe(el);
-    });
-
-    return () => observer.disconnect();
-  }, [viewMode]);
 
   const handleExportPdf = useCallback(async () => {
     setExporting("pdf");
@@ -397,60 +366,58 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
               </div>
             </aside>
 
-            {/* Continuous Vertical Report: All modules stacked vertically and scrollable */}
-            <main className="flex-1 min-w-0 space-y-14">
-              <section id="module-idea" className="scroll-mt-6">
-                <IdeaModule
-                  originalIdea={originalIdea}
-                  viabilityScorecard={viabilityScorecard}
-                  customerDiscovery={customerDiscovery}
-                  ideaAnalysis={ideaAnalysis}
-                  marketResearch={marketResearch}
-                  costEstimator={costEstimator}
-                />
-              </section>
-
-              <section id="module-frameworks" className="scroll-mt-6 pt-10 border-t border-slate-200/80">
-                <FrameworksModule
-                  swotAnalysis={swotAnalysis}
-                  portersFiveForces={portersFiveForces}
-                  ideaAnalysis={ideaAnalysis}
-                  marketResearch={marketResearch}
-                  competitorWeaknessAnalysis={competitorWeaknessAnalysis}
-                  customerPersona={customerPersona}
-                />
-              </section>
-
-              <section id="module-market" className="scroll-mt-6 pt-10 border-t border-slate-200/80">
-                <MarketModule
-                  marketSizing={marketSizing}
-                  marketResearch={marketResearch}
-                  competitorWeaknessAnalysis={competitorWeaknessAnalysis}
-                  customerPersona={customerPersona}
-                  viabilityScorecard={viabilityScorecard}
-                  ideaTitle={pitch?.elevatorPitch || originalIdea}
-                />
-              </section>
-
-              <section id="module-product" className="scroll-mt-6 pt-10 border-t border-slate-200/80">
-                <ProductModule
-                  productPlan={productPlan}
-                  technicalArchitecture={technicalArchitecture}
-                />
-              </section>
-
-              <section id="module-financials" className="scroll-mt-6 pt-10 border-t border-slate-200/80">
-                <FinancialsModule
-                  businessStrategy={businessStrategy}
-                  costEstimator={costEstimator}
-                  revenueSimulator={revenueSimulator}
-                  goToMarket={goToMarket}
-                  launchChecklist={launchChecklist}
-                  pitch={pitch}
-                  roadmap={roadmap}
-                  onToast={showToast}
-                />
-              </section>
+            {/* Active module content rendered with Peeking SectionCarousel */}
+            <main className="flex-1 min-w-0">
+              <div key={activeModule} className="animate-fade-in">
+                {activeModule === "idea" && (
+                  <IdeaModule
+                    originalIdea={originalIdea}
+                    viabilityScorecard={viabilityScorecard}
+                    customerDiscovery={customerDiscovery}
+                    ideaAnalysis={ideaAnalysis}
+                    marketResearch={marketResearch}
+                    costEstimator={costEstimator}
+                  />
+                )}
+                {activeModule === "frameworks" && (
+                  <FrameworksModule
+                    swotAnalysis={swotAnalysis}
+                    portersFiveForces={portersFiveForces}
+                    ideaAnalysis={ideaAnalysis}
+                    marketResearch={marketResearch}
+                    competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                    customerPersona={customerPersona}
+                  />
+                )}
+                {activeModule === "market" && (
+                  <MarketModule
+                    marketSizing={marketSizing}
+                    marketResearch={marketResearch}
+                    competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                    customerPersona={customerPersona}
+                    viabilityScorecard={viabilityScorecard}
+                    ideaTitle={pitch?.elevatorPitch || originalIdea}
+                  />
+                )}
+                {activeModule === "product" && (
+                  <ProductModule
+                    productPlan={productPlan}
+                    technicalArchitecture={technicalArchitecture}
+                  />
+                )}
+                {(activeModule === "financials" || activeModule === "business" || activeModule === "launch") && (
+                  <FinancialsModule
+                    businessStrategy={businessStrategy}
+                    costEstimator={costEstimator}
+                    revenueSimulator={revenueSimulator}
+                    goToMarket={goToMarket}
+                    launchChecklist={launchChecklist}
+                    pitch={pitch}
+                    roadmap={roadmap}
+                    onToast={showToast}
+                  />
+                )}
+              </div>
             </main>
           </div>
         </>
@@ -615,6 +582,224 @@ function ModuleHeader({ icon: Icon, title, description, accent }) {
 }
 
 // ---------------------------------------------------------------------------
+// Peeking Section Carousel with Smooth Horizontal Scroll & Left/Right Arrows
+// ---------------------------------------------------------------------------
+const SectionCarousel = memo(function SectionCarousel({
+  sections,
+  moduleTitle,
+  moduleIcon: ModuleIcon,
+  moduleDescription,
+  accent = "orange",
+}) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const containerRef = useRef(null);
+  const isNavigatingRef = useRef(false);
+
+  const scrollToSlide = useCallback((idx) => {
+    const container = containerRef.current;
+    if (!container) return;
+    const slides = container.children;
+    if (slides[idx]) {
+      const slide = slides[idx];
+      const targetLeft = slide.offsetLeft - (container.clientWidth - slide.clientWidth) / 2;
+      isNavigatingRef.current = true;
+      container.scrollTo({ left: targetLeft, behavior: "smooth" });
+      setActiveIndex(idx);
+      setTimeout(() => {
+        isNavigatingRef.current = false;
+      }, 450);
+    }
+  }, []);
+
+  const handlePrev = useCallback(() => {
+    if (activeIndex > 0) {
+      scrollToSlide(activeIndex - 1);
+    }
+  }, [activeIndex, scrollToSlide]);
+
+  const handleNext = useCallback(() => {
+    if (activeIndex < sections.length - 1) {
+      scrollToSlide(activeIndex + 1);
+    }
+  }, [activeIndex, sections.length, scrollToSlide]);
+
+  const handleScroll = useCallback(() => {
+    if (isNavigatingRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    const containerCenter = container.scrollLeft + container.clientWidth / 2;
+    const slides = container.children;
+    let closestIndex = 0;
+    let closestDistance = Infinity;
+
+    for (let i = 0; i < slides.length; i++) {
+      const slide = slides[i];
+      const slideCenter = slide.offsetLeft + slide.clientWidth / 2;
+      const distance = Math.abs(containerCenter - slideCenter);
+      if (distance < closestDistance) {
+        closestDistance = distance;
+        closestIndex = i;
+      }
+    }
+
+    if (closestIndex !== activeIndex) {
+      setActiveIndex(closestIndex);
+    }
+  }, [activeIndex]);
+
+  // Center initial slide on mount and when sections change
+  useEffect(() => {
+    setActiveIndex(0);
+    const timer = setTimeout(() => {
+      scrollToSlide(0);
+    }, 60);
+    return () => clearTimeout(timer);
+  }, [sections, scrollToSlide]);
+
+  return (
+    <div className="space-y-4">
+      {/* Module Header */}
+      <ModuleHeader
+        icon={ModuleIcon}
+        title={moduleTitle}
+        description={moduleDescription}
+        accent={accent}
+      />
+
+      {/* Top Section Switcher Navigation Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-2.5 sm:p-3.5 rounded-2xl border border-slate-200/90 shadow-2xs">
+        {/* Clickable section pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5 max-w-full">
+          {sections.map((sec, idx) => (
+            <button
+              key={sec.id || idx}
+              onClick={() => scrollToSlide(idx)}
+              className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                idx === activeIndex
+                  ? "bg-orange-600 text-white font-bold shadow-xs scale-[1.02]"
+                  : "bg-slate-50 text-slate-600 hover:bg-orange-50 hover:text-orange-700 border border-slate-200/70"
+              }`}
+            >
+              <span
+                className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${
+                  idx === activeIndex
+                    ? "bg-orange-700/60 text-white"
+                    : "bg-slate-200/70 text-slate-600"
+                }`}
+              >
+                {idx + 1}
+              </span>
+              <span>{sec.title}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Section Counter & Mini Nav Buttons */}
+        <div className="flex items-center gap-2.5 shrink-0 ml-auto">
+          <span className="text-xs font-mono text-slate-500 font-medium">
+            Section <strong className="text-slate-900">{activeIndex + 1}</strong> of{" "}
+            <strong>{sections.length}</strong>
+          </span>
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={handlePrev}
+              disabled={activeIndex === 0}
+              className="h-8 w-8 rounded-xl flex items-center justify-center bg-slate-50 hover:bg-orange-50 text-slate-700 hover:text-orange-600 border border-slate-200 hover:border-orange-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs active:scale-95"
+              title="Previous Section (Left Arrow)"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={activeIndex === sections.length - 1}
+              className="h-8 w-8 rounded-xl flex items-center justify-center bg-slate-50 hover:bg-orange-50 text-slate-700 hover:text-orange-600 border border-slate-200 hover:border-orange-200 disabled:opacity-30 disabled:cursor-not-allowed transition-all cursor-pointer shadow-2xs active:scale-95"
+              title="Next Section (Right Arrow)"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Peeking Horizontal Carousel Track */}
+      <div className="relative w-full overflow-hidden py-2">
+        {/* Floating Left Arrow Overlay */}
+        <button
+          onClick={handlePrev}
+          disabled={activeIndex === 0}
+          aria-label="Previous Section"
+          className={`absolute left-1 sm:left-3 top-1/2 -translate-y-1/2 z-30 h-11 w-11 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xl flex items-center justify-center text-slate-700 hover:text-orange-600 hover:border-orange-300 hover:scale-110 active:scale-95 transition-all cursor-pointer ${
+            activeIndex === 0 ? "opacity-0 pointer-events-none" : "opacity-90 hover:opacity-100"
+          }`}
+        >
+          <ChevronLeft size={22} className="-ml-0.5" />
+        </button>
+
+        {/* Floating Right Arrow Overlay */}
+        <button
+          onClick={handleNext}
+          disabled={activeIndex === sections.length - 1}
+          aria-label="Next Section"
+          className={`absolute right-1 sm:right-3 top-1/2 -translate-y-1/2 z-30 h-11 w-11 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 shadow-xl flex items-center justify-center text-slate-700 hover:text-orange-600 hover:border-orange-300 hover:scale-110 active:scale-95 transition-all cursor-pointer ${
+            activeIndex === sections.length - 1
+              ? "opacity-0 pointer-events-none"
+              : "opacity-90 hover:opacity-100"
+          }`}
+        >
+          <ChevronRight size={22} className="-mr-0.5" />
+        </button>
+
+        {/* Horizontal Track with Snapping and Padding to center slides */}
+        <div
+          ref={containerRef}
+          onScroll={handleScroll}
+          className="flex overflow-x-auto snap-x snap-mandatory scrollbar-none py-3 px-[6%] sm:px-[9%] lg:px-[11%] gap-4 sm:gap-6 items-start scroll-smooth"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {sections.map((sec, idx) => {
+            const isActive = idx === activeIndex;
+            return (
+              <div
+                key={sec.id || idx}
+                onClick={() => {
+                  if (!isActive) scrollToSlide(idx);
+                }}
+                className={`shrink-0 snap-center w-[88%] sm:w-[84%] lg:w-[80%] max-w-4xl transition-all duration-400 ease-out ${
+                  isActive
+                    ? "opacity-100 scale-100 shadow-xs pointer-events-auto"
+                    : "opacity-35 hover:opacity-65 scale-[0.96] blur-[0.2px] cursor-pointer pointer-events-auto select-none"
+                }`}
+              >
+                {sec.content}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Bottom Dots Indicator */}
+      {sections.length > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-1 pb-2">
+          {sections.map((sec, idx) => (
+            <button
+              key={idx}
+              onClick={() => scrollToSlide(idx)}
+              className={`h-2 transition-all rounded-full cursor-pointer ${
+                idx === activeIndex
+                  ? "w-7 bg-orange-600 shadow-2xs"
+                  : "w-2 bg-slate-300 hover:bg-slate-400"
+              }`}
+              title={sec.title}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+});
+
+// ---------------------------------------------------------------------------
 // Shared helpers
 // ---------------------------------------------------------------------------
 function isError(section) {
@@ -720,28 +905,29 @@ function IdeaModule({
   marketResearch,
   costEstimator,
 }) {
-  return (
-    <div className="space-y-6">
-      <ModuleHeader
-        icon={Lightbulb}
-        title="Module 1: Idea & Validation"
-        description="Venture viability index, Mom Test customer discovery interviews, and core thesis."
-        accent="orange"
-      />
-
-      {/* Venture Viability Scorecard (Gauge, Verdict, Fatal Risks) */}
-      <VentureViabilityScorecard
-        viabilityScorecard={viabilityScorecard}
-        ideaAnalysis={ideaAnalysis}
-        marketResearch={marketResearch}
-        costEstimator={costEstimator}
-        originalIdea={originalIdea}
-      />
-
-      {/* Lean Customer Discovery ("Mom Test" Questions, Red Flags, WTP Signals) */}
-      <LeanCustomerDiscoverySection customerDiscovery={customerDiscovery} />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+  const sections = [
+    {
+      id: "viability-scorecard",
+      title: "Venture Viability Scorecard",
+      content: (
+        <VentureViabilityScorecard
+          viabilityScorecard={viabilityScorecard}
+          ideaAnalysis={ideaAnalysis}
+          marketResearch={marketResearch}
+          costEstimator={costEstimator}
+          originalIdea={originalIdea}
+        />
+      ),
+    },
+    {
+      id: "lean-customer-discovery",
+      title: "Lean Customer Discovery",
+      content: <LeanCustomerDiscoverySection customerDiscovery={customerDiscovery} />,
+    },
+    {
+      id: "startup-idea-thesis",
+      title: "Startup Idea Thesis",
+      content: (
         <DashboardCard
           icon={Target}
           title="Startup Idea Thesis"
@@ -750,11 +936,16 @@ function IdeaModule({
           badge="Core Thesis"
           credibility="Founder Prompt"
         >
-          <p className="text-sm text-slate-700 leading-relaxed font-medium">
+          <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-medium">
             {originalIdea || "No idea text available."}
           </p>
         </DashboardCard>
-
+      ),
+    },
+    {
+      id: "idea-analysis",
+      title: "Idea Analysis",
+      content: (
         <DashboardCard
           icon={Lightbulb}
           title="Idea Analysis"
@@ -774,8 +965,18 @@ function IdeaModule({
             </>
           )}
         </DashboardCard>
-      </div>
-    </div>
+      ),
+    },
+  ];
+
+  return (
+    <SectionCarousel
+      sections={sections}
+      moduleTitle="Module 1: Idea & Validation"
+      moduleIcon={Lightbulb}
+      moduleDescription="Venture viability index, Mom Test customer discovery interviews, and core thesis."
+      accent="orange"
+    />
   );
 }
 
@@ -790,27 +991,35 @@ function FrameworksModule({
   competitorWeaknessAnalysis,
   customerPersona,
 }) {
+  const sections = [
+    {
+      id: "swot-analysis",
+      title: "SWOT Analysis Matrix",
+      content: (
+        <SwotAnalysisMatrix
+          swotAnalysis={swotAnalysis}
+          ideaAnalysis={ideaAnalysis}
+          marketResearch={marketResearch}
+          competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+          customerPersona={customerPersona}
+        />
+      ),
+    },
+    {
+      id: "porters-forces",
+      title: "Porter's Five Forces Breakdown",
+      content: <PortersFiveForcesBreakdown portersFiveForces={portersFiveForces} />,
+    },
+  ];
+
   return (
-    <div className="space-y-6">
-      <ModuleHeader
-        icon={ShieldCheck}
-        title="Module 2: Strategic Frameworks"
-        description="SWOT matrix and Porter's Five Forces industry defensibility."
-        accent="indigo"
-      />
-
-      {/* SWOT Analysis Matrix */}
-      <SwotAnalysisMatrix
-        swotAnalysis={swotAnalysis}
-        ideaAnalysis={ideaAnalysis}
-        marketResearch={marketResearch}
-        competitorWeaknessAnalysis={competitorWeaknessAnalysis}
-        customerPersona={customerPersona}
-      />
-
-      {/* Porter's Five Forces Breakdown */}
-      <PortersFiveForcesBreakdown portersFiveForces={portersFiveForces} />
-    </div>
+    <SectionCarousel
+      sections={sections}
+      moduleTitle="Module 2: Strategic Frameworks"
+      moduleIcon={ShieldCheck}
+      moduleDescription="SWOT matrix and Porter's Five Forces industry defensibility."
+      accent="indigo"
+    />
   );
 }
 
@@ -825,29 +1034,35 @@ function MarketModule({
   viabilityScorecard,
   ideaTitle,
 }) {
-  return (
-    <div className="space-y-6">
-      <ModuleHeader
-        icon={TrendingUp}
-        title="Module 3: Market Intelligence & Sizing"
-        description="Bottom-up TAM/SAM/SOM financial sizing, venture viability index, competitor vulnerabilities, and customer persona."
-        accent="emerald"
-      />
-
-      {/* Market Sizing & Viability Architecture (TAM/SAM/SOM + Viability Speedometer) */}
-      <MarketSizingSection
-        marketSizing={marketSizing}
-        viabilityScorecard={viabilityScorecard}
-        ideaTitle={ideaTitle}
-      />
-
-      {/* Competitor Vulnerability Matrix */}
-      {!isError(competitorWeaknessAnalysis) && competitorWeaknessAnalysis?.length > 0 && (
-        <CompetitorWeaknessSection analysis={competitorWeaknessAnalysis} accent="emerald" delayIndex={0} />
-      )}
-
-      {/* Customer Persona & Market Research */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+  const sections = [
+    {
+      id: "market-sizing",
+      title: "Market Sizing & Viability",
+      content: (
+        <MarketSizingSection
+          marketSizing={marketSizing}
+          viabilityScorecard={viabilityScorecard}
+          ideaTitle={ideaTitle}
+        />
+      ),
+    },
+    {
+      id: "competitor-weakness",
+      title: "Competitor Vulnerabilities",
+      content: (
+        !isError(competitorWeaknessAnalysis) && competitorWeaknessAnalysis?.length > 0 ? (
+          <CompetitorWeaknessSection analysis={competitorWeaknessAnalysis} accent="emerald" delayIndex={0} />
+        ) : (
+          <DashboardCard icon={Crosshair} title="Competitor Analysis" accent="emerald">
+            <p className="text-xs text-slate-500">No competitor vulnerabilities identified.</p>
+          </DashboardCard>
+        )
+      ),
+    },
+    {
+      id: "customer-persona",
+      title: "Customer Persona (ICP)",
+      content: (
         <DashboardCard
           icon={Users}
           title="Customer Persona (ICP)"
@@ -866,7 +1081,12 @@ function MarketModule({
             </>
           )}
         </DashboardCard>
-
+      ),
+    },
+    {
+      id: "market-dynamics",
+      title: "Market Dynamics & Research",
+      content: (
         <DashboardCard
           icon={TrendingUp}
           title="Market Dynamics & Research"
@@ -885,8 +1105,18 @@ function MarketModule({
             </>
           )}
         </DashboardCard>
-      </div>
-    </div>
+      ),
+    },
+  ];
+
+  return (
+    <SectionCarousel
+      sections={sections}
+      moduleTitle="Module 3: Market Intelligence & Sizing"
+      moduleIcon={TrendingUp}
+      moduleDescription="Bottom-up TAM/SAM/SOM financial sizing, venture viability index, competitor vulnerabilities, and customer persona."
+      accent="emerald"
+    />
   );
 }
 
@@ -894,16 +1124,11 @@ function MarketModule({
 // Module 4: Product & Technical Architecture
 // ---------------------------------------------------------------------------
 function ProductModule({ productPlan, technicalArchitecture }) {
-  return (
-    <div className="space-y-6">
-      <ModuleHeader
-        icon={ListChecks}
-        title="Module 4: Product & Technical Architecture"
-        description="MVP scope prioritization, future feature roadmap, and robust system architecture."
-        accent="sky"
-      />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+  const sections = [
+    {
+      id: "product-plan",
+      title: "Product Plan",
+      content: (
         <DashboardCard
           icon={ListChecks}
           title="Product Plan"
@@ -922,7 +1147,12 @@ function ProductModule({ productPlan, technicalArchitecture }) {
             </>
           )}
         </DashboardCard>
-
+      ),
+    },
+    {
+      id: "technical-architecture",
+      title: "Technical Architecture",
+      content: (
         <DashboardCard
           icon={Cpu}
           title="Technical Architecture"
@@ -943,8 +1173,18 @@ function ProductModule({ productPlan, technicalArchitecture }) {
             </div>
           )}
         </DashboardCard>
-      </div>
-    </div>
+      ),
+    },
+  ];
+
+  return (
+    <SectionCarousel
+      sections={sections}
+      moduleTitle="Module 4: Product & Technical Architecture"
+      moduleIcon={ListChecks}
+      moduleDescription="MVP scope prioritization, future feature roadmap, and robust system architecture."
+      accent="sky"
+    />
   );
 }
 
@@ -961,64 +1201,95 @@ function FinancialsModule({
   roadmap,
   onToast,
 }) {
-  return (
-    <div className="space-y-6">
-      <ModuleHeader
-        icon={Rocket}
-        title="Module 5: Financials & Launch Engine"
-        description="Cloud infrastructure costs, ARR revenue simulator, ready-to-use outreach copy, and launch checklist."
-        accent="amber"
-      />
-
-      {/* Investor Pitch One-Liner */}
-      <div
-        className="card-stagger p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm transition-all"
-        style={stagger(0)}
-      >
-        <div className="flex items-center gap-2 mb-2">
-          <span className="h-2 w-2 rounded-full bg-amber-500" />
-          <p className="text-[11px] font-mono uppercase tracking-wider text-amber-600 font-bold">
-            Investor Pitch & Executive Thesis
-          </p>
+  const sections = [
+    {
+      id: "pitch-thesis",
+      title: "Investor Pitch & Thesis",
+      content: (
+        <div className="card-stagger p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm transition-all">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="h-2 w-2 rounded-full bg-amber-500" />
+            <p className="text-[11px] font-mono uppercase tracking-wider text-amber-600 font-bold">
+              Investor Pitch & Executive Thesis
+            </p>
+          </div>
+          {isError(pitch) ? (
+            <ErrorNotice />
+          ) : (
+            <>
+              <p className="text-lg sm:text-xl font-bold text-slate-900 mb-3 tracking-tight">
+                {pitch?.elevatorPitch}
+              </p>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
+                {pitch?.executiveSummary}
+              </p>
+            </>
+          )}
         </div>
-        {isError(pitch) ? (
-          <ErrorNotice />
+      ),
+    },
+    {
+      id: "financial-simulator",
+      title: "Financial Simulator",
+      content: (
+        <UpmetricsFinancialSimulator costEstimator={costEstimator} revenueSimulator={revenueSimulator} />
+      ),
+    },
+    {
+      id: "cost-revenue",
+      title: "Cloud Costs & ARR",
+      content: (
+        <CostRevenueSection cost={costEstimator} revenue={revenueSimulator} accent="amber" delayIndex={1} />
+      ),
+    },
+    {
+      id: "gtm-engine",
+      title: "Go-to-Market & Outreach",
+      content: (
+        !isError(goToMarket) && goToMarket ? (
+          <div className="space-y-6">
+            <GoToMarketSection gtm={goToMarket} accent="amber" delayIndex={2} />
+            <FounderPalSwipeFile gtm={goToMarket} pitch={pitch} onToast={onToast} />
+          </div>
         ) : (
-          <>
-            <p className="text-lg sm:text-xl font-bold text-slate-900 mb-3 tracking-tight">
-              {pitch?.elevatorPitch}
-            </p>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
-              {pitch?.executiveSummary}
-            </p>
-          </>
-        )}
-      </div>
+          <DashboardCard icon={Target} title="Go-to-Market Strategy" accent="amber">
+            <p className="text-xs text-slate-500">Go-to-market data unavailable.</p>
+          </DashboardCard>
+        )
+      ),
+    },
+    {
+      id: "launch-checklist",
+      title: "Launch Checklist",
+      content: (
+        !isError(launchChecklist) && launchChecklist?.length > 0 ? (
+          <LaunchChecklistSection items={launchChecklist} accent="amber" delayIndex={3} />
+        ) : (
+          <DashboardCard icon={ListTodo} title="Launch Checklist" accent="amber">
+            <p className="text-xs text-slate-500">Checklist unavailable.</p>
+          </DashboardCard>
+        )
+      ),
+    },
+    {
+      id: "roadmap",
+      title: "Startup Roadmap",
+      content: (
+        <DashboardCard icon={MapIcon} title="Startup Roadmap" accent="amber" delayIndex={4}>
+          {isError(roadmap) ? <ErrorNotice /> : <RoadmapTimeline roadmap={roadmap} accent="amber" />}
+        </DashboardCard>
+      ),
+    },
+  ];
 
-      {/* Interactive Financial Simulator with Amount Selector Bar & Real-Time Automatic Calculations */}
-      <UpmetricsFinancialSimulator costEstimator={costEstimator} revenueSimulator={revenueSimulator} />
-
-      {/* Cloud Cost Estimator & ARR Revenue Simulator */}
-      <CostRevenueSection cost={costEstimator} revenue={revenueSimulator} accent="amber" delayIndex={1} />
-
-      {/* Go-To-Market Engine (Ready-to-use copy) */}
-      {!isError(goToMarket) && goToMarket && (
-        <>
-          <GoToMarketSection gtm={goToMarket} accent="amber" delayIndex={2} />
-          <FounderPalSwipeFile gtm={goToMarket} pitch={pitch} onToast={onToast} />
-        </>
-      )}
-
-      {/* Launch Checklist with Live % */}
-      {!isError(launchChecklist) && launchChecklist?.length > 0 && (
-        <LaunchChecklistSection items={launchChecklist} accent="amber" delayIndex={3} />
-      )}
-
-      {/* Roadmap Timeline */}
-      <DashboardCard icon={MapIcon} title="Startup Roadmap" accent="amber" delayIndex={4}>
-        {isError(roadmap) ? <ErrorNotice /> : <RoadmapTimeline roadmap={roadmap} accent="amber" />}
-      </DashboardCard>
-    </div>
+  return (
+    <SectionCarousel
+      sections={sections}
+      moduleTitle="Module 5: Financials & Launch Engine"
+      moduleIcon={Rocket}
+      moduleDescription="Cloud infrastructure costs, ARR revenue simulator, ready-to-use outreach copy, and launch checklist."
+      accent="amber"
+    />
   );
 }
 
