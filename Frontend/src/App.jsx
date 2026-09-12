@@ -11,7 +11,7 @@ import WorkspacePage from "./components/WorkspacePage.jsx";
 import SplineBackground from "./components/SplineBackground.jsx";
 import HistoryPanel from "./components/HistoryPanel.jsx";
 import AuthModal from "./components/AuthModal.jsx";
-import AiCopilotAgent from "./components/AiCopilotAgent.jsx";
+import CoFounderChatDrawer from "./components/CoFounderChatDrawer.jsx";
 import {
   AnnouncementBanner,
   MarqueeLogos,
@@ -249,7 +249,7 @@ export default function App() {
           onSignOut={handleSignOut}
         />
 
-        <AiCopilotAgent blueprint={blueprint} originalIdea={idea} />
+        <CoFounderChatDrawer blueprint={blueprint} originalIdea={idea} />
 
         <AuthModal
           isOpen={showAuthModal}
@@ -314,8 +314,8 @@ export default function App() {
       {/* 6. Full Clean Footer */}
       <FullFooter />
 
-      {/* 7. Floating Gemini 3.7 Flash AI Copilot Agent */}
-      <AiCopilotAgent blueprint={blueprint} originalIdea={idea} />
+      {/* 7. Floating Gemini 3.7 Flash AI Co-Founder Chat Drawer */}
+      <CoFounderChatDrawer blueprint={blueprint} originalIdea={idea} />
 
       {/* Modals & Overlays */}
       <AuthModal

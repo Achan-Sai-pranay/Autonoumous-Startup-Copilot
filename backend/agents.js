@@ -55,19 +55,22 @@ function unavailableSection() {
 // below and is what onProgress() steps through. Keeping this as a single
 // source of truth avoids step names drifting out of sync with
 // LoadingTimeline.jsx's copy of the same list.
+// Ordered list of step groups. Each step has one or more JSON keys it's
+// responsible for. Order matches the section order requested in the prompt
+// below and is what onProgress() steps through.
 const STEPS = [
-  { keys: ["ideaAnalysis"], name: "Idea Analysis" },
-  { keys: ["marketResearch"], name: "Market Research" },
-  { keys: ["customerPersona"], name: "Customer Persona" },
-  { keys: ["productPlan"], name: "Product Planning" },
+  { keys: ["ideaAnalysis", "viabilityScorecard"], name: "Venture Viability & Idea Analysis" },
+  { keys: ["customerDiscovery", "customerPersona"], name: "Lean Customer Discovery & Personas" },
+  { keys: ["swotAnalysis", "portersFiveForces"], name: "Strategic Frameworks (SWOT & Porter's)" },
+  { keys: ["marketResearch", "marketSizing"], name: "Market Intelligence & Sizing (TAM/SAM/SOM)" },
+  { keys: ["competitorWeaknessAnalysis"], name: "Competitor Vulnerability Matrix" },
+  { keys: ["productPlan"], name: "Product Planning & MVP Scope" },
   { keys: ["technicalArchitecture"], name: "Technical Architecture" },
-  { keys: ["businessStrategy"], name: "Business Strategy" },
-  { keys: ["pitch"], name: "Pitch Generation" },
-  { keys: ["roadmap"], name: "Roadmap" },
-  { keys: ["goToMarket"], name: "Go-to-Market Strategy" },
-  { keys: ["launchChecklist"], name: "Launch Checklist" },
-  { keys: ["costEstimator", "revenueSimulator"], name: "Cost & Revenue" },
-  { keys: ["competitorWeaknessAnalysis"], name: "Competitor Weakness Analysis" },
+  { keys: ["businessStrategy"], name: "Business Strategy & Monetization" },
+  { keys: ["pitch"], name: "Pitch & Executive Synthesis" },
+  { keys: ["roadmap"], name: "Startup Roadmap" },
+  { keys: ["goToMarket"], name: "Go-to-Market Engine" },
+  { keys: ["launchChecklist", "costEstimator", "revenueSimulator"], name: "Launch Checklist & Financials" },
 ];
 
 export const AGENT_STEP_NAMES = STEPS.map((s) => s.name);
@@ -75,8 +78,10 @@ export const AGENT_STEP_NAMES = STEPS.map((s) => s.name);
 // The primary JSON key that indicates the beginning of each step's generation
 const STEP_START_KEYS = [
   "ideaAnalysis",
+  "customerDiscovery",
+  "swotAnalysis",
   "marketResearch",
-  "customerPersona",
+  "competitorWeaknessAnalysis",
   "productPlan",
   "technicalArchitecture",
   "businessStrategy",
@@ -84,90 +89,102 @@ const STEP_START_KEYS = [
   "roadmap",
   "goToMarket",
   "launchChecklist",
-  "costEstimator",
-  "competitorWeaknessAnalysis",
 ];
 
 // ---------------------------------------------------------------------------
-// The single mega-prompt: 8 planning agents + AI Critic + 6 execution
-// sections, one JSON schema, one Gemini call.
+// The single mega-prompt: Strategic intelligence roles + Execution engine,
+// one JSON schema, one Gemini call.
 // ---------------------------------------------------------------------------
 function buildMegaPrompt(idea) {
   return `
-You are LaunchPilot AI, an autonomous startup co-founder made up of several
-specialist roles. Given a single startup idea, generate a COMPLETE startup
-blueprint AND an execution plan by reasoning through all roles below, in
-order, then return everything as ONE JSON object.
+You are LaunchPilot AI, an elite autonomous startup co-founder and venture creation engine.
+Given a single startup idea, generate a world-class, institutional-grade startup blueprint
+and execution plan. Reason through all specialist roles below and return everything as ONE JSON object.
 
-// ✅ After (fix):
 Startup idea:
 "${idea}"
 ---
-PART A — PLANNING (roles 1-8)
+PART A — STRATEGIC VENTURE EVALUATION & VALIDATION
 
 ROLE 1 — Senior Startup Analyst → key "ideaAnalysis"
-Analyze the core problem, goal, domain, and feasibility.
+Analyze the core problem, goal, domain, and honest feasibility assessment.
 
-ROLE 2 — Market Research Analyst → key "marketResearch"
-Based on general knowledge (no live web search), identify competitors,
-opportunities, and market demand.
+ROLE 2 — Venture Viability Evaluator → key "viabilityScorecard"
+Evaluate investment-readiness and survival probability:
+- Composite score (integer 0–100).
+- Sub-scores: marketDemandScore (0–100), technicalFeasibilityScore (0–100), monetizationScore (0–100).
+- verdict: Exactly one of "Proceed" | "Proceed with Caution" | "Pivot Recommended".
+- verdictReasoning: A sharp 2-sentence executive thesis explaining the verdict.
+- fatalRiskTraps: Array of 3 specific, non-obvious failure modes/traps to watch out for.
 
-ROLE 3 — UX Researcher → key "customerPersona"
-Define the ideal target users, their pain points, and a narrative user
-profile.
+ROLE 3 — Lean Customer Discovery Lead → key "customerDiscovery"
+Validation before building:
+- interviewQuestions: Array of 5 unbiased "Mom Test" validation questions to ask real prospective users (never ask "would you buy this", ask about past behavior and actual money spent).
+- redFlags: Array of 3 false-positive answers that deceive founders into false confidence.
+- willingnessToPaySignals: Array of 2 concrete commitment tests to prove buyer intent before writing code (e.g. LOI, pre-order deposit, concierge MVP).
 
-ROLE 4 — Senior Product Manager → key "productPlan"
-Define MVP features, future features, and development priority.
-
-ROLE 5 — Software Architect → key "technicalArchitecture"
-Recommend frontend, backend, database, hosting, relevant AI APIs, and a
-high-level architecture overview.
-
-ROLE 6 — Business Strategist → key "businessStrategy"
-Define the revenue model, pricing idea, and marketing channels.
-
-ROLE 7 — Startup Pitch Coach → key "pitch"
-Write a punchy elevator pitch and an executive summary.
-
-ROLE 8 — Technical Project Manager → key "roadmap"
-Create a build roadmap of 4 to 6 milestones (roughly one per week), each
-with a title and specific tasks, plus a launch plan.
+ROLE 4 — UX Researcher → key "customerPersona"
+Define target users, high-friction pain points, and a vivid narrative buyer profile.
 
 ---
-PART B — EXECUTION (roles 9-12). This is what makes LaunchPilot an
-execution platform, not just an advisor: be concrete and actionable, not
-generic.
+PART B — STRATEGIC FRAMEWORKS & MARKET SIZING
 
-ROLE 9 — Growth Marketer → key "goToMarket"
-Define the target audience, then recommend specific platforms to reach them
-(choose from: LinkedIn, Reddit, Discord, X (Twitter), Facebook Groups,
-Slack Communities, Product Hunt, Hacker News — pick whichever genuinely fit
-this idea) and explain WHY each one fits. Write a LinkedIn search strategy
-(example search queries a founder could paste into LinkedIn search), a cold
-email template, a LinkedIn DM template, a Reddit launch post, and an X
-(Twitter) launch post — all personalized to this specific idea, ready to
-copy-paste.
+ROLE 5 — Strategic Frameworks Specialist → keys "swotAnalysis" & "portersFiveForces"
+Deep strategic defensibility:
+- swotAnalysis:
+  - strengths: Array of 3-4 internal unfair advantages.
+  - weaknesses: Array of 3-4 internal vulnerabilities.
+  - opportunities: Array of 3-4 external market tailwinds.
+  - threats: Array of 3-4 external structural threats/incumbent actions.
+- portersFiveForces: Evaluate all 5 industry forces with level ("Low" | "Moderate" | "High") and a 1-2 sentence sharp analysis:
+  - buyerPower: { "level": "Low"|"Moderate"|"High", "analysis": "..." }
+  - supplierPower: { "level": "Low"|"Moderate"|"High", "analysis": "..." }
+  - competitiveRivalry: { "level": "Low"|"Moderate"|"High", "analysis": "..." }
+  - threatOfSubstitutes: { "level": "Low"|"Moderate"|"High", "analysis": "..." }
+  - threatOfNewEntry: { "level": "Low"|"Moderate"|"High", "analysis": "..." }
 
-ROLE 10 — Launch Operations Lead → key "launchChecklist"
-Produce a professional pre-launch checklist as a flat list of short,
-concrete action items (e.g. "Buy Domain", "Create Landing Page", "Setup
-Analytics", "Privacy Policy", "Find First 20 Users").
+ROLE 6 — Market Sizing Specialist → key "marketSizing"
+Calculate bottom-up market sizing metrics. IMPORTANT: Always state the full term in brackets alongside the acronym:
+- tam: { "value": "$XB", "description": "TAM (Total Addressable Market) calculation rationale and methodology" }
+- sam: { "value": "$YM", "description": "SAM (Serviceable Available Market) addressable target segment" }
+- som: { "value": "$ZM", "description": "SOM (Serviceable Obtainable Market) realistic year 1-3 capture target" }
 
-ROLE 11a — Finance: Cost Estimator → key "costEstimator"
-Estimate monthly costs for: domain, hosting, database, AI APIs, email,
-analytics, storage, and authentication. For each, note whether a free tier
-is sufficient at early stage. Provide overall estimated monthly and yearly
-totals.
+ROLE 7 — Market Research Analyst → key "marketResearch"
+Identify primary competitors, market tailwinds/opportunities, and current demand dynamics.
 
-ROLE 11b — Finance: Revenue Simulator → key "revenueSimulator"
-Using the pricing idea from businessStrategy, project monthly and annual
-revenue at 100, 500, 1000, and 5000 users. State the pricing assumption
-used.
+ROLE 8 — Competitive Strategist → key "competitorWeaknessAnalysis"
+For each competitor named in marketResearch.competitors, identify their structural weaknesses, overlooked user needs, and this startup's unfair differentiation wedge.
 
-ROLE 12 — Competitive Strategist → key "competitorWeaknessAnalysis"
-For each competitor named in marketResearch.competitors, identify their
-weaknesses, missed opportunities, and a suggested way this startup can
-differentiate against them.
+---
+PART C — PRODUCT, TECH & MONETIZATION
+
+ROLE 9 — Senior Product Manager → key "productPlan"
+Define MVP features, future roadmap features, and development prioritization logic.
+
+ROLE 10 — Software Architect → key "technicalArchitecture"
+Recommend modern production-ready frontend, backend, database, hosting, relevant AI APIs, and high-level architectural design.
+
+ROLE 11 — Business Strategist → key "businessStrategy"
+Define revenue model, recommended pricing tiers, and acquisition marketing channels.
+
+ROLE 12 — Startup Pitch Coach → key "pitch"
+Craft a high-conviction 1-2 sentence elevator pitch and 3-4 sentence executive summary.
+
+ROLE 13 — Technical Project Manager → key "roadmap"
+Create a 4-to-6 milestone roadmap (Week 1 through Week N) with concrete deliverables and post-milestone launch plan.
+
+---
+PART D — EXECUTION SUITE & FINANCIALS
+
+ROLE 14 — Growth Marketer → key "goToMarket"
+Define target audience, high-converting platforms (LinkedIn, Reddit, X, etc.) with explanations, LinkedIn search queries, cold email template, LinkedIn DM template, Reddit launch post, and X (Twitter) launch post.
+
+ROLE 15 — Launch Operations Lead → key "launchChecklist"
+A flat list of 4-7 actionable, sequential pre-launch action items.
+
+ROLE 16 — Financial Planner → keys "costEstimator" & "revenueSimulator"
+- costEstimator: Monthly costs for domain, hosting, database, aiApis, email, analytics, storage, authentication (with freeTierSufficient flags) and monthly/yearly totals.
+- revenueSimulator: Projections at 100, 500, 1000, and 5000 users with pricing assumptions.
 
 ---
 Return ONE JSON object with this exact structure:
@@ -175,79 +192,56 @@ Return ONE JSON object with this exact structure:
   "ideaAnalysis": {
     "problem": "the core problem this idea solves, 2-3 sentences",
     "goal": "the main goal/mission of this product, 1-2 sentences",
-    "domain": "the industry/domain this belongs to, e.g. EdTech, FinTech",
+    "domain": "the industry/domain this belongs to, e.g. B2B SaaS, FinTech, HealthTech",
     "feasibility": "a short honest assessment of how feasible this is to build, 2-3 sentences"
+  },
+  "viabilityScorecard": {
+    "score": 84,
+    "marketDemandScore": 88,
+    "technicalFeasibilityScore": 82,
+    "monetizationScore": 85,
+    "verdict": "Proceed",
+    "verdictReasoning": "Two-sentence executive investment thesis.",
+    "fatalRiskTraps": ["Specific failure trap 1", "Specific failure trap 2", "Specific failure trap 3"]
+  },
+  "customerDiscovery": {
+    "interviewQuestions": [
+      "Mom Test question 1 focusing on past behavior and actual friction",
+      "Mom Test question 2",
+      "Mom Test question 3",
+      "Mom Test question 4",
+      "Mom Test question 5"
+    ],
+    "redFlags": ["False positive answer 1", "False positive answer 2", "False positive answer 3"],
+    "willingnessToPaySignals": ["Commitment test 1 (e.g. Paid pilot deposit)", "Commitment test 2 (e.g. Letter of Intent)"]
+  },
+  "customerPersona": {
+    "targetUsers": ["user type 1", "user type 2"],
+    "painPoints": ["pain point 1", "pain point 2", "pain point 3"],
+    "userProfile": "narrative profile of primary buyer/user persona"
+  },
+  "swotAnalysis": {
+    "strengths": ["strength 1", "strength 2", "strength 3"],
+    "weaknesses": ["weakness 1", "weakness 2", "weakness 3"],
+    "opportunities": ["opportunity 1", "opportunity 2", "opportunity 3"],
+    "threats": ["threat 1", "threat 2", "threat 3"]
+  },
+  "portersFiveForces": {
+    "buyerPower": { "level": "Moderate", "analysis": "Explanation of customer leverage and switching costs" },
+    "supplierPower": { "level": "Low", "analysis": "Explanation of vendor and API reliance" },
+    "competitiveRivalry": { "level": "High", "analysis": "Explanation of competitor density" },
+    "threatOfSubstitutes": { "level": "Moderate", "analysis": "Explanation of alternative workarounds" },
+    "threatOfNewEntry": { "level": "Moderate", "analysis": "Explanation of capital and technical barriers" }
+  },
+  "marketSizing": {
+    "tam": { "value": "$12.4B", "description": "TAM (Total Addressable Market): Global market size calculation rationale" },
+    "sam": { "value": "$1.8B", "description": "SAM (Serviceable Available Market): Target sub-segment geography & tier" },
+    "som": { "value": "$45M", "description": "SOM (Serviceable Obtainable Market): Realistic 1-3 year capture target" }
   },
   "marketResearch": {
     "competitors": ["competitor 1", "competitor 2", "competitor 3"],
     "opportunities": ["opportunity 1", "opportunity 2", "opportunity 3"],
     "marketDemand": "a short paragraph describing current market demand/trend"
-  },
-  "customerPersona": {
-    "targetUsers": ["user type 1", "user type 2"],
-    "painPoints": ["pain point 1", "pain point 2", "pain point 3"],
-    "userProfile": "a short narrative profile of the primary target user (age range, behavior, motivations)"
-  },
-  "productPlan": {
-    "mvpFeatures": ["feature 1", "feature 2", "feature 3", "feature 4"],
-    "futureFeatures": ["future feature 1", "future feature 2", "future feature 3"],
-    "developmentPriority": "a short paragraph explaining what to build first and why"
-  },
-  "technicalArchitecture": {
-    "frontend": "recommended frontend stack and why",
-    "backend": "recommended backend stack and why",
-    "database": "recommended database and why",
-    "hosting": "recommended hosting platform(s) and why",
-    "aiApis": "recommended AI APIs/models to use, if relevant",
-    "architectureOverview": "a short paragraph describing the high-level system architecture"
-  },
-  "businessStrategy": {
-    "revenueModel": "how this startup makes money",
-    "pricingIdea": "a suggested pricing structure",
-    "marketingChannels": ["channel 1", "channel 2", "channel 3"]
-  },
-  "pitch": {
-    "elevatorPitch": "a punchy 1-2 sentence elevator pitch",
-    "executiveSummary": "a 3-4 sentence executive summary of the whole business"
-  },
-  "roadmap": {
-    "milestones": [
-      { "week": "Week 1", "title": "short milestone title", "tasks": ["task 1", "task 2", "task 3"] }
-    ],
-    "launchPlan": "a short paragraph describing how to launch after the final milestone"
-  },
-  "goToMarket": {
-    "targetAudience": "who exactly to target, 1-2 sentences",
-    "platforms": [
-      { "name": "e.g. LinkedIn", "why": "why this platform fits this specific idea" }
-    ],
-    "linkedInSearchStrategy": ["example search query 1", "example search query 2"],
-    "coldEmailTemplate": "a full, ready-to-send cold email, personalized to this idea, with a subject line",
-    "linkedInDmTemplate": "a full, ready-to-send LinkedIn DM, personalized to this idea",
-    "redditLaunchPost": "a full Reddit launch post, personalized to this idea",
-    "twitterLaunchPost": "a full X (Twitter) launch post/thread starter, personalized to this idea"
-  },
-  "launchChecklist": ["Buy Domain", "Create Landing Page", "Setup Analytics"],
-  "costEstimator": {
-    "domain": { "monthlyCost": "e.g. $1 (amortized)", "freeTierSufficient": false, "note": "short note" },
-    "hosting": { "monthlyCost": "e.g. $0", "freeTierSufficient": true, "note": "short note" },
-    "database": { "monthlyCost": "e.g. $0", "freeTierSufficient": true, "note": "short note" },
-    "aiApis": { "monthlyCost": "e.g. $10-50", "freeTierSufficient": false, "note": "short note" },
-    "email": { "monthlyCost": "e.g. $0", "freeTierSufficient": true, "note": "short note" },
-    "analytics": { "monthlyCost": "e.g. $0", "freeTierSufficient": true, "note": "short note" },
-    "storage": { "monthlyCost": "e.g. $0", "freeTierSufficient": true, "note": "short note" },
-    "authentication": { "monthlyCost": "e.g. $0", "freeTierSufficient": true, "note": "short note" },
-    "estimatedMonthlyCost": "e.g. $15-60",
-    "estimatedYearlyCost": "e.g. $180-720"
-  },
-  "revenueSimulator": {
-    "pricingAssumption": "restate the pricing model being used for this projection",
-    "projections": [
-      { "users": 100, "monthlyRevenue": "e.g. $500", "annualRevenue": "e.g. $6,000" },
-      { "users": 500, "monthlyRevenue": "e.g. $2,500", "annualRevenue": "e.g. $30,000" },
-      { "users": 1000, "monthlyRevenue": "e.g. $5,000", "annualRevenue": "e.g. $60,000" },
-      { "users": 5000, "monthlyRevenue": "e.g. $25,000", "annualRevenue": "e.g. $300,000" }
-    ]
   },
   "competitorWeaknessAnalysis": [
     {
@@ -256,14 +250,84 @@ Return ONE JSON object with this exact structure:
       "missedOpportunities": ["missed opportunity 1"],
       "suggestedDifferentiation": "how this startup can win against this specific competitor"
     }
-  ]
+  ],
+  "productPlan": {
+    "mvpFeatures": ["feature 1", "feature 2", "feature 3", "feature 4"],
+    "futureFeatures": ["future feature 1", "future feature 2", "future feature 3"],
+    "developmentPriority": "what to build first and why"
+  },
+  "technicalArchitecture": {
+    "frontend": "recommended frontend stack and why",
+    "backend": "recommended backend stack and why",
+    "database": "recommended database and why",
+    "hosting": "recommended hosting platform(s) and why",
+    "aiApis": "recommended AI APIs/models to use, if relevant",
+    "architectureOverview": "system architecture design overview"
+  },
+  "businessStrategy": {
+    "revenueModel": "how this startup makes money",
+    "pricingIdea": "pricing structure and tiers",
+    "marketingChannels": ["channel 1", "channel 2", "channel 3"]
+  },
+  "pitch": {
+    "elevatorPitch": "a punchy 1-2 sentence elevator pitch",
+    "executiveSummary": "a 3-4 sentence executive summary of the whole business"
+  },
+  "roadmap": {
+    "milestones": [
+      { "week": "Week 1", "title": "Foundation & Core MVP", "tasks": ["task 1", "task 2", "task 3"] },
+      { "week": "Week 2", "title": "Integration & Pipelines", "tasks": ["task 1", "task 2"] },
+      { "week": "Week 3", "title": "Closed Alpha Testing", "tasks": ["task 1", "task 2"] },
+      { "week": "Week 4", "title": "Public Launch & Distribution", "tasks": ["task 1", "task 2"] }
+    ],
+    "launchPlan": "launch execution strategy"
+  },
+  "goToMarket": {
+    "targetAudience": "who exactly to target",
+    "platforms": [
+      { "name": "LinkedIn", "why": "why this fits" },
+      { "name": "Reddit", "why": "why this fits" }
+    ],
+    "linkedInSearchStrategy": ["query 1", "query 2"],
+    "coldEmailTemplate": "full cold email with subject line",
+    "linkedInDmTemplate": "full ready-to-send LinkedIn DM",
+    "redditLaunchPost": "full Reddit launch post",
+    "twitterLaunchPost": "full X (Twitter) launch post"
+  },
+  "launchChecklist": [
+    "Secure Primary Domain and SSL Certificate",
+    "Deploy High-Conversion Waitlist Landing Page",
+    "Configure Product Analytics & Conversion Funnel",
+    "Complete 15 Mom Test Customer Discovery Interviews",
+    "Publish Launch Post on Reddit and Twitter"
+  ],
+  "costEstimator": {
+    "domain": { "monthlyCost": "$1", "freeTierSufficient": false, "note": "Annual domain registration amortized" },
+    "hosting": { "monthlyCost": "$0", "freeTierSufficient": true, "note": "Vercel / Netlify Free tier" },
+    "database": { "monthlyCost": "$0", "freeTierSufficient": true, "note": "Supabase / Neon Free tier" },
+    "aiApis": { "monthlyCost": "$15-50", "freeTierSufficient": false, "note": "Pay-as-you-go model usage" },
+    "email": { "monthlyCost": "$0", "freeTierSufficient": true, "note": "Resend / Brevo 300 free emails/day" },
+    "analytics": { "monthlyCost": "$0", "freeTierSufficient": true, "note": "PostHog / Google Analytics free" },
+    "storage": { "monthlyCost": "$0", "freeTierSufficient": true, "note": "Cloudflare R2 free tier" },
+    "authentication": { "monthlyCost": "$0", "freeTierSufficient": true, "note": "Appwrite / Supabase Auth free tier" },
+    "estimatedMonthlyCost": "$16-51",
+    "estimatedYearlyCost": "$192-612"
+  },
+  "revenueSimulator": {
+    "pricingAssumption": "Pricing model assumption (e.g. $49/mo Starter, $149/mo Pro)",
+    "projections": [
+      { "users": 100, "monthlyRevenue": "$4,900", "annualRevenue": "$58,800" },
+      { "users": 500, "monthlyRevenue": "$24,500", "annualRevenue": "$294,000" },
+      { "users": 1000, "monthlyRevenue": "$49,000", "annualRevenue": "$588,000" },
+      { "users": 5000, "monthlyRevenue": "$245,000", "annualRevenue": "$2,940,000" }
+    ]
+  }
 }
 
 Rules:
-- Generate between 4 and 6 milestone objects in "roadmap.milestones", in order.
-- Include 3-6 items in "launchChecklist", ordered logically (earliest task first).
-- Include one "competitorWeaknessAnalysis" entry per competitor listed in "marketResearch.competitors".
-- Every field must be filled in — do not leave placeholders like "TBD".
+- Generate 4 to 6 milestone objects in "roadmap.milestones".
+- In "marketSizing", always include the full name in brackets beside the acronym: TAM (Total Addressable Market), SAM (Serviceable Available Market), SOM (Serviceable Obtainable Market).
+- Every field must be populated with realistic, tailored strategic intelligence — never leave "TBD" or empty strings.
 ${JSON_ONLY_RULE}`;
 }
 

@@ -43,7 +43,8 @@ function formattedDate() {
 // ---------------------------------------------------------------------------
 export function buildMarkdown(blueprint, idea) {
   const {
-    ideaAnalysis, marketResearch, customerPersona, productPlan,
+    ideaAnalysis, viabilityScorecard, customerDiscovery, swotAnalysis,
+    portersFiveForces, marketSizing, marketResearch, customerPersona, productPlan,
     technicalArchitecture, businessStrategy, pitch, roadmap,
     goToMarket, launchChecklist, costEstimator, revenueSimulator,
     competitorWeaknessAnalysis,
@@ -60,6 +61,76 @@ export function buildMarkdown(blueprint, idea) {
   push(`## Startup Idea`);
   push();
   push(idea || "_Not provided._");
+  push();
+
+  push(`## Venture Viability Scorecard`);
+  if (ok(viabilityScorecard)) {
+    push(`**Composite Viability Score:** ${viabilityScorecard.score}/100`);
+    push(`**Verdict:** ${viabilityScorecard.verdict}`);
+    push(`**Executive Thesis:** ${viabilityScorecard.verdictReasoning}`);
+    push(`**Sub-Scores:**`);
+    push(`- Market Demand: ${viabilityScorecard.marketDemandScore}/100`);
+    push(`- Technical Feasibility: ${viabilityScorecard.technicalFeasibilityScore}/100`);
+    push(`- Monetization Engine: ${viabilityScorecard.monetizationScore}/100`);
+    push();
+    if (okList(viabilityScorecard.fatalRiskTraps)) {
+      push(`**Fatal Risk Traps:**`);
+      viabilityScorecard.fatalRiskTraps.forEach((trap) => push(`- ${trap}`));
+      push();
+    }
+  } else push(`_Unavailable._`);
+  push();
+
+  push(`## Lean Customer Discovery ("Mom Test")`);
+  if (ok(customerDiscovery)) {
+    if (okList(customerDiscovery.interviewQuestions)) {
+      push(`**Mom Test Interview Questions:**`);
+      customerDiscovery.interviewQuestions.forEach((q, i) => push(`${i + 1}. ${q}`));
+      push();
+    }
+    if (okList(customerDiscovery.redFlags)) {
+      push(`**False-Positive Red Flags:**`);
+      customerDiscovery.redFlags.forEach((rf) => push(`- ✕ ${rf}`));
+      push();
+    }
+    if (okList(customerDiscovery.willingnessToPaySignals)) {
+      push(`**Willingness-to-Pay Commitment Tests:**`);
+      customerDiscovery.willingnessToPaySignals.forEach((wtp) => push(`- ✓ ${wtp}`));
+      push();
+    }
+  } else push(`_Unavailable._`);
+  push();
+
+  push(`## Strategic Frameworks (SWOT & Porter's Five Forces)`);
+  if (ok(swotAnalysis)) {
+    push(`### SWOT (Strengths, Weaknesses, Opportunities, Threats) Matrix`);
+    push(`**Strengths:**`);
+    (swotAnalysis.strengths || []).forEach((s) => push(`- ${s}`));
+    push(`**Weaknesses:**`);
+    (swotAnalysis.weaknesses || []).forEach((w) => push(`- ${w}`));
+    push(`**Opportunities:**`);
+    (swotAnalysis.opportunities || []).forEach((o) => push(`- ${o}`));
+    push(`**Threats:**`);
+    (swotAnalysis.threats || []).forEach((t) => push(`- ${t}`));
+    push();
+  }
+  if (ok(portersFiveForces)) {
+    push(`### Porter's Five Forces Industry Analysis`);
+    push(`- Buyer Bargaining Power: [${portersFiveForces.buyerPower?.level || "Moderate"}] ${portersFiveForces.buyerPower?.analysis || ""}`);
+    push(`- Supplier Bargaining Power: [${portersFiveForces.supplierPower?.level || "Low"}] ${portersFiveForces.supplierPower?.analysis || ""}`);
+    push(`- Competitive Rivalry: [${portersFiveForces.competitiveRivalry?.level || "Moderate"}] ${portersFiveForces.competitiveRivalry?.analysis || ""}`);
+    push(`- Threat of Substitutes: [${portersFiveForces.threatOfSubstitutes?.level || "Moderate"}] ${portersFiveForces.threatOfSubstitutes?.analysis || ""}`);
+    push(`- Threat of New Entrants: [${portersFiveForces.threatOfNewEntry?.level || "Moderate"}] ${portersFiveForces.threatOfNewEntry?.analysis || ""}`);
+    push();
+  }
+  push();
+
+  push(`## Market Sizing Architecture (TAM / SAM / SOM)`);
+  if (ok(marketSizing)) {
+    push(`- **TAM (Total Addressable Market):** ${marketSizing.tam?.value || "$14B"} — ${marketSizing.tam?.description || ""}`);
+    push(`- **SAM (Serviceable Available Market):** ${marketSizing.sam?.value || "$2B"} — ${marketSizing.sam?.description || ""}`);
+    push(`- **SOM (Serviceable Obtainable Market):** ${marketSizing.som?.value || "$40M"} — ${marketSizing.som?.description || ""}`);
+  } else push(`_Unavailable._`);
   push();
 
   push(`## Idea Analysis`);
@@ -260,7 +331,8 @@ export async function downloadPdf(blueprint, idea) {
   const { jsPDF } = await import("jspdf");
 
   const {
-    ideaAnalysis, marketResearch, customerPersona, productPlan,
+    ideaAnalysis, viabilityScorecard, customerDiscovery, swotAnalysis,
+    portersFiveForces, marketSizing, marketResearch, customerPersona, productPlan,
     technicalArchitecture, businessStrategy, pitch, roadmap,
     goToMarket, launchChecklist, costEstimator, revenueSimulator,
     competitorWeaknessAnalysis,
@@ -360,6 +432,73 @@ export async function downloadPdf(blueprint, idea) {
 
   heading("Startup Idea");
   paragraph(idea || "Not provided.");
+  divider();
+
+  heading("Venture Viability Scorecard");
+  if (ok(viabilityScorecard)) {
+    subheading(`Composite Viability Score: ${viabilityScorecard.score}/100 [Verdict: ${viabilityScorecard.verdict}]`);
+    paragraph(viabilityScorecard.verdictReasoning);
+    subheading("Sub-Scores");
+    bulletList([
+      `Market Demand: ${viabilityScorecard.marketDemandScore}/100`,
+      `Technical Feasibility: ${viabilityScorecard.technicalFeasibilityScore}/100`,
+      `Monetization Engine: ${viabilityScorecard.monetizationScore}/100`,
+    ]);
+    if (okList(viabilityScorecard.fatalRiskTraps)) {
+      subheading("Fatal Risk Traps");
+      bulletList(viabilityScorecard.fatalRiskTraps);
+    }
+  } else unavailable();
+  divider();
+
+  heading("Lean Customer Discovery (Mom Test)");
+  if (ok(customerDiscovery)) {
+    if (okList(customerDiscovery.interviewQuestions)) {
+      subheading("Unbiased Validation Questions");
+      bulletList(customerDiscovery.interviewQuestions);
+    }
+    if (okList(customerDiscovery.redFlags)) {
+      subheading("False-Positive Red Flags");
+      bulletList(customerDiscovery.redFlags);
+    }
+    if (okList(customerDiscovery.willingnessToPaySignals)) {
+      subheading("Willingness-to-Pay Commitment Tests");
+      bulletList(customerDiscovery.willingnessToPaySignals);
+    }
+  } else unavailable();
+  divider();
+
+  heading("Strategic Frameworks (SWOT & Porter's)");
+  if (ok(swotAnalysis)) {
+    subheading("SWOT Matrix: Strengths");
+    bulletList(swotAnalysis.strengths);
+    subheading("SWOT Matrix: Weaknesses");
+    bulletList(swotAnalysis.weaknesses);
+    subheading("SWOT Matrix: Opportunities");
+    bulletList(swotAnalysis.opportunities);
+    subheading("SWOT Matrix: Threats");
+    bulletList(swotAnalysis.threats);
+  }
+  if (ok(portersFiveForces)) {
+    subheading("Porter's Five Forces Defensibility");
+    bulletList([
+      `Buyer Power: [${portersFiveForces.buyerPower?.level || "Moderate"}] ${portersFiveForces.buyerPower?.analysis || ""}`,
+      `Supplier Power: [${portersFiveForces.supplierPower?.level || "Low"}] ${portersFiveForces.supplierPower?.analysis || ""}`,
+      `Competitive Rivalry: [${portersFiveForces.competitiveRivalry?.level || "Moderate"}] ${portersFiveForces.competitiveRivalry?.analysis || ""}`,
+      `Threat of Substitutes: [${portersFiveForces.threatOfSubstitutes?.level || "Moderate"}] ${portersFiveForces.threatOfSubstitutes?.analysis || ""}`,
+      `Threat of New Entrants: [${portersFiveForces.threatOfNewEntry?.level || "Moderate"}] ${portersFiveForces.threatOfNewEntry?.analysis || ""}`,
+    ]);
+  }
+  divider();
+
+  heading("Market Sizing (TAM / SAM / SOM)");
+  if (ok(marketSizing)) {
+    bulletList([
+      `TAM (Total Addressable Market): ${marketSizing.tam?.value || "$14B"} — ${marketSizing.tam?.description || ""}`,
+      `SAM (Serviceable Available Market): ${marketSizing.sam?.value || "$2B"} — ${marketSizing.sam?.description || ""}`,
+      `SOM (Serviceable Obtainable Market): ${marketSizing.som?.value || "$40M"} — ${marketSizing.som?.description || ""}`,
+    ]);
+  } else unavailable();
   divider();
 
   heading("Idea Analysis");

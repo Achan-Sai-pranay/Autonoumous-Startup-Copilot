@@ -29,11 +29,18 @@ import {
   FileText,
   Loader2,
   LayoutGrid,
+  ShieldCheck,
+  DollarSign,
+  Layers,
+  Flame,
 } from "lucide-react";
 import { downloadMarkdown, downloadPdf } from "../components/exportBlueprint.js";
 import {
   VentureViabilityScorecard,
+  LeanCustomerDiscoverySection,
   SwotAnalysisMatrix,
+  PortersFiveForcesBreakdown,
+  MarketSizingSection,
   PestelAnalysisMatrix,
   LeanCanvasMatrix,
   UpmetricsFinancialSimulator,
@@ -102,11 +109,11 @@ const ACCENT_BAR = {
 };
 
 const MODULES = [
-  { id: "idea", label: "Executive Summary & Viability", icon: Lightbulb, accent: "orange" },
-  { id: "market", label: "Market & PESTEL Intelligence", icon: TrendingUp, accent: "emerald" },
-  { id: "product", label: "Product & Lean Canvas", icon: ListChecks, accent: "indigo" },
-  { id: "business", label: "Strategy & Financials", icon: Landmark, accent: "amber" },
-  { id: "launch", label: "Launch & GTM Execution", icon: Rocket, accent: "rose" },
+  { id: "idea", label: "Module 1: Idea & Validation", icon: Lightbulb, accent: "orange" },
+  { id: "frameworks", label: "Module 2: Strategic Frameworks", icon: ShieldCheck, accent: "indigo" },
+  { id: "market", label: "Module 3: Market & Sizing", icon: TrendingUp, accent: "emerald" },
+  { id: "product", label: "Module 4: Product & Tech Architecture", icon: ListChecks, accent: "sky" },
+  { id: "financials", label: "Module 5: Financials & Launch Engine", icon: Rocket, accent: "amber" },
 ];
 
 // Small helper for staggered card entrance — index-based delay in ms.
@@ -157,6 +164,11 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
 
   const {
     ideaAnalysis,
+    viabilityScorecard,
+    customerDiscovery,
+    swotAnalysis,
+    portersFiveForces,
+    marketSizing,
     marketResearch,
     customerPersona,
     productPlan,
@@ -332,45 +344,47 @@ export default function BlueprintDashboard({ blueprint, originalIdea }) {
                 {activeModule === "idea" && (
                   <IdeaModule
                     originalIdea={originalIdea}
+                    viabilityScorecard={viabilityScorecard}
+                    customerDiscovery={customerDiscovery}
                     ideaAnalysis={ideaAnalysis}
                     marketResearch={marketResearch}
                     costEstimator={costEstimator}
+                  />
+                )}
+                {activeModule === "frameworks" && (
+                  <FrameworksModule
+                    swotAnalysis={swotAnalysis}
+                    portersFiveForces={portersFiveForces}
+                    ideaAnalysis={ideaAnalysis}
+                    marketResearch={marketResearch}
                     competitorWeaknessAnalysis={competitorWeaknessAnalysis}
                     customerPersona={customerPersona}
                   />
                 )}
                 {activeModule === "market" && (
                   <MarketModule
-                    ideaAnalysis={ideaAnalysis}
+                    marketSizing={marketSizing}
                     marketResearch={marketResearch}
                     competitorWeaknessAnalysis={competitorWeaknessAnalysis}
-                    goToMarket={goToMarket}
-                    pitch={pitch}
-                    onToast={showToast}
+                    customerPersona={customerPersona}
                   />
                 )}
                 {activeModule === "product" && (
                   <ProductModule
-                    ideaAnalysis={ideaAnalysis}
-                    customerPersona={customerPersona}
                     productPlan={productPlan}
                     technicalArchitecture={technicalArchitecture}
-                    marketResearch={marketResearch}
-                    costEstimator={costEstimator}
                   />
                 )}
-                {activeModule === "business" && (
-                  <BusinessModule
+                {(activeModule === "financials" || activeModule === "business" || activeModule === "launch") && (
+                  <FinancialsModule
                     businessStrategy={businessStrategy}
                     costEstimator={costEstimator}
                     revenueSimulator={revenueSimulator}
-                  />
-                )}
-                {activeModule === "launch" && (
-                  <LaunchModule
+                    goToMarket={goToMarket}
                     launchChecklist={launchChecklist}
                     pitch={pitch}
                     roadmap={roadmap}
+                    onToast={showToast}
                   />
                 )}
               </div>
@@ -565,41 +579,45 @@ const ListField = memo(function ListField({ label, items, accent = "orange" }) {
 });
 
 // ---------------------------------------------------------------------------
-// Module: Idea & Validation (VenturusAI Upgrades)
+// Module 1: Idea & Validation
 // ---------------------------------------------------------------------------
 function IdeaModule({
   originalIdea,
+  viabilityScorecard,
+  customerDiscovery,
   ideaAnalysis,
   marketResearch,
   costEstimator,
-  competitorWeaknessAnalysis,
-  customerPersona,
 }) {
   return (
     <div className="space-y-6">
       <ModuleHeader
         icon={Lightbulb}
-        title="Idea & Validation"
-        description="What you're building, and whether it holds up in the market."
+        title="Module 1: Idea & Validation"
+        description="Venture viability index, Mom Test customer discovery interviews, and core thesis."
         accent="orange"
       />
 
-      {/* VenturusAI: Venture Viability Index Scorecard */}
+      {/* Venture Viability Scorecard (Gauge, Verdict, Fatal Risks) */}
       <VentureViabilityScorecard
+        viabilityScorecard={viabilityScorecard}
         ideaAnalysis={ideaAnalysis}
         marketResearch={marketResearch}
         costEstimator={costEstimator}
         originalIdea={originalIdea}
       />
 
+      {/* Lean Customer Discovery ("Mom Test" Questions, Red Flags, WTP Signals) */}
+      <LeanCustomerDiscoverySection customerDiscovery={customerDiscovery} />
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <DashboardCard
           icon={Target}
-          title="Startup Idea"
+          title="Startup Idea Thesis"
           accent="orange"
           delayIndex={0}
           badge="Core Thesis"
-          credibility="Validated"
+          credibility="Founder Prompt"
         >
           <p className="text-sm text-slate-700 leading-relaxed font-medium">
             {originalIdea || "No idea text available."}
@@ -612,137 +630,158 @@ function IdeaModule({
           accent="orange"
           delayIndex={1}
           badge="High Conviction"
-          credibility="94% Confidence"
+          credibility="AI Validated"
         >
           {isError(ideaAnalysis) ? (
             <ErrorNotice />
           ) : (
             <>
               <Field label="Problem Statement" value={ideaAnalysis?.problem} accent="orange" />
-              <Field label="Objectives" value={ideaAnalysis?.goal} accent="orange" />
-              <Field label="Domain" value={ideaAnalysis?.domain} accent="orange" />
-              <Field label="Feasibility" value={ideaAnalysis?.feasibility} accent="orange" />
+              <Field label="Objectives & Mission" value={ideaAnalysis?.goal} accent="orange" />
+              <Field label="Target Industry Domain" value={ideaAnalysis?.domain} accent="orange" />
+              <Field label="Feasibility & Speed" value={ideaAnalysis?.feasibility} accent="orange" />
             </>
           )}
         </DashboardCard>
       </div>
+    </div>
+  );
+}
 
-      {/* VenturusAI: 4-Quadrant Strategic SWOT Analysis Matrix */}
+// ---------------------------------------------------------------------------
+// Module 2: Strategic Frameworks (SWOT & Porter's Five Forces)
+// ---------------------------------------------------------------------------
+function FrameworksModule({
+  swotAnalysis,
+  portersFiveForces,
+  ideaAnalysis,
+  marketResearch,
+  competitorWeaknessAnalysis,
+  customerPersona,
+}) {
+  return (
+    <div className="space-y-6">
+      <ModuleHeader
+        icon={ShieldCheck}
+        title="Module 2: Strategic Frameworks"
+        description="SWOT matrix and Porter's Five Forces industry defensibility."
+        accent="indigo"
+      />
+
+      {/* SWOT Analysis Matrix */}
       <SwotAnalysisMatrix
+        swotAnalysis={swotAnalysis}
         ideaAnalysis={ideaAnalysis}
         marketResearch={marketResearch}
         competitorWeaknessAnalysis={competitorWeaknessAnalysis}
         customerPersona={customerPersona}
       />
+
+      {/* Porter's Five Forces Breakdown */}
+      <PortersFiveForcesBreakdown portersFiveForces={portersFiveForces} />
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Module: Market Intelligence (PESTEL & FounderPal Upgrades)
+// Module 3: Market Intelligence & Sizing (TAM/SAM/SOM & Competitors)
 // ---------------------------------------------------------------------------
-function MarketModule({ ideaAnalysis, marketResearch, competitorWeaknessAnalysis, goToMarket, pitch, onToast }) {
+function MarketModule({
+  marketSizing,
+  marketResearch,
+  competitorWeaknessAnalysis,
+  customerPersona,
+}) {
   return (
     <div className="space-y-6">
       <ModuleHeader
         icon={TrendingUp}
-        title="Market & PESTEL Intelligence"
-        description="Macro-environment drivers, competitor vulnerabilities, and market capture strategy."
+        title="Module 3: Market Intelligence & Sizing"
+        description="Bottom-up TAM/SAM/SOM financial sizing, competitor vulnerabilities, and customer persona."
         accent="emerald"
       />
-      <DashboardCard
-        icon={TrendingUp}
-        title="Market Research"
-        accent="emerald"
-        delayIndex={0}
-        badge="TAM / SAM / SOM"
-        credibility="92% Accuracy"
-      >
-        {isError(marketResearch) ? (
-          <ErrorNotice />
-        ) : (
-          <>
-            <ListField label="Competitors" items={marketResearch?.competitors} accent="emerald" />
-            <ListField label="Opportunities" items={marketResearch?.opportunities} accent="emerald" />
-            <Field label="Market Demand" value={marketResearch?.marketDemand} accent="emerald" />
-          </>
-        )}
-      </DashboardCard>
 
-      {/* VenturusAI: 360° Macro PESTEL Analysis */}
-      <PestelAnalysisMatrix ideaAnalysis={ideaAnalysis} marketResearch={marketResearch} />
+      {/* Market Sizing Metrics (TAM / SAM / SOM) */}
+      <MarketSizingSection marketSizing={marketSizing} />
 
+      {/* Competitor Vulnerability Matrix */}
       {!isError(competitorWeaknessAnalysis) && competitorWeaknessAnalysis?.length > 0 && (
-        <CompetitorWeaknessSection analysis={competitorWeaknessAnalysis} accent="emerald" delayIndex={1} />
+        <CompetitorWeaknessSection analysis={competitorWeaknessAnalysis} accent="emerald" delayIndex={0} />
       )}
 
-      {!isError(goToMarket) && goToMarket && (
-        <>
-          <GoToMarketSection gtm={goToMarket} accent="emerald" delayIndex={2} />
-          {/* FounderPal: 1-Click Outreach Swipe File */}
-          <FounderPalSwipeFile gtm={goToMarket} pitch={pitch} onToast={onToast} />
-        </>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Module: Product Planning & Lean Architecture
-// ---------------------------------------------------------------------------
-function ProductModule({ ideaAnalysis, customerPersona, productPlan, technicalArchitecture, marketResearch, costEstimator }) {
-  return (
-    <div className="space-y-6">
-      <ModuleHeader
-        icon={ListChecks}
-        title="Product & Lean Architecture"
-        description="9-Box Lean Canvas, customer persona, and scalable system engineering."
-        accent="indigo"
-      />
-
-      {/* VenturusAI: 9-Box Strategic Lean Canvas */}
-      <LeanCanvasMatrix
-        ideaAnalysis={ideaAnalysis}
-        productPlan={productPlan}
-        marketResearch={marketResearch}
-        costEstimator={costEstimator}
-      />
-
+      {/* Customer Persona & Market Research */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <DashboardCard
           icon={Users}
-          title="Customer Persona"
-          accent="indigo"
-          delayIndex={0}
-          badge="ICP Profile"
+          title="Customer Persona (ICP)"
+          accent="emerald"
+          delayIndex={1}
+          badge="ICP (Ideal Customer Profile)"
           credibility="High Intent"
         >
           {isError(customerPersona) ? (
             <ErrorNotice />
           ) : (
             <>
-              <ListField label="Target Users" items={customerPersona?.targetUsers} accent="indigo" />
-              <ListField label="Pain Points" items={customerPersona?.painPoints} accent="indigo" />
-              <Field label="User Profile" value={customerPersona?.userProfile} accent="indigo" />
+              <ListField label="Target Users" items={customerPersona?.targetUsers} accent="emerald" />
+              <ListField label="High-Friction Pain Points" items={customerPersona?.painPoints} accent="emerald" />
+              <Field label="Narrative Buyer Story" value={customerPersona?.userProfile} accent="emerald" />
             </>
           )}
         </DashboardCard>
 
         <DashboardCard
+          icon={TrendingUp}
+          title="Market Dynamics & Research"
+          accent="emerald"
+          delayIndex={2}
+          badge="Landscape"
+          credibility="92% Accuracy"
+        >
+          {isError(marketResearch) ? (
+            <ErrorNotice />
+          ) : (
+            <>
+              <ListField label="Identified Competitors" items={marketResearch?.competitors} accent="emerald" />
+              <ListField label="Market Opportunities" items={marketResearch?.opportunities} accent="emerald" />
+              <Field label="Market Demand Dynamics" value={marketResearch?.marketDemand} accent="emerald" />
+            </>
+          )}
+        </DashboardCard>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Module 4: Product & Technical Architecture
+// ---------------------------------------------------------------------------
+function ProductModule({ productPlan, technicalArchitecture }) {
+  return (
+    <div className="space-y-6">
+      <ModuleHeader
+        icon={ListChecks}
+        title="Module 4: Product & Technical Architecture"
+        description="MVP scope prioritization, future feature roadmap, and robust system architecture."
+        accent="sky"
+      />
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <DashboardCard
           icon={ListChecks}
           title="Product Plan"
-          accent="indigo"
-          delayIndex={1}
-          badge="MVP Scope"
+          accent="sky"
+          delayIndex={0}
+          badge="MVP (Minimum Viable Product)"
           credibility="Sprint 1"
         >
           {isError(productPlan) ? (
             <ErrorNotice />
           ) : (
             <>
-              <ListField label="MVP Features" items={productPlan?.mvpFeatures} accent="indigo" />
-              <ListField label="Future Features" items={productPlan?.futureFeatures} accent="indigo" />
-              <Field label="Development Priority" value={productPlan?.developmentPriority} accent="indigo" />
+              <ListField label="MVP (Minimum Viable Product) Core Features" items={productPlan?.mvpFeatures} accent="sky" />
+              <ListField label="Future Feature Phases" items={productPlan?.futureFeatures} accent="sky" />
+              <Field label="Development Priority" value={productPlan?.developmentPriority} accent="sky" />
             </>
           )}
         </DashboardCard>
@@ -750,20 +789,20 @@ function ProductModule({ ideaAnalysis, customerPersona, productPlan, technicalAr
         <DashboardCard
           icon={Cpu}
           title="Technical Architecture"
-          accent="indigo"
-          className="md:col-span-2"
-          delayIndex={2}
+          accent="sky"
+          delayIndex={1}
+          badge="Production Stack"
         >
           {isError(technicalArchitecture) ? (
             <ErrorNotice />
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              <Field label="Frontend" value={technicalArchitecture?.frontend} accent="indigo" />
-              <Field label="Backend" value={technicalArchitecture?.backend} accent="indigo" />
-              <Field label="Database" value={technicalArchitecture?.database} accent="indigo" />
-              <Field label="Hosting" value={technicalArchitecture?.hosting} accent="indigo" />
-              <Field label="AI APIs" value={technicalArchitecture?.aiApis} accent="indigo" />
-              <Field label="Overview" value={technicalArchitecture?.architectureOverview} accent="indigo" />
+            <div className="space-y-3.5">
+              <Field label="Frontend Stack" value={technicalArchitecture?.frontend} accent="sky" />
+              <Field label="Backend Stack" value={technicalArchitecture?.backend} accent="sky" />
+              <Field label="Database Architecture" value={technicalArchitecture?.database} accent="sky" />
+              <Field label="Cloud Hosting" value={technicalArchitecture?.hosting} accent="sky" />
+              <Field label="AI APIs & Models" value={technicalArchitecture?.aiApis} accent="sky" />
+              <Field label="High-Level Overview" value={technicalArchitecture?.architectureOverview} accent="sky" />
             </div>
           )}
         </DashboardCard>
@@ -773,58 +812,36 @@ function ProductModule({ ideaAnalysis, customerPersona, productPlan, technicalAr
 }
 
 // ---------------------------------------------------------------------------
-// Module: Business Strategy (Upmetrics Upgrades)
+// Module 5: Financials & Launch Engine
 // ---------------------------------------------------------------------------
-function BusinessModule({ businessStrategy, costEstimator, revenueSimulator }) {
-  return (
-    <div className="space-y-6">
-      <ModuleHeader
-        icon={Landmark}
-        title="Business Strategy"
-        description="How this prints revenue, and what it costs to scale."
-        accent="amber"
-      />
-      <DashboardCard icon={Landmark} title="Business Strategy" accent="amber" delayIndex={0}>
-        {isError(businessStrategy) ? (
-          <ErrorNotice />
-        ) : (
-          <>
-            <Field label="Revenue Model" value={businessStrategy?.revenueModel} accent="amber" />
-            <Field label="Pricing Strategy" value={businessStrategy?.pricingIdea} accent="amber" />
-            <ListField label="Marketing Channels" items={businessStrategy?.marketingChannels} accent="amber" />
-          </>
-        )}
-      </DashboardCard>
-
-      {/* Upmetrics: Interactive Dynamic Financial Simulator & Break-Even Calculator */}
-      <UpmetricsFinancialSimulator costEstimator={costEstimator} revenueSimulator={revenueSimulator} />
-
-      <CostRevenueSection cost={costEstimator} revenue={revenueSimulator} accent="amber" delayIndex={1} />
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Module: Launch Strategy
-// ---------------------------------------------------------------------------
-function LaunchModule({ launchChecklist, pitch, roadmap }) {
+function FinancialsModule({
+  businessStrategy,
+  costEstimator,
+  revenueSimulator,
+  goToMarket,
+  launchChecklist,
+  pitch,
+  roadmap,
+  onToast,
+}) {
   return (
     <div className="space-y-6">
       <ModuleHeader
         icon={Rocket}
-        title="Launch Strategy"
-        description="The pitch, the plan, and execution roadmap."
-        accent="rose"
+        title="Module 5: Financials & Launch Engine"
+        description="Cloud infrastructure costs, ARR revenue simulator, ready-to-use outreach copy, and launch checklist."
+        accent="amber"
       />
 
+      {/* Investor Pitch One-Liner */}
       <div
-        className="card-stagger p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-sm transition-all"
+        className="card-stagger p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm transition-all"
         style={stagger(0)}
       >
         <div className="flex items-center gap-2 mb-2">
-          <span className="h-2 w-2 rounded-full bg-rose-500" />
-          <p className="text-[11px] font-mono uppercase tracking-wider text-rose-600 font-bold">
-            Investor One-Liner & Executive Thesis
+          <span className="h-2 w-2 rounded-full bg-amber-500" />
+          <p className="text-[11px] font-mono uppercase tracking-wider text-amber-600 font-bold">
+            Investor Pitch & Executive Thesis
           </p>
         </div>
         {isError(pitch) ? (
@@ -841,12 +858,25 @@ function LaunchModule({ launchChecklist, pitch, roadmap }) {
         )}
       </div>
 
-      {!isError(launchChecklist) && launchChecklist?.length > 0 && (
-        <LaunchChecklistSection items={launchChecklist} accent="rose" delayIndex={1} />
+      {/* Cloud Cost Estimator & ARR Revenue Simulator */}
+      <CostRevenueSection cost={costEstimator} revenue={revenueSimulator} accent="amber" delayIndex={1} />
+
+      {/* Go-To-Market Engine (Ready-to-use copy) */}
+      {!isError(goToMarket) && goToMarket && (
+        <>
+          <GoToMarketSection gtm={goToMarket} accent="amber" delayIndex={2} />
+          <FounderPalSwipeFile gtm={goToMarket} pitch={pitch} onToast={onToast} />
+        </>
       )}
 
-      <DashboardCard icon={MapIcon} title="Startup Roadmap" accent="rose" delayIndex={2}>
-        {isError(roadmap) ? <ErrorNotice /> : <RoadmapTimeline roadmap={roadmap} accent="rose" />}
+      {/* Launch Checklist with Live % */}
+      {!isError(launchChecklist) && launchChecklist?.length > 0 && (
+        <LaunchChecklistSection items={launchChecklist} accent="amber" delayIndex={3} />
+      )}
+
+      {/* Roadmap Timeline */}
+      <DashboardCard icon={MapIcon} title="Startup Roadmap" accent="amber" delayIndex={4}>
+        {isError(roadmap) ? <ErrorNotice /> : <RoadmapTimeline roadmap={roadmap} accent="amber" />}
       </DashboardCard>
     </div>
   );

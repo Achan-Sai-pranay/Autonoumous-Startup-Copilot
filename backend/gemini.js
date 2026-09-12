@@ -393,3 +393,104 @@ export async function chatGemini(messages = [], systemPrompt = "") {
   const fallbackReply = await tryCall(FALLBACK_MODEL);
   return fallbackReply || "I couldn't generate a response. Please try asking again.";
 }
+
+/**
+ * Streams conversational responses from Gemini via SSE, calling onChunk on each token.
+ * Falls back to FALLBACK_MODEL if PRIMARY_MODEL encounters errors or capacity limits.
+ *
+ * @param {Array<{role: string, text?: string, content?: string}>} messages
+ * @param {string} systemPrompt
+ * @param {function(string, string): void} onChunk - (chunkText, fullAccumulatedText) => void
+ * @returns {Promise<string>} full response text
+ */
+export async function streamChatGemini(messages = [], systemPrompt = "", onChunk = () => {}) {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing GEMINI_API_KEY in environment");
+  }
+
+  const contents = [];
+  if (systemPrompt) {
+    contents.push({
+      role: "user",
+      parts: [{ text: `[SYSTEM CONTEXT & ROLE]:\n${systemPrompt}` }],
+    });
+    contents.push({
+      role: "model",
+      parts: [
+        {
+          text: "Understood. I am your LaunchPilot AI Co-Founder and YC-grade strategic advisor. I have deeply analyzed your startup blueprint and data, and I am ready to provide direct, high-impact, actionable guidance.",
+        },
+      ],
+    });
+  }
+
+  for (const m of messages) {
+    contents.push({
+      role: m.role === "assistant" || m.role === "model" || m.role === "ai" ? "model" : "user",
+      parts: [{ text: m.text || m.content || "" }],
+    });
+  }
+
+  const tryStream = async (modelName) => {
+    const streamUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:streamGenerateContent?key=${apiKey}&alt=sse`;
+    const response = await fetch(streamUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents,
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 4096,
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errorBody = await response.text();
+      throw new Error(`Gemini stream (${modelName}) failed (${response.status}): ${errorBody}`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let done = false;
+    let fullRawText = "";
+    let buffer = "";
+
+    while (!done) {
+      const { value, done: isDone } = await reader.read();
+      done = isDone;
+      if (value) {
+        buffer += decoder.decode(value, { stream: !done });
+        const lines = buffer.split("\n");
+        buffer = lines.pop();
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("data:")) {
+            const jsonStr = trimmed.replace(/^data:\s*/, "");
+            if (!jsonStr || jsonStr === "[DONE]") continue;
+            try {
+              const data = JSON.parse(jsonStr);
+              const chunkText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+              if (chunkText) {
+                fullRawText += chunkText;
+                onChunk(chunkText, fullRawText);
+              }
+            } catch (e) {
+              // Ignore partial frame parse issues
+            }
+          }
+        }
+      }
+    }
+    return fullRawText;
+  };
+
+  try {
+    return await tryStream(PRIMARY_MODEL);
+  } catch (err) {
+    console.warn(`[Gemini Chat Stream] ${PRIMARY_MODEL} failed: ${err.message}. Retrying with ${FALLBACK_MODEL}...`);
+    return await tryStream(FALLBACK_MODEL);
+  }
+}

@@ -38,197 +38,376 @@ import {
 // 1. VENTURUSAI FEATURE: Venture Viability Scorecard & 4-Quadrant SWOT Matrix
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// 1. VENTURUSAI & STRATEGIC SUITE: Scorecard, Mom Test, SWOT, Porter's & TAM/SAM/SOM
+// ---------------------------------------------------------------------------
+
 export const VentureViabilityScorecard = memo(function VentureViabilityScorecard({
+  viabilityScorecard,
   ideaAnalysis,
   marketResearch,
   costEstimator,
   originalIdea,
 }) {
-  // Synthesize realistic venture readiness scores based on project depth
-  const viabilityScore = useMemo(() => {
-    let score = 84;
-    if (ideaAnalysis?.problem && ideaAnalysis?.goal) score += 5;
-    if (marketResearch?.competitors?.length > 0) score += 3;
-    if (marketResearch?.opportunities?.length > 0) score += 3;
-    if (costEstimator?.estimatedMonthlyCost) score += 2;
-    return Math.min(97, score);
-  }, [ideaAnalysis, marketResearch, costEstimator]);
+  const score = Math.max(0, Math.min(100, viabilityScorecard?.score ?? 84));
+  const marketScore = Math.max(0, Math.min(100, viabilityScorecard?.marketDemandScore ?? 88));
+  const techScore = Math.max(0, Math.min(100, viabilityScorecard?.technicalFeasibilityScore ?? 82));
+  const capitalScore = Math.max(0, Math.min(100, viabilityScorecard?.monetizationScore ?? 85));
 
-  const marketScore = 92;
-  const techScore = 88;
-  const capitalScore = 95;
+  const verdict = viabilityScorecard?.verdict || "Proceed";
+  const reasoning =
+    viabilityScorecard?.verdictReasoning ||
+    "Strong product-market alignment with manageable technical complexity and straightforward monetization pathways.";
+
+  const traps = viabilityScorecard?.fatalRiskTraps || [
+    "Underestimating customer acquisition costs (CAC) across initial marketing channels.",
+    "Over-engineering secondary features prior to securing 10 committed paying pilot users.",
+    "Relying on generic AI wrappers without building proprietary domain workflow defensibility.",
+  ];
+
+  // Circular gauge calculations
+  const radius = 38;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (score / 100) * circumference;
+
+  const scoreColor =
+    score >= 80 ? "text-emerald-600" : score >= 60 ? "text-amber-600" : "text-rose-600";
+  const strokeColor =
+    score >= 80 ? "#059669" : score >= 60 ? "#d97706" : "#e11d48";
+
+  const verdictBadge =
+    verdict === "Proceed"
+      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+      : verdict === "Pivot Recommended"
+      ? "bg-rose-50 text-rose-700 border-rose-200"
+      : "bg-amber-50 text-amber-700 border-amber-200";
 
   return (
-    <div className="p-6 rounded-2xl bg-gradient-to-br from-white via-orange-50/20 to-white border border-slate-200/90 shadow-sm mb-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-slate-100">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-orange-500/10 border border-orange-200 flex items-center justify-center text-orange-600">
-            <Award size={20} />
+    <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm mb-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100">
+        <div className="flex items-center gap-3.5">
+          <div className="h-11 w-11 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 shadow-2xs">
+            <Award size={22} />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                LaunchPilot™ Startup Viability Index
+            <div className="flex items-center gap-2.5">
+              <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                Venture Viability Scorecard
               </h3>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                STARTUP-GRADE
+              <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-mono font-bold border ${verdictBadge}`}>
+                {verdict}
               </span>
             </div>
-            <p className="text-xs text-slate-500">
-              Multi-factor validation across product feasibility, market demand, and capital efficiency.
+            <p className="text-xs text-slate-500 mt-0.5">
+              Institutional-grade venture readiness and early-stage survival scorecard.
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 self-start sm:self-center bg-white px-4 py-2 rounded-xl border border-slate-200/80 shadow-xs">
-          <span className="text-xs font-mono uppercase text-slate-400 font-medium">Composite Score</span>
-          <span className="text-2xl font-black text-orange-600 font-mono tracking-tight">
-            {viabilityScore}
-            <span className="text-xs font-normal text-slate-400">/100</span>
-          </span>
+        {/* Circular Gauge */}
+        <div className="flex items-center gap-4 self-start sm:self-center bg-slate-50/80 px-4 py-2.5 rounded-2xl border border-slate-200/80">
+          <div className="relative flex items-center justify-center w-14 h-14">
+            <svg className="w-14 h-14 transform -rotate-90" viewBox="0 0 96 96">
+              <circle
+                cx="48"
+                cy="48"
+                r={radius}
+                className="text-slate-200 stroke-current"
+                strokeWidth="8"
+                fill="transparent"
+              />
+              <circle
+                cx="48"
+                cy="48"
+                r={radius}
+                stroke={strokeColor}
+                strokeWidth="8"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                strokeLinecap="round"
+                fill="transparent"
+                className="transition-all duration-1000 ease-out"
+              />
+            </svg>
+            <div className="absolute flex flex-col items-center justify-center">
+              <span className={`text-base font-black font-mono leading-none ${scoreColor}`}>
+                {score}
+              </span>
+              <span className="text-[8px] font-mono text-slate-400">/100</span>
+            </div>
+          </div>
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 block font-semibold">
+              Viability Index
+            </span>
+            <span className="text-xs font-bold text-slate-800">
+              {score >= 80 ? "High Conviction" : score >= 60 ? "Moderate Viability" : "High Risk"}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* 4 Multi-Factor Score Bars */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 pt-5">
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200/70">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-mono uppercase text-slate-500 font-medium">Market Demand</span>
-            <span className="text-xs font-mono font-bold text-emerald-600">{marketScore}%</span>
+      {/* Executive Thesis */}
+      <div className="mt-5 p-4 rounded-2xl bg-orange-50/40 border border-orange-100">
+        <p className="text-xs font-mono uppercase tracking-wider text-orange-800 font-bold mb-1 flex items-center gap-1.5">
+          <Sparkles size={12} className="text-orange-600" />
+          Executive Investment Thesis
+        </p>
+        <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-sans">{reasoning}</p>
+      </div>
+
+      {/* 3 Sub-Scores */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 mt-5">
+        <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-mono uppercase text-slate-500 font-bold">Market Demand</span>
+            <span className="text-xs font-mono font-bold text-emerald-600">{marketScore}/100</span>
           </div>
-          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${marketScore}%` }} />
+          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+            <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${marketScore}%` }} />
           </div>
-          <span className="text-[10px] text-slate-400 block mt-1.5">High appetite in target demographic</span>
+          <span className="text-[10px] text-slate-400 block mt-2">Organic pull & ICP urgency</span>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200/70">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-mono uppercase text-slate-500 font-medium">Tech Feasibility</span>
-            <span className="text-xs font-mono font-bold text-indigo-600">{techScore}%</span>
+        <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-mono uppercase text-slate-500 font-bold">Tech Feasibility</span>
+            <span className="text-xs font-mono font-bold text-indigo-600">{techScore}/100</span>
           </div>
-          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${techScore}%` }} />
+          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+            <div className="h-full bg-indigo-500 rounded-full transition-all duration-500" style={{ width: `${techScore}%` }} />
           </div>
-          <span className="text-[10px] text-slate-400 block mt-1.5">Off-the-shelf APIs & modern stack</span>
+          <span className="text-[10px] text-slate-400 block mt-2">API availability & dev velocity</span>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200/70">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-mono uppercase text-slate-500 font-medium">Capital Efficiency</span>
-            <span className="text-xs font-mono font-bold text-orange-600">{capitalScore}%</span>
+        <div className="p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-mono uppercase text-slate-500 font-bold">Monetization Engine</span>
+            <span className="text-xs font-mono font-bold text-orange-600">{capitalScore}/100</span>
           </div>
-          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-orange-500 rounded-full" style={{ width: `${capitalScore}%` }} />
+          <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+            <div className="h-full bg-orange-500 rounded-full transition-all duration-500" style={{ width: `${capitalScore}%` }} />
           </div>
-          <span className="text-[10px] text-slate-400 block mt-1.5">Sub-$50/mo initial runway burn</span>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200/70">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-mono uppercase text-slate-500 font-medium">Moat Defensibility</span>
-            <span className="text-xs font-mono font-bold text-sky-600">89%</span>
-          </div>
-          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full bg-sky-500 rounded-full" style={{ width: `89%` }} />
-          </div>
-          <span className="text-[10px] text-slate-400 block mt-1.5">Workflow lock-in & fast MVP speed</span>
+          <span className="text-[10px] text-slate-400 block mt-2">Willingness to pay & gross margins</span>
         </div>
       </div>
 
-      {/* Credibility Badges */}
-      <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-slate-100">
-        <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400 font-bold mr-1">
-          Credibility Signals:
+      {/* 3 Fatal Risk Traps */}
+      <div className="mt-5 p-4 rounded-2xl bg-rose-50/50 border border-rose-200/70">
+        <p className="text-xs font-mono uppercase tracking-wider text-rose-800 font-bold mb-2 flex items-center gap-1.5">
+          <Flame size={13} className="text-rose-600" />
+          3 Fatal Risk Traps (Watch Out For)
+        </p>
+        <ul className="space-y-1.5">
+          {traps.map((trap, idx) => (
+            <li key={idx} className="flex items-start gap-2 text-xs text-rose-900 leading-relaxed font-sans">
+              <span className="text-rose-600 font-bold select-none">•</span>
+              <span>{trap}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+});
+
+export const LeanCustomerDiscoverySection = memo(function LeanCustomerDiscoverySection({
+  customerDiscovery,
+}) {
+  const [copiedIndex, setCopiedIndex] = useState(null);
+
+  const questions = customerDiscovery?.interviewQuestions || [
+    "When was the last time you experienced this specific workflow bottleneck?",
+    "How much money or time did you spend trying to solve it this month?",
+    "What specific workarounds or tools are you currently stitching together?",
+    "What is the most painful part of your current solution?",
+    "Who else in your organization feels the pain or needs to approve changes?",
+  ];
+
+  const redFlags = customerDiscovery?.redFlags || [
+    "Prospect says 'This sounds like a great idea!' without mentioning past spend or action.",
+    "Prospect requests endless non-essential custom features before committing to trial.",
+    "Prospect is willing to use it only if it is completely free forever.",
+  ];
+
+  const wtpSignals = customerDiscovery?.willingnessToPaySignals || [
+    "Signed Letter of Intent (LOI) or paid pilot deposit ($100-$500 commitment) prior to build.",
+    "Customer offers immediate access to internal data/APIs for manual concierge onboarding.",
+  ];
+
+  const handleCopyQuestion = (q, idx) => {
+    navigator.clipboard?.writeText(q);
+    setCopiedIndex(idx);
+    setTimeout(() => setCopiedIndex(null), 1500);
+  };
+
+  return (
+    <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm mb-6">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 shadow-2xs">
+            <Target size={18} />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">
+              Lean Customer Discovery (The "Mom Test" Protocol)
+            </h3>
+            <p className="text-xs text-slate-500">
+              Unbiased questions to validate real buyer urgency before writing a line of code.
+            </p>
+          </div>
+        </div>
+        <span className="text-[10px] font-mono text-slate-500 uppercase bg-slate-50 px-2 py-1 rounded border border-slate-200 font-bold hidden sm:inline-block">
+          Pre-Code Validation
         </span>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200">
-          <CheckCircle2 size={12} className="text-emerald-500" /> B2B High-Margin Economics
-        </span>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200">
-          <CheckCircle2 size={12} className="text-emerald-500" /> Low Tech Debt Risk
-        </span>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200">
-          <CheckCircle2 size={12} className="text-emerald-500" /> Clear Beachhead Segment
-        </span>
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-50 text-slate-700 border border-slate-200">
-          <CheckCircle2 size={12} className="text-emerald-500" /> 1-Person Scalable MVP
-        </span>
+      </div>
+
+      {/* 5 Interview Questions */}
+      <div className="space-y-2 mb-5">
+        <p className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-bold mb-2">
+          5 Core Interview Questions (Click to Copy)
+        </p>
+        {questions.map((q, i) => (
+          <div
+            key={i}
+            className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-50/70 border border-slate-200/70 hover:border-orange-300 transition-all group"
+          >
+            <div className="flex items-start gap-2.5 min-w-0">
+              <span className="text-xs font-mono font-bold text-orange-600 bg-orange-50 border border-orange-200 px-1.5 py-0.2 rounded shrink-0">
+                Q{i + 1}
+              </span>
+              <p className="text-xs sm:text-sm text-slate-800 font-sans leading-relaxed">{q}</p>
+            </div>
+            <button
+              onClick={() => handleCopyQuestion(q, i)}
+              className="flex items-center gap-1 text-[11px] font-mono text-slate-400 group-hover:text-orange-600 transition-colors shrink-0 cursor-pointer"
+            >
+              {copiedIndex === i ? (
+                <>
+                  <Check size={12} className="text-emerald-600" />
+                  <span className="text-emerald-600">Copied</span>
+                </>
+              ) : (
+                <>
+                  <Copy size={12} />
+                  <span>Copy</span>
+                </>
+              )}
+            </button>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-3 border-t border-slate-100">
+        {/* Red Flags */}
+        <div className="p-4 rounded-2xl bg-rose-50/40 border border-rose-200/70">
+          <p className="text-xs font-mono uppercase tracking-wider text-rose-800 font-bold mb-2 flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-rose-500" />
+            False-Positive Red Flags (Beware)
+          </p>
+          <ul className="space-y-1.5">
+            {redFlags.map((flag, idx) => (
+              <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed">
+                <span className="text-rose-500 font-bold select-none">✕</span>
+                <span>{flag}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Commitment Signals */}
+        <div className="p-4 rounded-2xl bg-emerald-50/40 border border-emerald-200/70">
+          <p className="text-xs font-mono uppercase tracking-wider text-emerald-800 font-bold mb-2 flex items-center gap-1.5">
+            <span className="h-2 w-2 rounded-full bg-emerald-500" />
+            Willingness-to-Pay Commitment Tests
+          </p>
+          <ul className="space-y-1.5">
+            {wtpSignals.map((sig, idx) => (
+              <li key={idx} className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed">
+                <span className="text-emerald-600 font-bold select-none">✓</span>
+                <span>{sig}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
     </div>
   );
 });
 
 export const SwotAnalysisMatrix = memo(function SwotAnalysisMatrix({
+  swotAnalysis,
   ideaAnalysis,
   marketResearch,
   competitorWeaknessAnalysis,
   customerPersona,
 }) {
   const strengths = useMemo(() => {
+    if (swotAnalysis?.strengths?.length) return swotAnalysis.strengths;
     const list = [];
     if (ideaAnalysis?.feasibility) list.push(ideaAnalysis.feasibility);
     if (competitorWeaknessAnalysis?.[0]?.suggestedDifferentiation) {
       list.push(competitorWeaknessAnalysis[0].suggestedDifferentiation);
     }
-    list.push("Extremely lean infrastructure footprint with zero legacy technical debt.");
-    list.push("Rapid continuous deployment speed compared to legacy enterprise incumbents.");
-    return list.slice(0, 3);
-  }, [ideaAnalysis, competitorWeaknessAnalysis]);
+    list.push("Lean architecture footprint with low initial burn.");
+    list.push("Fast deployment velocity compared to incumbent tools.");
+    return list.slice(0, 4);
+  }, [swotAnalysis, ideaAnalysis, competitorWeaknessAnalysis]);
 
   const weaknesses = useMemo(() => {
+    if (swotAnalysis?.weaknesses?.length) return swotAnalysis.weaknesses;
     return [
-      "Initial cold-start distribution challenge and unproven organic search visibility.",
-      "Reliance on third-party foundational LLM API latency and rate limits.",
+      "Initial cold-start distribution challenge and unproven organic search authority.",
+      "Reliance on upstream foundation AI model API pricing and latency.",
       "Early lack of proprietary user behavioral dataset before first 1,000 active cohorts.",
     ];
-  }, []);
+  }, [swotAnalysis]);
 
   const opportunities = useMemo(() => {
+    if (swotAnalysis?.opportunities?.length) return swotAnalysis.opportunities;
     const list = [];
     if (marketResearch?.opportunities?.length > 0) {
       list.push(...marketResearch.opportunities);
     }
-    if (competitorWeaknessAnalysis?.[0]?.missedOpportunities?.length > 0) {
-      list.push(competitorWeaknessAnalysis[0].missedOpportunities[0]);
-    }
-    list.push("Expanding from initial single-player utility into collaborative team workflows.");
-    return list.slice(0, 3);
-  }, [marketResearch, competitorWeaknessAnalysis]);
+    list.push("Expanding from initial single-player utility into collaborative multi-seat workflows.");
+    return list.slice(0, 4);
+  }, [swotAnalysis, marketResearch]);
 
   const threats = useMemo(() => {
+    if (swotAnalysis?.threats?.length) return swotAnalysis.threats;
     const list = [];
     if (marketResearch?.competitors?.length > 0) {
-      list.push(`Feature replication from entrenched incumbents like ${marketResearch.competitors.slice(0, 2).join(", ")}.`);
+      list.push(`Fast-follow feature replication from incumbents like ${marketResearch.competitors.slice(0, 2).join(", ")}.`);
     }
-    list.push("Platform risk or pricing tier adjustments from upstream cloud & AI infrastructure providers.");
-    list.push("Commoditization of baseline automated generation if domain personalization is not prioritized.");
-    return list.slice(0, 3);
-  }, [marketResearch]);
+    list.push("Commoditization of generic automation if deep personalization is omitted.");
+    return list.slice(0, 4);
+  }, [swotAnalysis, marketResearch]);
 
   return (
-    <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-sm mb-6">
+    <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm mb-6">
       <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600">
-            <ShieldCheck size={16} />
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 shadow-2xs">
+            <ShieldCheck size={18} />
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-900 tracking-tight">
-              LaunchPilot™ 4-Quadrant Strategic SWOT Analysis
+              SWOT (Strengths, Weaknesses, Opportunities, Threats) Strategic Matrix
             </h3>
             <p className="text-xs text-slate-500">
-              Rigorous strategic audit of competitive strengths, internal vulnerabilities, and market tailwinds.
+              Audit of internal capabilities vs. external market environment.
             </p>
           </div>
         </div>
-        <span className="text-[11px] font-mono text-slate-400 uppercase hidden sm:inline-block">
-          Framework: Harvard Business School SWOT
+        <span className="text-[10px] font-mono text-slate-400 uppercase hidden sm:inline-block">
+          Harvard Business Review Model
         </span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Strengths */}
-        <div className="p-4 rounded-xl bg-emerald-50/50 border border-emerald-200/80">
+        {/* Strengths (Emerald) */}
+        <div className="p-4 rounded-2xl bg-emerald-50/50 border border-emerald-200/80">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-800 flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
@@ -248,15 +427,15 @@ export const SwotAnalysisMatrix = memo(function SwotAnalysisMatrix({
           </ul>
         </div>
 
-        {/* Weaknesses */}
-        <div className="p-4 rounded-xl bg-amber-50/50 border border-amber-200/80">
+        {/* Weaknesses (Amber) */}
+        <div className="p-4 rounded-2xl bg-amber-50/50 border border-amber-200/80">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-amber-500" />
-              Weaknesses (Internal Gaps)
+              Weaknesses (Internal Vulnerabilities)
             </span>
             <span className="text-[10px] font-mono text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded font-bold">
-              RISK
+              GAPS
             </span>
           </div>
           <ul className="space-y-2">
@@ -269,15 +448,15 @@ export const SwotAnalysisMatrix = memo(function SwotAnalysisMatrix({
           </ul>
         </div>
 
-        {/* Opportunities */}
-        <div className="p-4 rounded-xl bg-sky-50/50 border border-sky-200/80">
+        {/* Opportunities (Sky) */}
+        <div className="p-4 rounded-2xl bg-sky-50/50 border border-sky-200/80">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-sky-800 flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-sky-500" />
               Opportunities (Market Tailwinds)
             </span>
             <span className="text-[10px] font-mono text-sky-700 bg-sky-100/80 px-2 py-0.5 rounded font-bold">
-              UPSIDE
+              TAILWINDS
             </span>
           </div>
           <ul className="space-y-2">
@@ -290,15 +469,15 @@ export const SwotAnalysisMatrix = memo(function SwotAnalysisMatrix({
           </ul>
         </div>
 
-        {/* Threats */}
-        <div className="p-4 rounded-xl bg-rose-50/50 border border-rose-200/80">
+        {/* Threats (Rose) */}
+        <div className="p-4 rounded-2xl bg-rose-50/50 border border-rose-200/80">
           <div className="flex items-center justify-between mb-2.5">
             <span className="text-xs font-mono font-bold uppercase tracking-wider text-rose-800 flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-rose-500" />
-              Threats (External Factors)
+              Threats (External Competitors & Risks)
             </span>
             <span className="text-[10px] font-mono text-rose-700 bg-rose-100/80 px-2 py-0.5 rounded font-bold">
-              GUARD
+              RISK
             </span>
           </div>
           <ul className="space-y-2">
@@ -314,6 +493,168 @@ export const SwotAnalysisMatrix = memo(function SwotAnalysisMatrix({
     </div>
   );
 });
+
+export const PortersFiveForcesBreakdown = memo(function PortersFiveForcesBreakdown({
+  portersFiveForces,
+}) {
+  const defaultAnalysis = {
+    buyerPower: { level: "Moderate", analysis: "Buyers have alternatives, but high switching friction can be built via deeply integrated workflows." },
+    supplierPower: { level: "Low", analysis: "Foundational AI models and cloud hosts are highly commoditized, reducing supplier lock-in risk." },
+    competitiveRivalry: { level: "Moderate", analysis: "Incumbents exist but move slowly, leaving agile beachheads open for modern UX." },
+    threatOfSubstitutes: { level: "Moderate", analysis: "Manual spreadsheets and fragmented scripts remain primary alternatives to displace." },
+    threatOfNewEntry: { level: "Moderate", analysis: "Low code barriers exist, but proprietary data integrations form defensible moats." },
+  };
+
+  const forces = [
+    { key: "buyerPower", label: "Buyer Bargaining Power", data: portersFiveForces?.buyerPower || defaultAnalysis.buyerPower },
+    { key: "supplierPower", label: "Supplier Bargaining Power", data: portersFiveForces?.supplierPower || defaultAnalysis.supplierPower },
+    { key: "competitiveRivalry", label: "Competitive Rivalry", data: portersFiveForces?.competitiveRivalry || defaultAnalysis.competitiveRivalry },
+    { key: "threatOfSubstitutes", label: "Threat of Substitutes", data: portersFiveForces?.threatOfSubstitutes || defaultAnalysis.threatOfSubstitutes },
+    { key: "threatOfNewEntry", label: "Threat of New Entrants", data: portersFiveForces?.threatOfNewEntry || defaultAnalysis.threatOfNewEntry },
+  ];
+
+  const getBadgeStyle = (level = "Moderate") => {
+    const l = level.toLowerCase();
+    if (l.includes("low")) return "bg-emerald-50 text-emerald-700 border-emerald-200";
+    if (l.includes("high")) return "bg-rose-50 text-rose-700 border-rose-200";
+    return "bg-amber-50 text-amber-700 border-amber-200";
+  };
+
+  return (
+    <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm mb-6">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 shadow-2xs">
+            <Layers size={18} />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">
+              Porter's Five Forces Industry Defensibility
+            </h3>
+            <p className="text-xs text-slate-500">
+              Structural analysis of industry rivalry, entry barriers, and pricing power.
+            </p>
+          </div>
+        </div>
+        <span className="text-[10px] font-mono uppercase bg-slate-50 text-slate-500 px-2 py-1 rounded border border-slate-200 font-bold hidden sm:inline-block">
+          Harvard Framework
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        {forces.map((f, i) => (
+          <div
+            key={f.key}
+            className={`p-4 rounded-2xl bg-slate-50/70 border border-slate-200/70 hover:border-orange-300 transition-all ${
+              i === 4 ? "sm:col-span-2 lg:col-span-1" : ""
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-700 truncate">
+                {f.label}
+              </span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border shrink-0 ${getBadgeStyle(f.data?.level)}`}>
+                {f.data?.level || "Moderate"}
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 leading-relaxed font-sans">{f.data?.analysis}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+
+export const MarketSizingSection = memo(function MarketSizingSection({
+  marketSizing,
+}) {
+  const tam = marketSizing?.tam || {
+    value: "$14.2B",
+    description: "TAM (Total Addressable Market): Global market size calculation rationale based on total sector software spend.",
+  };
+  const sam = marketSizing?.sam || {
+    value: "$2.1B",
+    description: "SAM (Serviceable Available Market): Addressable market segment matching beachhead ICP geography and vertical.",
+  };
+  const som = marketSizing?.som || {
+    value: "$48M",
+    description: "SOM (Serviceable Obtainable Market): Realistic 1–3 year capture target with focused founder-led sales.",
+  };
+
+  return (
+    <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm mb-6">
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-2xs">
+            <DollarSign size={18} />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-slate-900 tracking-tight">
+              Market Sizing Architecture
+            </h3>
+            <p className="text-xs text-slate-500">
+              TAM, SAM, and SOM bottom-up market sizing projections.
+            </p>
+          </div>
+        </div>
+        <span className="text-[10px] font-mono uppercase bg-slate-50 text-slate-500 px-2 py-1 rounded border border-slate-200 font-bold hidden sm:inline-block">
+          Bottom-Up Financials
+        </span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* TAM */}
+        <div className="p-5 rounded-2xl bg-gradient-to-br from-orange-50/40 via-white to-white border border-orange-200/70 shadow-xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-orange-600">
+              TAM (Total Addressable Market)
+            </span>
+            <span className="text-[10px] font-mono text-orange-700 bg-orange-100/80 px-2 py-0.5 rounded font-bold">
+              Global
+            </span>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight my-2">
+            {tam.value}
+          </div>
+          <p className="text-xs text-slate-600 leading-relaxed font-sans">{tam.description}</p>
+        </div>
+
+        {/* SAM */}
+        <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50/40 via-white to-white border border-amber-200/70 shadow-xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-amber-700">
+              SAM (Serviceable Available Market)
+            </span>
+            <span className="text-[10px] font-mono text-amber-700 bg-amber-100/80 px-2 py-0.5 rounded font-bold">
+              Segment
+            </span>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight my-2">
+            {sam.value}
+          </div>
+          <p className="text-xs text-slate-600 leading-relaxed font-sans">{sam.description}</p>
+        </div>
+
+        {/* SOM */}
+        <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-50/40 via-white to-white border border-emerald-200/70 shadow-xs">
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-700">
+              SOM (Serviceable Obtainable Market)
+            </span>
+            <span className="text-[10px] font-mono text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded font-bold">
+              Year 1–3
+            </span>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight my-2">
+            {som.value}
+          </div>
+          <p className="text-xs text-slate-600 leading-relaxed font-sans">{som.description}</p>
+        </div>
+      </div>
+    </div>
+  );
+});
+
 
 // ---------------------------------------------------------------------------
 // VENTURUSAI FEATURE: 360° Macro PESTEL Analysis Framework

@@ -22,7 +22,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import { runAllAgents } from "./agents.js";
-import { chatGemini } from "./gemini.js";
+import { chatGemini, streamChatGemini } from "./gemini.js";
 
 dotenv.config();
 
@@ -104,6 +104,58 @@ app.post("/api/chat-agent", async (req, res) => {
   }
 });
 
+// Strong AI Co-Founder & YC Partner Interactive Consultant Streaming Endpoint
+app.post("/api/consultant", async (req, res) => {
+  const { message, history = [], blueprint = null, originalIdea = "" } = req.body;
+
+  if (!message || typeof message !== "string" || !message.trim()) {
+    return res.status(400).json({ error: "Please provide a query message." });
+  }
+
+  // Set streaming headers
+  res.writeHead(200, {
+    "Content-Type": "text/plain; charset=utf-8",
+    "Transfer-Encoding": "chunked",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+
+  // Prepare system prompt with active blueprint context
+  let systemPrompt = [
+    "You are the elite LaunchPilot AI Co-Founder, YC partner, and senior startup growth strategist.",
+    "Your mission: partner with the founder to test assumptions, sharpen product positioning, pressure-test unit economics, dissect competitive defensibility, and design aggressive go-to-market strategies.",
+    "Tone & Style Guidelines:",
+    "- High-signal, authoritative, supportive yet rigorous and intellectually honest (like a top Y Combinator partner during office hours).",
+    "- Directly answer questions with tactical specificity rather than generic business clichés.",
+    "- When advising on strategy, pricing, or product, directly reference the founder's specific idea, market, and blueprint data.",
+    "- Format with crisp bullet points, clean formatting, bold highlights, and code/template blocks where appropriate.",
+    "- When abbreviations or acronyms like TAM, SAM, SOM are mentioned, write out their full forms in brackets beside them: e.g. TAM (Total Addressable Market), SAM (Serviceable Available Market), SOM (Serviceable Obtainable Market).",
+    "- If grilled or asked to find flaws, give honest, fatal failure modes and high-leverage solutions.",
+  ].join("\n");
+
+  if (originalIdea) {
+    systemPrompt += `\n\n[STARTUP CONCEPT / ORIGINAL IDEA]:\n${originalIdea}`;
+  }
+
+  if (blueprint) {
+    systemPrompt += `\n\n[ACTIVE STARTUP BLUEPRINT REPORT CONTEXT]:\n${JSON.stringify(blueprint, null, 2).slice(0, 15000)}`;
+  }
+
+  const messages = [...history];
+  messages.push({ role: "user", text: message.trim() });
+
+  try {
+    await streamChatGemini(messages, systemPrompt, (chunk) => {
+      res.write(chunk);
+    });
+  } catch (err) {
+    console.error("Consultant stream error:", err.message);
+    res.write(`\n\n[Co-Founder Note]: Response stream encountered a network issue (${err.message}).`);
+  } finally {
+    res.end();
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`LaunchPilot AI backend running on http://localhost:${PORT}`);
-});
+});
