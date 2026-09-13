@@ -125,7 +125,7 @@ export default function WorkspacePage({
   });
 
   // Business Analysis navigation & viewMode for Blueprint
-  const [activeSection, setActiveSection] = useState("standard-analysis");
+  const [activeSection, setActiveSection] = useState("overview");
   const [viewMode, setViewMode] = useState("dashboard"); // "dashboard" | "prd"
   const [isBusinessOpen, setIsBusinessOpen] = useState(true);
 
@@ -135,7 +135,7 @@ export default function WorkspacePage({
       setActiveView("new");
     } else if (blueprint) {
       setActiveView("blueprint");
-      setActiveSection("standard-analysis");
+      setActiveSection("overview");
       scrollToTop();
     }
   }, [isLoading, blueprint, scrollToTop]);
@@ -173,7 +173,7 @@ export default function WorkspacePage({
   const handleStartNew = () => {
     setBlueprint(null);
     setActiveView("new");
-    setActiveSection("standard-analysis");
+    setActiveSection("overview");
     setError("");
     scrollToTop();
     setTimeout(() => {
@@ -189,7 +189,7 @@ export default function WorkspacePage({
       setBlueprint(entry.blueprint);
     }
     setActiveView("blueprint");
-    setActiveSection("standard-analysis");
+    setActiveSection("overview");
     setViewMode("dashboard");
     scrollToTop();
     showToast(`Loaded "${entry.idea.slice(0, 30)}..."`);
