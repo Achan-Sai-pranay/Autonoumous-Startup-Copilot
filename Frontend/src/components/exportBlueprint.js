@@ -341,7 +341,7 @@ export async function downloadPdf(blueprint, idea) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 48;
+  const margin = 44;
   const contentWidth = pageWidth - margin * 2;
   const footerZone = 40;
   let y = margin;
@@ -354,32 +354,32 @@ export async function downloadPdf(blueprint, idea) {
   };
 
   const heading = (text) => {
-    ensureSpace(30);
+    ensureSpace(32);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(15);
+    doc.setTextColor(15, 23, 42);
     doc.text(text, margin, y);
-    y += 24;
+    y += 22;
   };
 
   const subheading = (text) => {
-    ensureSpace(18);
+    ensureSpace(20);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
+    doc.setFontSize(10.5);
     doc.setTextColor(79, 70, 229);
     doc.text(text, margin, y);
-    y += 16;
+    y += 15;
   };
 
   const paragraph = (text) => {
     if (!text) return;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
+    doc.setFontSize(9.5);
     doc.setTextColor(51, 65, 85);
     doc.splitTextToSize(text, contentWidth).forEach((line) => {
-      ensureSpace(14);
+      ensureSpace(13);
       doc.text(line, margin, y);
-      y += 14;
+      y += 13;
     });
     y += 6;
   };
@@ -387,78 +387,278 @@ export async function downloadPdf(blueprint, idea) {
   const bulletList = (items) => {
     if (!items?.length) return;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
+    doc.setFontSize(9.5);
     doc.setTextColor(51, 65, 85);
     items.forEach((item) => {
       doc.splitTextToSize(`•  ${item}`, contentWidth - 10).forEach((line) => {
-        ensureSpace(14);
+        ensureSpace(13);
         doc.text(line, margin + 8, y);
-        y += 14;
+        y += 13;
       });
     });
-    y += 6;
+    y += 5;
   };
 
   const unavailable = () => {
     ensureSpace(18);
     doc.setFont("helvetica", "italic");
-    doc.setFontSize(10);
+    doc.setFontSize(9.5);
     doc.setTextColor(180, 83, 9);
     doc.text("Generation unavailable.", margin, y);
-    y += 22;
+    y += 20;
   };
 
   const divider = () => {
-    ensureSpace(18);
+    ensureSpace(16);
     doc.setDrawColor(226, 232, 240);
     doc.line(margin, y, pageWidth - margin, y);
-    y += 18;
+    y += 16;
   };
 
   const ok = (s) => s && !s.error;
   const okList = (l) => Array.isArray(l) && l.length > 0;
 
-  // Cover header
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(24);
-  doc.setTextColor(15, 23, 42);
-  doc.text("Startup Blueprint", margin, y);
-  y += 28;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
-  doc.setTextColor(100, 116, 139);
-  doc.text("Prepared by LaunchPilot AI", margin, y);
-  y += 30;
+  // -------------------------------------------------------------------------
+  // Executive Cover Header Banner
+  // -------------------------------------------------------------------------
+  doc.setFillColor(15, 23, 42); // Slate-900 background banner
+  doc.rect(0, 0, pageWidth, 68, "F");
+  doc.setFillColor(99, 102, 241); // Indigo top accent stripe
+  doc.rect(0, 0, pageWidth, 4, "F");
 
-  heading("Startup Idea");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor(255, 255, 255);
+  doc.text("LaunchPilot Executive Startup Blueprint", margin, 36);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(203, 213, 225);
+  doc.text(`CONFIDENTIAL INVESTOR MEMO  |  SYNTHESIZED ON ${formattedDate().toUpperCase()}`, margin, 52);
+
+  // Status Badge on Header Right
+  doc.setFillColor(30, 41, 59);
+  doc.roundedRect(pageWidth - margin - 130, 24, 130, 24, 4, 4, "F");
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(8);
+  doc.setTextColor(129, 140, 248);
+  doc.text("12-AGENT AI CO-FOUNDER", pageWidth - margin - 65, 39, { align: "center" });
+
+  y = 88;
+
+  heading("Startup Concept & Objective");
   paragraph(idea || "Not provided.");
   divider();
 
+  // -------------------------------------------------------------------------
+  // Visual Chart 1: Viability Speedometer Gauge & Sub-Scores
+  // -------------------------------------------------------------------------
   heading("Venture Viability Scorecard");
   if (ok(viabilityScorecard)) {
-    subheading(`Composite Viability Score: ${viabilityScorecard.score}/100 [Verdict: ${viabilityScorecard.verdict}]`);
-    paragraph(viabilityScorecard.verdictReasoning);
-    subheading("Sub-Scores");
-    bulletList([
-      `Market Demand: ${viabilityScorecard.marketDemandScore}/100`,
-      `Technical Feasibility: ${viabilityScorecard.technicalFeasibilityScore}/100`,
-      `Monetization Engine: ${viabilityScorecard.monetizationScore}/100`,
-    ]);
+    ensureSpace(140);
+    const score = Number(viabilityScorecard.score) || 75;
+    const cardHeight = 110;
+
+    // Card background
+    doc.setFillColor(248, 250, 252);
+    doc.setDrawColor(226, 232, 240);
+    doc.roundedRect(margin, y, contentWidth, cardHeight, 8, 8, "FD");
+
+    // Left Score Box
+    const scoreBoxWidth = 140;
+    let scoreColor = [16, 185, 129]; // Emerald
+    let badgeBg = [209, 250, 229];
+    let badgeText = [6, 95, 70];
+    if (score < 50) {
+      scoreColor = [239, 68, 68];
+      badgeBg = [254, 226, 226];
+      badgeText = [153, 27, 27];
+    } else if (score < 75) {
+      scoreColor = [245, 158, 11];
+      badgeBg = [254, 243, 199];
+      badgeText = [146, 64, 14];
+    }
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(38);
+    doc.setTextColor(scoreColor[0], scoreColor[1], scoreColor[2]);
+    doc.text(String(score), margin + 24, y + 50);
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.setTextColor(148, 163, 184);
+    doc.text("/100", margin + 80, y + 42);
+
+    // Overall Progress Bar under the big score
+    doc.setFillColor(226, 232, 240);
+    doc.roundedRect(margin + 20, y + 62, 100, 6, 3, 3, "F");
+    doc.setFillColor(scoreColor[0], scoreColor[1], scoreColor[2]);
+    doc.roundedRect(margin + 20, y + 62, Math.max(8, (score / 100) * 100), 6, 3, 3, "F");
+
+    // Verdict Badge
+    const verdict = (viabilityScorecard.verdict || "VIABLE").toUpperCase();
+    doc.setFillColor(badgeBg[0], badgeBg[1], badgeBg[2]);
+    doc.roundedRect(margin + 16, y + 78, scoreBoxWidth - 32, 18, 4, 4, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(badgeText[0], badgeText[1], badgeText[2]);
+    doc.text(verdict, margin + scoreBoxWidth / 2, y + 90, { align: "center" });
+
+    // Vertical separator
+    doc.setDrawColor(226, 232, 240);
+    doc.line(margin + scoreBoxWidth, y + 12, margin + scoreBoxWidth, y + cardHeight - 12);
+
+    // Right side: 3 Sub-Score Metric Progress Bars
+    const subX = margin + scoreBoxWidth + 18;
+    const subWidth = contentWidth - scoreBoxWidth - 36;
+    const subScores = [
+      { label: "Market Demand", score: viabilityScorecard.marketDemandScore || 80, color: [59, 130, 246] },
+      { label: "Technical Feasibility", score: viabilityScorecard.technicalFeasibilityScore || 85, color: [16, 185, 129] },
+      { label: "Monetization Engine", score: viabilityScorecard.monetizationScore || 75, color: [245, 158, 11] },
+    ];
+
+    subScores.forEach((item, idx) => {
+      const rowY = y + 26 + idx * 28;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(71, 85, 105);
+      doc.text(item.label, subX, rowY);
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text(`${item.score}%`, subX + subWidth, rowY, { align: "right" });
+
+      // Track
+      doc.setFillColor(226, 232, 240);
+      doc.roundedRect(subX, rowY + 5, subWidth, 5, 2.5, 2.5, "F");
+      // Fill
+      doc.setFillColor(item.color[0], item.color[1], item.color[2]);
+      doc.roundedRect(subX, rowY + 5, Math.max(6, (item.score / 100) * subWidth), 5, 2.5, 2.5, "F");
+    });
+
+    y += cardHeight + 14;
+
+    // Executive Thesis
+    if (viabilityScorecard.verdictReasoning) {
+      subheading("Executive Investment Thesis");
+      paragraph(viabilityScorecard.verdictReasoning);
+    }
+
+    // Fatal Risk Traps alert callout
     if (okList(viabilityScorecard.fatalRiskTraps)) {
-      subheading("Fatal Risk Traps");
-      bulletList(viabilityScorecard.fatalRiskTraps);
+      ensureSpace(50);
+      doc.setFillColor(254, 242, 242);
+      doc.setDrawColor(254, 202, 202);
+      doc.roundedRect(margin, y, contentWidth, 22 + viabilityScorecard.fatalRiskTraps.length * 14, 6, 6, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9);
+      doc.setTextColor(185, 28, 28);
+      doc.text("FATAL RISK TRAPS & DEFENSE MECHANISMS", margin + 12, y + 15);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(127, 29, 29);
+      viabilityScorecard.fatalRiskTraps.forEach((trap, i) => {
+        doc.text(`!  ${trap}`, margin + 14, y + 30 + i * 14);
+      });
+      y += 30 + viabilityScorecard.fatalRiskTraps.length * 14 + 10;
     }
   } else unavailable();
   divider();
 
-  heading("Lean Customer Discovery (Mom Test)");
+  // -------------------------------------------------------------------------
+  // Visual Chart 2: TAM / SAM / SOM Market Sizing Architecture
+  // -------------------------------------------------------------------------
+  heading("Market Sizing Architecture (TAM / SAM / SOM)");
+  if (ok(marketSizing)) {
+    ensureSpace(120);
+    const boxWidth = (contentWidth - 20) / 3;
+    const boxHeight = 90;
+
+    const cards = [
+      {
+        badge: "TAM",
+        label: "Total Addressable Market",
+        val: marketSizing.tam?.value || "$14B",
+        desc: marketSizing.tam?.description || "Global macroeconomic ceiling",
+        bg: [238, 242, 255],
+        border: [199, 210, 254],
+        primary: [67, 56, 202],
+        secondary: [99, 102, 241],
+      },
+      {
+        badge: "SAM",
+        label: "Serviceable Available Market",
+        val: marketSizing.sam?.value || "$2.4B",
+        desc: marketSizing.sam?.description || "Addressable target segment",
+        bg: [236, 253, 245],
+        border: [167, 243, 208],
+        primary: [6, 95, 70],
+        secondary: [16, 185, 129],
+      },
+      {
+        badge: "SOM",
+        label: "Serviceable Obtainable Market",
+        val: marketSizing.som?.value || "$48M",
+        desc: marketSizing.som?.description || "Realistic 3-5 yr captured wedge",
+        bg: [254, 243, 199],
+        border: [253, 230, 138],
+        primary: [146, 64, 14],
+        secondary: [217, 119, 6],
+      },
+    ];
+
+    cards.forEach((c, i) => {
+      const bx = margin + i * (boxWidth + 10);
+      doc.setFillColor(c.bg[0], c.bg[1], c.bg[2]);
+      doc.setDrawColor(c.border[0], c.border[1], c.border[2]);
+      doc.roundedRect(bx, y, boxWidth, boxHeight, 6, 6, "FD");
+
+      // Badge
+      doc.setFillColor(c.secondary[0], c.secondary[1], c.secondary[2]);
+      doc.roundedRect(bx + 10, y + 10, 36, 14, 3, 3, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(255, 255, 255);
+      doc.text(c.badge, bx + 28, y + 20, { align: "center" });
+
+      // Value
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(c.primary[0], c.primary[1], c.primary[2]);
+      doc.text(c.val, bx + 10, y + 46);
+
+      // Label
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(30, 41, 59);
+      doc.text(c.label, bx + 10, y + 60);
+
+      // Description
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      const splitDesc = doc.splitTextToSize(c.desc, boxWidth - 20);
+      if (splitDesc[0]) doc.text(splitDesc[0], bx + 10, y + 74);
+    });
+
+    y += boxHeight + 14;
+  } else unavailable();
+  divider();
+
+  // -------------------------------------------------------------------------
+  // Customer Discovery & Mom Test Validation
+  // -------------------------------------------------------------------------
+  heading("Customer Discovery (Mom Test Protocol)");
   if (ok(customerDiscovery)) {
     if (okList(customerDiscovery.interviewQuestions)) {
-      subheading("Unbiased Validation Questions");
+      subheading("Mom Test Validation Questions (Avoid Pitching)");
       bulletList(customerDiscovery.interviewQuestions);
     }
     if (okList(customerDiscovery.redFlags)) {
-      subheading("False-Positive Red Flags");
+      subheading("False-Positive Red Flags to Watch For");
       bulletList(customerDiscovery.redFlags);
     }
     if (okList(customerDiscovery.willingnessToPaySignals)) {
@@ -468,36 +668,121 @@ export async function downloadPdf(blueprint, idea) {
   } else unavailable();
   divider();
 
-  heading("Strategic Frameworks (SWOT & Porter's)");
+  // -------------------------------------------------------------------------
+  // Visual Chart 3: SWOT Analysis 2x2 Quadrant Grid
+  // -------------------------------------------------------------------------
+  heading("SWOT Strategic Matrix");
   if (ok(swotAnalysis)) {
-    subheading("SWOT Matrix: Strengths");
-    bulletList(swotAnalysis.strengths);
-    subheading("SWOT Matrix: Weaknesses");
-    bulletList(swotAnalysis.weaknesses);
-    subheading("SWOT Matrix: Opportunities");
-    bulletList(swotAnalysis.opportunities);
-    subheading("SWOT Matrix: Threats");
-    bulletList(swotAnalysis.threats);
-  }
-  if (ok(portersFiveForces)) {
-    subheading("Porter's Five Forces Defensibility");
-    bulletList([
-      `Buyer Power: [${portersFiveForces.buyerPower?.level || "Moderate"}] ${portersFiveForces.buyerPower?.analysis || ""}`,
-      `Supplier Power: [${portersFiveForces.supplierPower?.level || "Low"}] ${portersFiveForces.supplierPower?.analysis || ""}`,
-      `Competitive Rivalry: [${portersFiveForces.competitiveRivalry?.level || "Moderate"}] ${portersFiveForces.competitiveRivalry?.analysis || ""}`,
-      `Threat of Substitutes: [${portersFiveForces.threatOfSubstitutes?.level || "Moderate"}] ${portersFiveForces.threatOfSubstitutes?.analysis || ""}`,
-      `Threat of New Entrants: [${portersFiveForces.threatOfNewEntry?.level || "Moderate"}] ${portersFiveForces.threatOfNewEntry?.analysis || ""}`,
-    ]);
-  }
+    ensureSpace(190);
+    const swotBoxWidth = (contentWidth - 10) / 2;
+    const swotBoxHeight = 85;
+
+    const quadrants = [
+      {
+        title: "STRENGTHS",
+        items: (swotAnalysis.strengths || []).slice(0, 3),
+        x: margin,
+        y: y,
+        bg: [240, 253, 244],
+        border: [187, 247, 208],
+        titleColor: [22, 101, 52],
+      },
+      {
+        title: "WEAKNESSES",
+        items: (swotAnalysis.weaknesses || []).slice(0, 3),
+        x: margin + swotBoxWidth + 10,
+        y: y,
+        bg: [255, 241, 242],
+        border: [254, 205, 211],
+        titleColor: [159, 18, 57],
+      },
+      {
+        title: "OPPORTUNITIES",
+        items: (swotAnalysis.opportunities || []).slice(0, 3),
+        x: margin,
+        y: y + swotBoxHeight + 10,
+        bg: [239, 246, 255],
+        border: [191, 219, 254],
+        titleColor: [30, 64, 175],
+      },
+      {
+        title: "THREATS",
+        items: (swotAnalysis.threats || []).slice(0, 3),
+        x: margin + swotBoxWidth + 10,
+        y: y + swotBoxHeight + 10,
+        bg: [254, 252, 232],
+        border: [254, 240, 138],
+        titleColor: [133, 77, 14],
+      },
+    ];
+
+    quadrants.forEach((q) => {
+      doc.setFillColor(q.bg[0], q.bg[1], q.bg[2]);
+      doc.setDrawColor(q.border[0], q.border[1], q.border[2]);
+      doc.roundedRect(q.x, q.y, swotBoxWidth, swotBoxHeight, 6, 6, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(q.titleColor[0], q.titleColor[1], q.titleColor[2]);
+      doc.text(q.title, q.x + 10, q.y + 16);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(51, 65, 85);
+      q.items.forEach((item, idx) => {
+        const itemLines = doc.splitTextToSize(`• ${item}`, swotBoxWidth - 20);
+        if (itemLines[0]) {
+          doc.text(itemLines[0], q.x + 10, q.y + 32 + idx * 16);
+        }
+      });
+    });
+
+    y += swotBoxHeight * 2 + 20;
+  } else unavailable();
   divider();
 
-  heading("Market Sizing (TAM / SAM / SOM)");
-  if (ok(marketSizing)) {
-    bulletList([
-      `TAM (Total Addressable Market): ${marketSizing.tam?.value || "$14B"} — ${marketSizing.tam?.description || ""}`,
-      `SAM (Serviceable Available Market): ${marketSizing.sam?.value || "$2B"} — ${marketSizing.sam?.description || ""}`,
-      `SOM (Serviceable Obtainable Market): ${marketSizing.som?.value || "$40M"} — ${marketSizing.som?.description || ""}`,
-    ]);
+  // -------------------------------------------------------------------------
+  // Porter's Five Forces with Visual Badges
+  // -------------------------------------------------------------------------
+  if (ok(portersFiveForces)) {
+    heading("Porter's Five Forces Analysis");
+    const forces = [
+      { name: "Buyer Bargaining Power", data: portersFiveForces.buyerPower },
+      { name: "Supplier Bargaining Power", data: portersFiveForces.supplierPower },
+      { name: "Competitive Rivalry", data: portersFiveForces.competitiveRivalry },
+      { name: "Threat of Substitutes", data: portersFiveForces.threatOfSubstitutes },
+      { name: "Threat of New Entrants", data: portersFiveForces.threatOfNewEntry },
+    ];
+
+    forces.forEach((f) => {
+      const level = (f.data?.level || "Moderate").toUpperCase();
+      let badgeBg = [254, 243, 199];
+      let badgeText = [146, 64, 14];
+      if (level === "HIGH") {
+        badgeBg = [254, 226, 226];
+        badgeText = [153, 27, 27];
+      } else if (level === "LOW") {
+        badgeBg = [209, 250, 229];
+        badgeText = [6, 95, 70];
+      }
+
+      ensureSpace(28);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(30, 41, 59);
+      doc.text(f.name, margin, y + 10);
+
+      doc.setFillColor(badgeBg[0], badgeBg[1], badgeBg[2]);
+      doc.roundedRect(pageWidth - margin - 80, y, 80, 15, 3, 3, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7.5);
+      doc.setTextColor(badgeText[0], badgeText[1], badgeText[2]);
+      doc.text(level, pageWidth - margin - 40, y + 11, { align: "center" });
+
+      y += 18;
+      paragraph(f.data?.analysis);
+    });
+    divider();
   } else unavailable();
   divider();
 

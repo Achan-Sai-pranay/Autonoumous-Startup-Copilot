@@ -12,6 +12,7 @@ import LoadingTimeline from "./LoadingTimeline.jsx";
 import BlueprintDashboard, { BUSINESS_SECTIONS } from "./BlueprintDashboard.jsx";
 import { useSpeechToText } from "../hooks/useSpeechToText.js";
 import { downloadPdf } from "./exportBlueprint.js";
+import { saveToHistory } from "../lib/projectHistory.js";
 import {
   ArrowLeft,
   Zap,
@@ -1079,9 +1080,18 @@ export default function WorkspacePage({
                 </div>
               </div>
 
-              {/* Dashboard with synchronized section & viewMode */}
+              {/* Dashboard with synchronized section, viewMode & live card editing */}
               <BlueprintDashboard
                 blueprint={blueprint}
+                setBlueprint={(updater) => {
+                  setBlueprint((prev) => {
+                    const next = typeof updater === "function" ? updater(prev) : updater;
+                    if (idea && next) {
+                      saveToHistory(idea, next, currentUser?.id);
+                    }
+                    return next;
+                  });
+                }}
                 originalIdea={idea}
                 activeSection={activeSection}
                 setActiveSection={setActiveSection}

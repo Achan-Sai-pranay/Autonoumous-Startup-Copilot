@@ -21,6 +21,7 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import rateLimit from "express-rate-limit";
 import { runAllAgents } from "./agents.js";
 import { chatGemini, streamChatGemini } from "./gemini.js";
 
@@ -32,13 +33,46 @@ const PORT = process.env.PORT || 5001;
 app.use(cors());
 app.use(express.json());
 
+// Global API rate limiter (protects server against spam)
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 150, // 150 requests per 15 minutes per IP
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many requests from this IP. Please slow down and try again shortly." },
+});
+
+// Blueprint generation rate limiter (expensive multi-agent calls)
+const blueprintLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20, // 20 full blueprint runs per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Blueprint generation limit reached (max 20 blueprints per 15 minutes). Please wait before generating another.",
+  },
+});
+
+// Chat & Consultant rate limiter
+const chatLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 80, // 80 chat turns per 15 minutes
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    error: "Co-Founder chat query limit reached. Please wait a moment before sending another message.",
+  },
+});
+
+app.use("/api/", globalLimiter);
+
 // Simple health check — useful to confirm the server is up.
 app.get("/", (req, res) => {
   res.send("LaunchPilot AI backend is running.");
 });
 
 // The one and only API endpoint. Streams progress, then the final result.
-app.post("/api/generate-blueprint", async (req, res) => {
+app.post("/api/generate-blueprint", blueprintLimiter, async (req, res) => {
   const { idea } = req.body;
 
   if (!idea || typeof idea !== "string" || idea.trim().length < 5) {
@@ -79,7 +113,7 @@ app.post("/api/generate-blueprint", async (req, res) => {
 });
 
 // Commercial Website AI Copilot Assistant Endpoint
-app.post("/api/chat-agent", async (req, res) => {
+app.post("/api/chat-agent", chatLimiter, async (req, res) => {
   const { messages = [], blueprintContext = null } = req.body;
 
   let systemPrompt =
@@ -92,7 +126,8 @@ app.post("/api/chat-agent", async (req, res) => {
     "5. Directly answer the founder's specific query without generic fluff, intros, or robotic sign-offs.";
 
   if (blueprintContext) {
-    systemPrompt += `\n\nACTIVE STARTUP BLUEPRINT CONTEXT:\n${JSON.stringify(blueprintContext, null, 2).slice(0, 8000)}`;
+    // Provide the complete active blueprint context without arbitrary truncation
+    systemPrompt += `\n\nACTIVE STARTUP BLUEPRINT CONTEXT:\n${JSON.stringify(blueprintContext, null, 2)}`;
   }
 
   try {
@@ -105,7 +140,7 @@ app.post("/api/chat-agent", async (req, res) => {
 });
 
 // Strong AI Co-Founder & YC Partner Interactive Consultant Streaming Endpoint
-app.post("/api/consultant", async (req, res) => {
+app.post("/api/consultant", chatLimiter, async (req, res) => {
   const { message, history = [], blueprint = null, originalIdea = "" } = req.body;
 
   if (!message || typeof message !== "string" || !message.trim()) {
@@ -127,7 +162,7 @@ app.post("/api/consultant", async (req, res) => {
     "Tone & Style Guidelines:",
     "- High-signal, authoritative, supportive yet rigorous and intellectually honest (like a top Y Combinator partner during office hours).",
     "- Directly answer questions with tactical specificity rather than generic business clichés.",
-    "- When advising on strategy, pricing, or product, directly reference the founder's specific idea, market, and blueprint data.",
+    "- When advising on strategy, pricing, or product, directly reference the founder's specific idea, market, and blueprint data (including Financials, Unit Economics, Launch Checklists, and GTM copy).",
     "- Format with crisp bullet points, clean formatting, bold highlights, and code/template blocks where appropriate.",
     "- When abbreviations or acronyms like TAM, SAM, SOM are mentioned, write out their full forms in brackets beside them: e.g. TAM (Total Addressable Market), SAM (Serviceable Available Market), SOM (Serviceable Obtainable Market).",
     "- If grilled or asked to find flaws, give honest, fatal failure modes and high-leverage solutions.",
@@ -138,7 +173,8 @@ app.post("/api/consultant", async (req, res) => {
   }
 
   if (blueprint) {
-    systemPrompt += `\n\n[ACTIVE STARTUP BLUEPRINT REPORT CONTEXT]:\n${JSON.stringify(blueprint, null, 2).slice(0, 15000)}`;
+    // Retain full blueprint data (financial models, unit economics, GTM copy, checklists) without mid-JSON string slicing
+    systemPrompt += `\n\n[ACTIVE STARTUP BLUEPRINT REPORT CONTEXT]:\n${JSON.stringify(blueprint, null, 2)}`;
   }
 
   const messages = [...history];

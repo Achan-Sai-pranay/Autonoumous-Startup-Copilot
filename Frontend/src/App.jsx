@@ -24,7 +24,7 @@ import {
   FullFooter,
   FloatingChatWidget,
 } from "./components/MarketingSections.jsx";
-import { getHistory, saveToHistory, deleteFromHistory } from "./lib/projectHistory.js";
+import { getHistory, saveToHistory, deleteFromHistory, syncHistoryFromCloud } from "./lib/projectHistory.js";
 import { getCurrentUser, logout } from "./lib/authContext.js";
 import { useSpeechToText } from "./hooks/useSpeechToText.js";
 import {
@@ -137,9 +137,19 @@ export default function App() {
   const generatorRef = useRef(null);
   const inputRef = useRef(null);
 
-  function handleOpenHistory() {
+  async function handleOpenHistory() {
     setHistory(getHistory(currentUser?.id));
     setShowHistory(true);
+    if (currentUser?.id) {
+      try {
+        const cloudProjects = await syncHistoryFromCloud(currentUser.id);
+        if (cloudProjects && cloudProjects.length > 0) {
+          setHistory(cloudProjects);
+        }
+      } catch (e) {
+        // Safe fallback to local history
+      }
+    }
   }
 
   function handleLoadProject(entry) {

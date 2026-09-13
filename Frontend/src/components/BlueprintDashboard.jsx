@@ -48,6 +48,8 @@ import {
   MessageSquare,
   BookOpen,
   Edit2,
+  Trash2,
+  Plus,
   Info,
   Sparkles,
   Flame,
@@ -115,8 +117,198 @@ class SectionErrorBoundary extends Component {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Inline Editable List Component for Interactive Card Customization
+// ---------------------------------------------------------------------------
+function EditableList({
+  items = [],
+  onUpdate,
+  placeholder = "Add new item...",
+  addButtonLabel = "Add Item",
+  accentColor = "sky",
+  icon: ItemIcon = Check,
+}) {
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [newItemText, setNewItemText] = useState("");
+
+  const handleStartEdit = (idx, text) => {
+    setEditingIndex(idx);
+    setEditText(text);
+  };
+
+  const handleSaveEdit = (idx) => {
+    if (editText.trim()) {
+      const updated = [...items];
+      updated[idx] = editText.trim();
+      onUpdate?.(updated);
+    }
+    setEditingIndex(null);
+  };
+
+  const handleDelete = (idx) => {
+    const updated = items.filter((_, i) => i !== idx);
+    onUpdate?.(updated);
+  };
+
+  const handleAddItem = () => {
+    if (newItemText.trim()) {
+      const updated = [...items, newItemText.trim()];
+      onUpdate?.(updated);
+      setNewItemText("");
+      setIsAdding(false);
+    }
+  };
+
+  const colorStyles = {
+    sky: {
+      icon: "text-sky-500",
+      addBtn: "text-sky-600 hover:text-sky-700 bg-sky-50/70 hover:bg-sky-100 border-sky-200",
+      editInput: "focus:border-sky-500 focus:ring-sky-500/20",
+    },
+    orange: {
+      icon: "text-orange-500",
+      addBtn: "text-orange-600 hover:text-orange-700 bg-orange-50/70 hover:bg-orange-100 border-orange-200",
+      editInput: "focus:border-orange-500 focus:ring-orange-500/20",
+    },
+    emerald: {
+      icon: "text-emerald-500",
+      addBtn: "text-emerald-600 hover:text-emerald-700 bg-emerald-50/70 hover:bg-emerald-100 border-emerald-200",
+      editInput: "focus:border-emerald-500 focus:ring-emerald-500/20",
+    },
+    amber: {
+      icon: "text-amber-500",
+      addBtn: "text-amber-600 hover:text-amber-700 bg-amber-50/70 hover:bg-amber-100 border-amber-200",
+      editInput: "focus:border-amber-500 focus:ring-amber-500/20",
+    },
+  }[accentColor] || {
+    icon: "text-orange-500",
+    addBtn: "text-orange-600 hover:text-orange-700 bg-orange-50/70 hover:bg-orange-100 border-orange-200",
+    editInput: "focus:border-orange-500 focus:ring-orange-500/20",
+  };
+
+  return (
+    <div className="space-y-2">
+      <ul className="space-y-1.5">
+        {(items || []).map((item, idx) => (
+          <li
+            key={idx}
+            className="group relative flex items-start justify-between gap-2 text-xs text-slate-700 leading-relaxed bg-slate-50 hover:bg-white p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 transition-all shadow-2xs"
+          >
+            {editingIndex === idx ? (
+              <div className="flex items-center gap-1.5 w-full">
+                <input
+                  type="text"
+                  value={editText}
+                  onChange={(e) => setEditText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSaveEdit(idx);
+                    if (e.key === "Escape") setEditingIndex(null);
+                  }}
+                  autoFocus
+                  className={`flex-1 text-xs px-2 py-1 bg-white rounded-lg border border-slate-300 outline-none transition-all ${colorStyles.editInput}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleSaveEdit(idx)}
+                  className="p-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-600 cursor-pointer"
+                  title="Save"
+                >
+                  <Check size={13} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setEditingIndex(null)}
+                  className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-500 cursor-pointer"
+                  title="Cancel"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="flex items-start gap-2 flex-1 min-w-0">
+                  <ItemIcon size={14} className={`${colorStyles.icon} shrink-0 mt-0.5`} />
+                  <span className="break-words select-text">{item}</span>
+                </div>
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 shrink-0 ml-1">
+                  <button
+                    type="button"
+                    onClick={() => handleStartEdit(idx, item)}
+                    className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer transition-colors"
+                    title="Edit item"
+                  >
+                    <Edit2 size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(idx)}
+                    className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer transition-colors"
+                    title="Delete item"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      {/* Add New Item */}
+      {isAdding ? (
+        <div className="flex items-center gap-1.5 pt-1">
+          <input
+            type="text"
+            value={newItemText}
+            placeholder={placeholder}
+            onChange={(e) => setNewItemText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleAddItem();
+              if (e.key === "Escape") {
+                setIsAdding(false);
+                setNewItemText("");
+              }
+            }}
+            autoFocus
+            className={`flex-1 text-xs px-2.5 py-1.5 bg-white rounded-xl border border-slate-300 outline-none transition-all ${colorStyles.editInput}`}
+          />
+          <button
+            type="button"
+            onClick={handleAddItem}
+            className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer transition-colors"
+          >
+            Add
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsAdding(false);
+              setNewItemText("");
+            }}
+            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 cursor-pointer"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsAdding(true)}
+          className={`w-full py-1.5 px-3 rounded-xl border border-dashed text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${colorStyles.addBtn}`}
+        >
+          <Plus size={13} />
+          <span>{addButtonLabel}</span>
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function BlueprintDashboard({
   blueprint,
+  setBlueprint,
   originalIdea,
   activeSection: controlledActiveSection,
   setActiveSection: setControlledActiveSection,
@@ -138,6 +330,45 @@ export default function BlueprintDashboard({
   const [customTitle, setCustomTitle] = useState(null);
   const titleInputRef = useRef(null);
 
+  const [internalViewMode, setInternalViewMode] = useState("dashboard");
+  const viewMode = controlledViewMode !== undefined ? controlledViewMode : internalViewMode;
+  const setViewMode = setControlledViewMode || setInternalViewMode;
+
+  const [exporting, setExporting] = useState(null);
+  const [toast, setToast] = useState(null);
+
+  const showToast = useCallback((message) => {
+    setToast(message);
+    setTimeout(() => setToast(null), 2500);
+  }, []);
+
+  // Updaters for modifying blueprint cards live
+  const updateSectionField = useCallback((sectionKey, fieldKey, updatedVal) => {
+    if (setBlueprint) {
+      setBlueprint((prev) => {
+        const sec = prev?.[sectionKey] || {};
+        return {
+          ...prev,
+          [sectionKey]: {
+            ...sec,
+            [fieldKey]: updatedVal,
+          },
+        };
+      });
+    }
+    showToast("Updated item & saved to vault");
+  }, [setBlueprint, showToast]);
+
+  const updateRootField = useCallback((fieldKey, updatedVal) => {
+    if (setBlueprint) {
+      setBlueprint((prev) => ({
+        ...prev,
+        [fieldKey]: updatedVal,
+      }));
+    }
+    showToast("Updated item & saved to vault");
+  }, [setBlueprint, showToast]);
+
   // Smart scroll management
   useEffect(() => {
     if (prevBlueprintRef.current !== blueprint || isFirstMountRef.current) {
@@ -153,18 +384,6 @@ export default function BlueprintDashboard({
       sectionHeaderRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [activeSection, blueprint]);
-
-  const [internalViewMode, setInternalViewMode] = useState("dashboard");
-  const viewMode = controlledViewMode !== undefined ? controlledViewMode : internalViewMode;
-  const setViewMode = setControlledViewMode || setInternalViewMode;
-
-  const [exporting, setExporting] = useState(null);
-  const [toast, setToast] = useState(null);
-
-  const showToast = useCallback((message) => {
-    setToast(message);
-    setTimeout(() => setToast(null), 2500);
-  }, []);
 
   const handleExportPdf = useCallback(async () => {
     setExporting("pdf");
@@ -434,6 +653,10 @@ export default function BlueprintDashboard({
                   <CustomerDiscoverySection
                     customerPersona={customerPersona}
                     customerDiscovery={customerDiscovery}
+                    onUpdatePainPoints={(val) => updateSectionField("customerPersona", "painPoints", val)}
+                    onUpdateQuestions={(val) => updateSectionField("customerDiscovery", "interviewQuestions", val)}
+                    onUpdateRedFlags={(val) => updateSectionField("customerDiscovery", "redFlags", val)}
+                    onUpdateWtpSignals={(val) => updateSectionField("customerDiscovery", "willingnessToPaySignals", val)}
                   />
                 )}
 
@@ -455,6 +678,8 @@ export default function BlueprintDashboard({
                     productPlan={productPlan}
                     technicalArchitecture={technicalArchitecture}
                     roadmap={roadmap}
+                    onUpdateMvpFeatures={(val) => updateSectionField("productPlan", "mvpFeatures", val)}
+                    onUpdateFutureFeatures={(val) => updateSectionField("productPlan", "futureFeatures", val)}
                   />
                 )}
 
@@ -478,6 +703,7 @@ export default function BlueprintDashboard({
                     launchChecklist={launchChecklist}
                     pitch={pitch}
                     onToast={showToast}
+                    onUpdateChecklist={(val) => updateRootField("launchChecklist", val)}
                   />
                 )}
 
@@ -747,7 +973,14 @@ function OverviewSection({ viabilityScorecard, ideaAnalysis, marketSizing, origi
 // ============================================================================
 // SECTION 2: CUSTOMER PERSONA & DISCOVERY
 // ============================================================================
-function CustomerDiscoverySection({ customerPersona, customerDiscovery }) {
+function CustomerDiscoverySection({
+  customerPersona,
+  customerDiscovery,
+  onUpdatePainPoints,
+  onUpdateQuestions,
+  onUpdateRedFlags,
+  onUpdateWtpSignals,
+}) {
   const users = customerPersona?.targetUsers?.length > 0
     ? customerPersona.targetUsers
     : ["Early-Stage Founders & Builders", "Growth Operators & Product Leads"];
@@ -789,30 +1022,40 @@ function CustomerDiscoverySection({ customerPersona, customerDiscovery }) {
 
   return (
     <ResponsiveCardGrid>
-      {/* Card 1: Customer Persona (ICP) */}
+      {/* Card 1: Customer Persona & Profile */}
       <StatCard
-        title="Customer Persona (ICP)"
+        title="Target Customer Profile"
         icon={Users}
         iconColor="text-orange-500"
-        stat={users[0] || "Target Founders"}
-        subtitle="Primary Buyer Archetype"
-        detailsTitle="Buyer Persona Story"
+        stat={`${users.length} ICP Segments`}
+        subtitle="Primary Economic Buyer"
+        detailsTitle="Ideal Customer Profile (ICP)"
         detailsText={profile}
       >
-        <div className="space-y-2 text-xs">
-          <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
-            Target User Roles
-          </span>
-          {users.map((u, i) => (
-            <div key={i} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-700">
-              <span className="text-orange-600 font-bold mr-1.5 font-mono">0{i + 1}.</span>
-              {u}
+        <div className="space-y-3 text-xs">
+          <div>
+            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1.5">
+              Target Demographic / Cohorts
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {users.map((u, i) => (
+                <span
+                  key={i}
+                  className="px-2.5 py-1 rounded-lg bg-orange-50/70 border border-orange-100 text-orange-800 font-medium text-[11px]"
+                >
+                  {u}
+                </span>
+              ))}
             </div>
-          ))}
+          </div>
+          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 leading-relaxed text-[11px]">
+            <span className="font-bold text-slate-800 block mb-0.5">Behavioral Archetype:</span>
+            {profile}
+          </div>
         </div>
       </StatCard>
 
-      {/* Card 2: Critical Pain Points */}
+      {/* Card 2: Critical Pain Points (Editable) */}
       <StatCard
         title="Critical Pain Points"
         icon={AlertTriangle}
@@ -820,22 +1063,19 @@ function CustomerDiscoverySection({ customerPersona, customerDiscovery }) {
         stat={`${painPoints.length} Core Bottlenecks`}
         subtitle="Workflow Friction Areas"
         detailsTitle="Impact on Purchasing Urgency"
-        detailsText="These pain points create significant operational friction, resulting in high willingness to pay for a dedicated solution."
+        detailsText="These pain points create significant operational friction, resulting in high willingness to pay for a dedicated solution. Hover to edit or add custom pain points."
       >
-        <div className="space-y-2 text-xs">
-          <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
-            High-Friction Pain Points
-          </span>
-          {painPoints.map((p, i) => (
-            <div key={i} className="p-2.5 rounded-xl bg-rose-50/50 border border-rose-100 text-rose-900 leading-snug">
-              <span className="text-rose-600 font-bold mr-1.5">✕</span>
-              {p}
-            </div>
-          ))}
-        </div>
+        <EditableList
+          items={painPoints}
+          onUpdate={onUpdatePainPoints}
+          placeholder="e.g. Inability to track unit-level profitability"
+          addButtonLabel="Add Pain Point"
+          accentColor="orange"
+          icon={AlertTriangle}
+        />
       </StatCard>
 
-      {/* Card 3: Lean Customer Discovery — Mom Test */}
+      {/* Card 3: Lean Customer Discovery — Mom Test (Editable) */}
       <StatCard
         title="Lean Customer Discovery"
         icon={Lightbulb}
@@ -845,20 +1085,17 @@ function CustomerDiscoverySection({ customerPersona, customerDiscovery }) {
         detailsTitle="Validation Criteria & Hypotheses"
         detailsText="Focus strictly on past user habits, current workarounds, and financial trade-offs rather than hypothetical commitments."
       >
-        <div className="space-y-2.5 text-xs">
-          <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
-            Core Discovery Questions (The Mom Test)
-          </span>
-          {interviewQuestions.map((q, i) => (
-            <div key={i} className="p-3 rounded-xl bg-slate-50 border border-slate-100 text-slate-700 leading-relaxed">
-              <span className="text-orange-600 font-bold mr-1.5 font-mono">Q{i + 1}.</span>
-              {q}
-            </div>
-          ))}
-        </div>
+        <EditableList
+          items={interviewQuestions}
+          onUpdate={onUpdateQuestions}
+          placeholder="e.g. How much did you spend trying to solve this last month?"
+          addButtonLabel="Add Mom Test Question"
+          accentColor="orange"
+          icon={HelpCircle}
+        />
       </StatCard>
 
-      {/* Card 4: Red Flags (False Positives) — Always Rendered */}
+      {/* Card 4: Red Flags (False Positives) (Editable) */}
       <StatCard
         title="False-Positive Red Flags"
         icon={AlertTriangle}
@@ -868,17 +1105,17 @@ function CustomerDiscoverySection({ customerPersona, customerDiscovery }) {
         detailsTitle="Why Red Flags Matter"
         detailsText="These are common responses from interviewees that sound encouraging but indicate no real commitment. If you hear these, dig deeper — don't celebrate."
       >
-        <div className="space-y-2 text-xs">
-          {redFlags.map((flag, i) => (
-            <div key={i} className="p-2.5 rounded-xl bg-amber-50/60 border border-amber-100 text-amber-900 leading-snug">
-              <span className="text-amber-600 font-bold mr-1.5">⚠</span>
-              {flag}
-            </div>
-          ))}
-        </div>
+        <EditableList
+          items={redFlags}
+          onUpdate={onUpdateRedFlags}
+          placeholder="e.g. 'That sounds super cool, email me when it's done'"
+          addButtonLabel="Add Red Flag"
+          accentColor="amber"
+          icon={AlertTriangle}
+        />
       </StatCard>
 
-      {/* Card 5: Willingness-to-Pay Signals — Always Rendered */}
+      {/* Card 5: Willingness-to-Pay Signals (Editable) */}
       <StatCard
         title="Willingness-to-Pay Signals"
         icon={DollarSign}
@@ -888,14 +1125,14 @@ function CustomerDiscoverySection({ customerPersona, customerDiscovery }) {
         detailsTitle="Why Commitment Tests Matter"
         detailsText="These concrete commitment tests prove real buyer intent before you write a single line of code. Ask for skin in the game."
       >
-        <div className="space-y-2 text-xs">
-          {wtpSignals.map((signal, i) => (
-            <div key={i} className="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100 text-emerald-900 leading-snug">
-              <span className="text-emerald-600 font-bold mr-1.5">✓</span>
-              {signal}
-            </div>
-          ))}
-        </div>
+        <EditableList
+          items={wtpSignals}
+          onUpdate={onUpdateWtpSignals}
+          placeholder="e.g. Founder introduces you to their finance lead to approve PO"
+          addButtonLabel="Add Commitment Signal"
+          accentColor="emerald"
+          icon={DollarSign}
+        />
       </StatCard>
     </ResponsiveCardGrid>
   );
@@ -1167,7 +1404,13 @@ function MarketCompetitorsSection({
 // ============================================================================
 // SECTION 4: PRODUCT ARCHITECTURE & MVP SCOPE
 // ============================================================================
-function ProductMvpSection({ productPlan, technicalArchitecture, roadmap }) {
+function ProductMvpSection({
+  productPlan,
+  technicalArchitecture,
+  roadmap,
+  onUpdateMvpFeatures,
+  onUpdateFutureFeatures,
+}) {
   return (
     <div className="space-y-6">
       <ResponsiveCardGrid>
@@ -1179,20 +1422,20 @@ function ProductMvpSection({ productPlan, technicalArchitecture, roadmap }) {
           stat="Sprint 1 MVP"
           subtitle={`Priority: ${productPlan?.developmentPriority || "Speed to Market"}`}
           detailsTitle="Scope Rationale"
-          detailsText="Prioritized to validate core customer value proposition and collect telemetry in under 4 weeks."
+          detailsText="Prioritized to validate core customer value proposition and collect telemetry in under 4 weeks. Hover to edit, delete, or add custom features."
         >
           <div className="space-y-2">
             <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
-              Core MVP Features
+              Core MVP Features (Editable)
             </span>
-            <ul className="space-y-2">
-              {(productPlan?.mvpFeatures || []).map((feat, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                  <Check size={14} className="text-sky-500 shrink-0 mt-0.5" />
-                  <span>{feat}</span>
-                </li>
-              ))}
-            </ul>
+            <EditableList
+              items={productPlan?.mvpFeatures || []}
+              onUpdate={onUpdateMvpFeatures}
+              placeholder="e.g. Automated real-time report generator"
+              addButtonLabel="Add MVP Feature"
+              accentColor="sky"
+              icon={Check}
+            />
           </div>
         </StatCard>
 
@@ -1244,16 +1487,16 @@ function ProductMvpSection({ productPlan, technicalArchitecture, roadmap }) {
         >
           <div className="space-y-2">
             <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
-              Future Expansion Roadmap
+              Future Expansion Roadmap (Editable)
             </span>
-            <ul className="space-y-2">
-              {(productPlan?.futureFeatures || []).map((feat, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs text-slate-700 leading-relaxed bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                  <span className="text-sky-500 font-bold select-none">›</span>
-                  <span>{feat}</span>
-                </li>
-              ))}
-            </ul>
+            <EditableList
+              items={productPlan?.futureFeatures || []}
+              onUpdate={onUpdateFutureFeatures}
+              placeholder="e.g. Enterprise RBAC & Audit Trails"
+              addButtonLabel="Add Roadmap Item"
+              accentColor="sky"
+              icon={Sparkles}
+            />
           </div>
         </StatCard>
       </ResponsiveCardGrid>
@@ -1307,6 +1550,84 @@ function FinancesSection({
   productPlan,
   blueprint,
 }) {
+  // Business Model Archetype Selector (eliminates B2B SaaS bias)
+  const [selectedArchetype, setSelectedArchetype] = useState(() => {
+    const domain = (ideaAnalysis?.domain || "").toLowerCase();
+    const model = (businessStrategy?.revenueModel || "").toLowerCase();
+    if (
+      domain.includes("d2c") ||
+      domain.includes("retail") ||
+      domain.includes("ecommerce") ||
+      domain.includes("physical") ||
+      domain.includes("hardware") ||
+      model.includes("ecommerce")
+    ) {
+      return "d2c";
+    }
+    if (
+      domain.includes("marketplace") ||
+      domain.includes("platform") ||
+      model.includes("marketplace") ||
+      model.includes("commission")
+    ) {
+      return "marketplace";
+    }
+    if (
+      domain.includes("agency") ||
+      domain.includes("service") ||
+      domain.includes("consult") ||
+      model.includes("service")
+    ) {
+      return "agency";
+    }
+    return "saas";
+  });
+
+  const ARCHETYPES = {
+    saas: {
+      id: "saas",
+      name: "B2B SaaS",
+      grossMargin: 88,
+      ltvMultiplier: 20,
+      cacDivisor: 3,
+      payback: "< 6 mos",
+      typeLabel: "Software Subscription",
+      churnNote: "5% monthly SaaS churn benchmark (20-month average lifecycle)",
+    },
+    d2c: {
+      id: "d2c",
+      name: "D2C / E-Commerce",
+      grossMargin: 54,
+      ltvMultiplier: 2.2,
+      cacDivisor: 2.0,
+      payback: "First Order",
+      typeLabel: "Physical Consumer Brand",
+      churnNote: "Factoring manufacturing COGS, shipping, and 1.8x repeat purchases",
+    },
+    marketplace: {
+      id: "marketplace",
+      name: "Marketplace",
+      grossMargin: 22,
+      ltvMultiplier: 25,
+      cacDivisor: 3.5,
+      payback: "< 8 mos",
+      typeLabel: "Two-Sided Net Take Rate",
+      churnNote: "4% platform churn with buyer/seller retention network effects",
+    },
+    agency: {
+      id: "agency",
+      name: "Agency / Retainer",
+      grossMargin: 65,
+      ltvMultiplier: 28,
+      cacDivisor: 4,
+      payback: "< 2 mos",
+      typeLabel: "High-Ticket Client Retainers",
+      churnNote: "3.5% client churn (28-month average account lifecycle)",
+    },
+  };
+
+  const activeArch = ARCHETYPES[selectedArchetype] || ARCHETYPES.saas;
+
   // Dynamic ARPU calculation
   const arpu = useMemo(() => {
     if (revenueSimulator?.pricingAssumption) {
@@ -1326,9 +1647,9 @@ function FinancesSection({
   }, [costEstimator]);
 
   const breakevenSubscribers = Math.max(1, Math.ceil(monthlyBurn / arpu));
-  const estimatedLtv = Math.round(arpu * 20); // 5% monthly SaaS churn benchmark (20-month average customer life)
-  const targetCac = Math.round(estimatedLtv / 3); // Standard institutional 3:1 LTV:CAC target
-  const grossMargin = 88; // Cloud SaaS standard with serverless AI inference
+  const estimatedLtv = Math.round(arpu * activeArch.ltvMultiplier);
+  const targetCac = Math.max(1, Math.round(estimatedLtv / activeArch.cacDivisor));
+  const grossMargin = activeArch.grossMargin;
 
   return (
     <div className="space-y-6">
@@ -1359,21 +1680,15 @@ function FinancesSection({
                   <div className="flex items-center gap-2">
                     <span>{COST_LABELS[key] || key}</span>
                     {item.freeTierSufficient && (
-                      <span className="text-[9px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-bold">FREE</span>
+                      <span className="text-[9px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-bold">
+                        FREE TIER
+                      </span>
                     )}
                   </div>
-                  <div className="text-right">
-                    <span className="font-mono font-bold text-slate-900">{item.monthlyCost}/mo</span>
-                  </div>
+                  <span className="font-mono font-bold text-slate-800">{item.monthlyCost}</span>
                 </div>
               );
             })}
-            {costEstimator && (
-              <div className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-orange-50 border border-orange-100 mt-2">
-                <span className="font-bold text-orange-800">Monthly Total</span>
-                <span className="font-mono font-bold text-orange-800">{costEstimator.estimatedMonthlyCost}</span>
-              </div>
-            )}
           </div>
         </StatCard>
 
@@ -1400,7 +1715,7 @@ function FinancesSection({
               <div key={i} className="flex items-center justify-between text-xs p-2.5 rounded-xl bg-slate-50 border border-slate-100">
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-slate-900">{proj.users?.toLocaleString()} users</span>
-                  <span className="text-[9px] font-mono text-slate-400">
+                  <span className="text-[10px] font-mono text-slate-400">
                     {i === 0 ? "Traction" : i === 1 ? "PMF" : i === 2 ? "Scale" : "Leader"}
                   </span>
                 </div>
@@ -1414,40 +1729,64 @@ function FinancesSection({
           </div>
         </StatCard>
 
-        {/* Card 3: Unit Economics & SaaS Health Ratios (NEW) */}
+        {/* Card 3: Unit Economics & Multi-Archetype Health Ratios */}
         <StatCard
-          title="Unit Economics & SaaS Ratios"
+          title="Unit Economics & Ratios"
           icon={BarChart3}
           iconColor="text-emerald-500"
           stat={`$${estimatedLtv} LTV`}
-          subtitle={`ARPU: $${arpu}/mo | CAC Target: <$${targetCac}`}
-          detailsTitle="LTV:CAC Multiple"
-          detailsText={`At $${arpu}/mo ARPU and standard 5% monthly SaaS churn, Customer Lifetime Value is ~$${estimatedLtv}. An acquisition cost under $${targetCac} maintains an institutional 3:1+ LTV:CAC ratio.`}
+          subtitle={`ARPU: $${arpu}/mo | Target CAC: <$${targetCac}`}
+          detailsTitle="Industry Benchmark"
+          detailsText={`Configured for ${activeArch.typeLabel}. ${activeArch.churnNote}. Maintaining a healthy LTV:CAC ensures sustainable unit margins.`}
         >
-          <div className="space-y-2 text-xs">
+          <div className="space-y-2.5 text-xs">
+            {/* Archetype switcher pills */}
+            <div>
+              <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1.5">
+                Select Business Model Archetype:
+              </span>
+              <div className="grid grid-cols-2 gap-1.5">
+                {Object.values(ARCHETYPES).map((arch) => (
+                  <button
+                    key={arch.id}
+                    type="button"
+                    onClick={() => setSelectedArchetype(arch.id)}
+                    className={`px-2 py-1.5 rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer border ${
+                      selectedArchetype === arch.id
+                        ? "bg-slate-900 text-white border-slate-900 shadow-2xs"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    {arch.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-2">
               <div className="p-2.5 rounded-xl bg-emerald-50/60 border border-emerald-100 text-center">
                 <span className="text-[10px] text-emerald-800 block font-mono uppercase">Gross Margin</span>
                 <span className="font-bold font-mono text-emerald-900 text-base">{grossMargin}%</span>
-                <span className="text-[9px] text-emerald-600 block mt-0.5">Software SaaS</span>
+                <span className="text-[9px] text-emerald-600 block mt-0.5">{activeArch.name}</span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-center">
                 <span className="text-[10px] text-slate-400 block font-mono uppercase">Payback Period</span>
-                <span className="font-bold font-mono text-slate-900 text-base">&lt; 6 mos</span>
-                <span className="text-[9px] text-slate-500 block mt-0.5">Organic + Outbound</span>
+                <span className="font-bold font-mono text-slate-900 text-base">{activeArch.payback}</span>
+                <span className="text-[9px] text-slate-500 block mt-0.5">Acquisition Recoup</span>
               </div>
             </div>
+
             <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
               <div className="flex justify-between">
-                <span className="text-slate-600">Average Revenue Per User (ARPU):</span>
+                <span className="text-slate-600">Average Revenue / Order (ARPU):</span>
                 <span className="font-mono font-bold text-slate-900">${arpu}/mo</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Expected Lifetime Value (LTV):</span>
+                <span className="text-slate-600">Expected Customer Lifetime Value:</span>
                 <span className="font-mono font-bold text-emerald-700">${estimatedLtv}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">Maximum Allowable CAC:</span>
+                <span className="text-slate-600">Max Allowable Target CAC:</span>
                 <span className="font-mono font-bold text-orange-600">&lt; ${targetCac}</span>
               </div>
             </div>
@@ -1552,7 +1891,51 @@ function FinancesSection({
 // ============================================================================
 // SECTION 6: GO-TO-MARKET & LAUNCH EXECUTION
 // ============================================================================
-function GoToMarketSection({ goToMarket, launchChecklist, pitch, onToast }) {
+function GoToMarketSection({ goToMarket, launchChecklist = [], pitch, onToast, onUpdateChecklist }) {
+  const [completedItems, setCompletedItems] = useState(() => new Set());
+  const [editingIdx, setEditingIdx] = useState(null);
+  const [editText, setEditText] = useState("");
+  const [isAdding, setIsAdding] = useState(false);
+  const [newItemText, setNewItemText] = useState("");
+
+  const toggleComplete = (idx) => {
+    setCompletedItems((prev) => {
+      const next = new Set(prev);
+      if (next.has(idx)) next.delete(idx);
+      else next.add(idx);
+      return next;
+    });
+  };
+
+  const handleSaveEdit = (idx) => {
+    if (editText.trim() && onUpdateChecklist) {
+      const updated = [...launchChecklist];
+      updated[idx] = editText.trim();
+      onUpdateChecklist(updated);
+    }
+    setEditingIdx(null);
+  };
+
+  const handleDeleteItem = (idx) => {
+    if (onUpdateChecklist) {
+      const updated = launchChecklist.filter((_, i) => i !== idx);
+      onUpdateChecklist(updated);
+    }
+  };
+
+  const handleAddItem = () => {
+    if (newItemText.trim() && onUpdateChecklist) {
+      const updated = [...launchChecklist, newItemText.trim()];
+      onUpdateChecklist(updated);
+      setNewItemText("");
+      setIsAdding(false);
+    }
+  };
+
+  const totalCount = launchChecklist?.length || 0;
+  const completedCount = completedItems.size;
+  const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
   return (
     <div className="space-y-6">
       <ResponsiveCardGrid>
@@ -1605,7 +1988,7 @@ function GoToMarketSection({ goToMarket, launchChecklist, pitch, onToast }) {
           </div>
         </StatCard>
 
-        {/* Card 2: Acquisition Channels — FIXED: p.why instead of p.strategy/p.urgency */}
+        {/* Card 2: Acquisition Channels */}
         <StatCard
           title="Acquisition Channels"
           icon={Rocket}
@@ -1630,7 +2013,7 @@ function GoToMarketSection({ goToMarket, launchChecklist, pitch, onToast }) {
           </div>
         </StatCard>
 
-        {/* Card 3: Social Launch Copy — NEW: Reddit & X posts rendered */}
+        {/* Card 3: Social Launch Copy */}
         <StatCard
           title="Social Launch Copy"
           icon={MessageSquare}
@@ -1693,29 +2076,150 @@ function GoToMarketSection({ goToMarket, launchChecklist, pitch, onToast }) {
         </StatCard>
       </ResponsiveCardGrid>
 
-      {/* Launch Readiness Checklist */}
-      {launchChecklist?.length > 0 && (
-        <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
-          <h3 className="text-sm font-bold text-slate-900 mb-4 tracking-tight flex items-center gap-2">
+      {/* Launch Readiness Checklist (Interactive & Editable) */}
+      <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
             <ListTodo size={16} className="text-orange-500" />
-            <span>Launch Readiness Checklist — {launchChecklist.length} Milestones</span>
+            <span>Launch Readiness Checklist</span>
+            <span className="text-xs font-mono font-normal text-slate-500">
+              ({completedCount}/{totalCount} completed • {progressPct}%)
+            </span>
           </h3>
-          <div className="space-y-1.5 text-xs">
-            {launchChecklist.map((item, idx) => (
-              <label
-                key={idx}
-                className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-50 border border-slate-100 hover:bg-white transition-colors cursor-pointer text-slate-800"
-              >
-                <input
-                  type="checkbox"
-                  className="h-3.5 w-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500"
-                />
-                <span className="leading-snug">{item}</span>
-              </label>
-            ))}
+
+          {/* Mini progress track */}
+          <div className="w-full sm:w-48 bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200">
+            <div
+              className="bg-orange-500 h-full rounded-full transition-all duration-300"
+              style={{ width: `${progressPct}%` }}
+            />
           </div>
         </div>
-      )}
+
+        <div className="space-y-1.5 text-xs">
+          {launchChecklist.map((item, idx) => (
+            <div
+              key={idx}
+              className={`group flex items-center justify-between gap-2.5 p-3 rounded-xl border transition-all ${
+                completedItems.has(idx)
+                  ? "bg-emerald-50/40 border-emerald-200 text-slate-500 line-through"
+                  : "bg-slate-50 hover:bg-white border-slate-100 hover:border-slate-200 text-slate-800"
+              }`}
+            >
+              {editingIdx === idx ? (
+                <div className="flex items-center gap-1.5 w-full">
+                  <input
+                    type="text"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveEdit(idx);
+                      if (e.key === "Escape") setEditingIdx(null);
+                    }}
+                    autoFocus
+                    className="flex-1 text-xs px-2 py-1 bg-white rounded-lg border border-orange-300 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleSaveEdit(idx)}
+                    className="p-1 rounded bg-emerald-50 text-emerald-600 cursor-pointer"
+                  >
+                    <Check size={13} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingIdx(null)}
+                    className="p-1 rounded bg-slate-100 text-slate-500 cursor-pointer"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <label className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer select-none">
+                    <input
+                      type="checkbox"
+                      checked={completedItems.has(idx)}
+                      onChange={() => toggleComplete(idx)}
+                      className="h-3.5 w-3.5 rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                    />
+                    <span className="leading-snug break-words">{item}</span>
+                  </label>
+
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 shrink-0 ml-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingIdx(idx);
+                        setEditText(item);
+                      }}
+                      className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer"
+                      title="Edit milestone"
+                    >
+                      <Edit2 size={12} />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteItem(idx)}
+                      className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                      title="Delete milestone"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* Add Milestone Item */}
+        {isAdding ? (
+          <div className="flex items-center gap-1.5 pt-1">
+            <input
+              type="text"
+              value={newItemText}
+              placeholder="e.g. Set up Stripe Billing webhook & production DNS"
+              onChange={(e) => setNewItemText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleAddItem();
+                if (e.key === "Escape") {
+                  setIsAdding(false);
+                  setNewItemText("");
+                }
+              }}
+              autoFocus
+              className="flex-1 text-xs px-2.5 py-1.5 bg-white rounded-xl border border-slate-300 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500/20"
+            />
+            <button
+              type="button"
+              onClick={handleAddItem}
+              className="px-2.5 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-semibold cursor-pointer transition-colors"
+            >
+              Add
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsAdding(false);
+                setNewItemText("");
+              }}
+              className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 cursor-pointer"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setIsAdding(true)}
+            className="w-full py-2 px-3 rounded-xl border border-dashed border-orange-200 text-xs font-semibold text-orange-600 hover:text-orange-700 bg-orange-50/50 hover:bg-orange-100/70 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <Plus size={13} />
+            <span>Add Custom Launch Milestone</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 }

@@ -198,8 +198,9 @@ export async function callGemini(prompt) {
  * A single attempt at calling the Gemini API. Throws on any failure
  * (network error, non-2xx response, empty response).
  */
-async function requestOnce(prompt, apiKey) {
-  const response = await fetch(`${GEMINI_URL}?key=${apiKey}`, {
+async function requestOnce(prompt, apiKey, model = PRIMARY_MODEL) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const response = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
