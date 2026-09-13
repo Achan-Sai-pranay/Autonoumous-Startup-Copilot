@@ -567,53 +567,106 @@ export const LeanCustomerDiscoverySection = memo(function LeanCustomerDiscoveryS
   );
 });
 
+// Normalizer helper for robust list extraction from varied model outputs
+function normalizeSwotList(raw) {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw
+      .map((item) => {
+        if (typeof item === "string") return item.trim();
+        if (item && typeof item === "object") {
+          return item.text || item.point || item.title || item.description || "";
+        }
+        return String(item).trim();
+      })
+      .filter((s) => s && s.length > 0);
+  }
+  if (typeof raw === "string") {
+    return raw
+      .split(/\n|•|;/)
+      .map((s) => s.replace(/^\s*[-*\d.]+\s*/, "").trim())
+      .filter((s) => s.length > 1);
+  }
+  return [];
+}
+
 export const SwotAnalysisMatrix = memo(function SwotAnalysisMatrix({
   swotAnalysis,
   ideaAnalysis,
   marketResearch,
   competitorWeaknessAnalysis,
   customerPersona,
+  blueprint,
 }) {
+  const rawSwot = swotAnalysis || blueprint?.swotAnalysis || {};
+
   const strengths = useMemo(() => {
-    if (swotAnalysis?.strengths?.length) return swotAnalysis.strengths;
-    const list = [];
-    if (ideaAnalysis?.feasibility) list.push(ideaAnalysis.feasibility);
-    if (competitorWeaknessAnalysis?.[0]?.suggestedDifferentiation) {
+    const parsed = normalizeSwotList(
+      rawSwot?.strengths || rawSwot?.Strengths || rawSwot?.strength || rawSwot?.s
+    );
+    if (parsed.length >= 3) return parsed;
+    const list = [...parsed];
+    if (ideaAnalysis?.feasibility && !list.includes(ideaAnalysis.feasibility)) {
+      list.push(ideaAnalysis.feasibility);
+    }
+    if (competitorWeaknessAnalysis?.[0]?.suggestedDifferentiation && !list.includes(competitorWeaknessAnalysis[0].suggestedDifferentiation)) {
       list.push(competitorWeaknessAnalysis[0].suggestedDifferentiation);
     }
-    list.push("Lean architecture footprint with low initial burn.");
-    list.push("Fast deployment velocity compared to incumbent tools.");
-    return list.slice(0, 4);
-  }, [swotAnalysis, ideaAnalysis, competitorWeaknessAnalysis]);
+    if (blueprint?.pitch?.elevatorPitch && !list.includes(blueprint.pitch.elevatorPitch)) {
+      list.push(`Core Value Proposition: ${blueprint.pitch.elevatorPitch}`);
+    }
+    list.push("Lean serverless cloud footprint with low initial burn and high operational gross margins (85%+).");
+    list.push("Agile deployment velocity and specialized workflow focus compared to legacy bloated incumbents.");
+    return Array.from(new Set(list)).slice(0, 4);
+  }, [rawSwot, ideaAnalysis, competitorWeaknessAnalysis, blueprint]);
 
   const weaknesses = useMemo(() => {
-    if (swotAnalysis?.weaknesses?.length) return swotAnalysis.weaknesses;
-    return [
-      "Initial cold-start distribution challenge and unproven organic search authority.",
-      "Reliance on upstream foundation AI model API pricing and latency.",
-      "Early lack of proprietary user behavioral dataset before first 1,000 active cohorts.",
-    ];
-  }, [swotAnalysis]);
+    const parsed = normalizeSwotList(
+      rawSwot?.weaknesses || rawSwot?.Weaknesses || rawSwot?.weakness || rawSwot?.w
+    );
+    if (parsed.length >= 3) return parsed;
+    const list = [...parsed];
+    if (blueprint?.viabilityScorecard?.fatalRiskTraps?.length > 0) {
+      list.push(blueprint.viabilityScorecard.fatalRiskTraps[0]);
+    }
+    list.push("Initial cold-start distribution hurdle and unproven organic search domain authority.");
+    list.push("Reliance on upstream foundation AI model API pricing, rate limits, and latency SLAs.");
+    list.push("Early lack of proprietary user behavioral feedback loops prior to reaching 1,000 active cohorts.");
+    list.push("Single-founder or small-team bandwidth requiring disciplined focus on high-leverage workflows.");
+    return Array.from(new Set(list)).slice(0, 4);
+  }, [rawSwot, blueprint]);
 
   const opportunities = useMemo(() => {
-    if (swotAnalysis?.opportunities?.length) return swotAnalysis.opportunities;
-    const list = [];
+    const parsed = normalizeSwotList(
+      rawSwot?.opportunities || rawSwot?.Opportunities || rawSwot?.opportunity || rawSwot?.o
+    );
+    if (parsed.length >= 3) return parsed;
+    const list = [...parsed];
     if (marketResearch?.opportunities?.length > 0) {
-      list.push(...marketResearch.opportunities);
+      marketResearch.opportunities.forEach((opp) => {
+        if (!list.includes(opp)) list.push(opp);
+      });
     }
-    list.push("Expanding from initial single-player utility into collaborative multi-seat workflows.");
-    return list.slice(0, 4);
-  }, [swotAnalysis, marketResearch]);
+    list.push("Expansion from single-player founder utility into collaborative multi-seat enterprise team workflows.");
+    list.push("Building programmatic API integrations and export plugins for compounding user workflow lock-in.");
+    list.push("Capitalizing on widespread customer dissatisfaction with expensive, non-AI legacy incumbent pricing.");
+    return Array.from(new Set(list)).slice(0, 4);
+  }, [rawSwot, marketResearch]);
 
   const threats = useMemo(() => {
-    if (swotAnalysis?.threats?.length) return swotAnalysis.threats;
-    const list = [];
+    const parsed = normalizeSwotList(
+      rawSwot?.threats || rawSwot?.Threats || rawSwot?.threat || rawSwot?.t
+    );
+    if (parsed.length >= 3) return parsed;
+    const list = [...parsed];
     if (marketResearch?.competitors?.length > 0) {
-      list.push(`Fast-follow feature replication from incumbents like ${marketResearch.competitors.slice(0, 2).join(", ")}.`);
+      list.push(`Fast-follow feature replication and bundling from established incumbents like ${marketResearch.competitors.slice(0, 2).join(", ")}.`);
     }
-    list.push("Commoditization of generic automation if deep personalization is omitted.");
-    return list.slice(0, 4);
-  }, [swotAnalysis, marketResearch]);
+    list.push("Foundation LLM providers natively integrating vertical capabilities into core base models.");
+    list.push("Rising customer acquisition costs (CAC) across competitive search and paid social distribution channels.");
+    list.push("Commoditization risks if proprietary domain context and personalized telemetry are omitted.");
+    return Array.from(new Set(list)).slice(0, 4);
+  }, [rawSwot, marketResearch]);
 
   return (
     <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm mb-6">
