@@ -133,6 +133,24 @@ function EditableList({
   const [isAdding, setIsAdding] = useState(false);
   const [newItemText, setNewItemText] = useState("");
 
+  const safeItems = useMemo(() => {
+    let arr = [];
+    if (Array.isArray(items)) {
+      arr = items;
+    } else if (items && typeof items === "object") {
+      arr = Object.values(items);
+    } else if (typeof items === "string") {
+      arr = [items];
+    }
+    return arr.map((it) => {
+      if (typeof it === "string") return it;
+      if (it && typeof it === "object") {
+        return it.text || it.title || it.task || it.item || it.name || it.description || JSON.stringify(it);
+      }
+      return String(it ?? "");
+    });
+  }, [items]);
+
   const handleStartEdit = (idx, text) => {
     setEditingIndex(idx);
     setEditText(text);
@@ -140,7 +158,7 @@ function EditableList({
 
   const handleSaveEdit = (idx) => {
     if (editText.trim()) {
-      const updated = [...items];
+      const updated = [...safeItems];
       updated[idx] = editText.trim();
       onUpdate?.(updated);
     }
@@ -148,13 +166,13 @@ function EditableList({
   };
 
   const handleDelete = (idx) => {
-    const updated = items.filter((_, i) => i !== idx);
+    const updated = safeItems.filter((_, i) => i !== idx);
     onUpdate?.(updated);
   };
 
   const handleAddItem = () => {
     if (newItemText.trim()) {
-      const updated = [...items, newItemText.trim()];
+      const updated = [...safeItems, newItemText.trim()];
       onUpdate?.(updated);
       setNewItemText("");
       setIsAdding(false);
@@ -191,7 +209,7 @@ function EditableList({
   return (
     <div className="space-y-2">
       <ul className="space-y-1.5">
-        {(items || []).map((item, idx) => (
+        {safeItems.map((item, idx) => (
           <li
             key={idx}
             className="group relative flex items-start justify-between gap-2 text-xs text-slate-700 leading-relaxed bg-slate-50 hover:bg-white p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 transition-all shadow-2xs"
@@ -780,6 +798,14 @@ function StatCard({
   detailsText,
   className = "",
 }) {
+  const safeText = (val) => {
+    if (val === null || val === undefined) return null;
+    if (typeof val === "string" || typeof val === "number") return val;
+    if (Array.isArray(val)) return val.map((v) => (typeof v === "object" ? JSON.stringify(v) : String(v))).join(", ");
+    if (typeof val === "object") return JSON.stringify(val);
+    return String(val);
+  };
+
   return (
     <div
       className={`p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col hover:border-slate-300 hover:shadow-sm transition-all duration-200 ${className}`}
@@ -794,9 +820,9 @@ function StatCard({
       {stat && (
         <div className="mb-4">
           <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono tracking-tight leading-tight">
-            {stat}
+            {safeText(stat)}
           </div>
-          {subtitle && <p className="text-xs text-slate-500 mt-1 font-medium">{subtitle}</p>}
+          {subtitle && <p className="text-xs text-slate-500 mt-1 font-medium">{safeText(subtitle)}</p>}
         </div>
       )}
 
@@ -807,7 +833,7 @@ function StatCard({
       {detailsTitle && (
         <div className="pt-4 border-t border-slate-100 mt-4">
           <h4 className="text-xs font-bold text-slate-900 mb-1">{detailsTitle}</h4>
-          <p className="text-xs text-slate-600 leading-relaxed font-sans">{detailsText}</p>
+          <p className="text-xs text-slate-600 leading-relaxed font-sans">{safeText(detailsText)}</p>
         </div>
       )}
     </div>
@@ -1891,12 +1917,135 @@ function FinancesSection({
 // ============================================================================
 // SECTION 6: GO-TO-MARKET & LAUNCH EXECUTION
 // ============================================================================
-function GoToMarketSection({ goToMarket, launchChecklist = [], pitch, onToast, onUpdateChecklist }) {
+function formatTemplateContent(content) {
+  if (!content) return "";
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((c) => (typeof c === "object" ? JSON.stringify(c, null, 2) : String(c)))
+      .join("\n\n");
+  }
+  if (typeof content === "object") {
+    if (content.subject && content.body) {
+      return `Subject: ${content.subject}\n\n${content.body}`;
+    }
+    if (content.title && content.post) {
+      return `Title: ${content.title}\n\n${content.post}`;
+    }
+    if (content.title && content.body) {
+      return `Title: ${content.title}\n\n${content.body}`;
+    }
+    if (content.hook && content.thread) {
+      const threadStr = Array.isArray(content.thread) ? content.thread.join("\n\n") : content.thread;
+      return `${content.hook}\n\n${threadStr}`;
+    }
+    if (content.tweet) {
+      return content.tweet;
+    }
+    return Object.entries(content)
+      .map(([k, v]) => `${k.toUpperCase()}:\n${typeof v === "object" ? JSON.stringify(v, null, 2) : v}`)
+      .join("\n\n");
+  }
+  return String(content);
+}
+
+function GoToMarketSection({ goToMarket, launchChecklist, pitch, onToast, onUpdateChecklist }) {
   const [completedItems, setCompletedItems] = useState(() => new Set());
   const [editingIdx, setEditingIdx] = useState(null);
   const [editText, setEditText] = useState("");
   const [isAdding, setIsAdding] = useState(false);
   const [newItemText, setNewItemText] = useState("");
+
+  // Normalize launchChecklist into a safe array of strings
+  const safeChecklist = useMemo(() => {
+    if (Array.isArray(launchChecklist)) {
+      return launchChecklist.map((item) => {
+        if (typeof item === "string") return item;
+        if (item && typeof item === "object") {
+          return item.task || item.title || item.milestone || item.step || item.item || item.name || JSON.stringify(item);
+        }
+        return String(item ?? "");
+      });
+    }
+    if (launchChecklist && typeof launchChecklist === "object") {
+      if (Array.isArray(launchChecklist.checklist)) {
+        return launchChecklist.checklist.map((item) => (typeof item === "string" ? item : item?.task || item?.title || JSON.stringify(item)));
+      }
+      if (Array.isArray(launchChecklist.items)) {
+        return launchChecklist.items.map((item) => (typeof item === "string" ? item : item?.task || item?.title || JSON.stringify(item)));
+      }
+      return Object.values(launchChecklist).map((val) => (typeof val === "string" ? val : JSON.stringify(val)));
+    }
+    if (typeof launchChecklist === "string" && launchChecklist.trim()) {
+      return [launchChecklist.trim()];
+    }
+    return [
+      "Secure Primary Domain and SSL Certificate",
+      "Deploy High-Conversion Waitlist Landing Page",
+      "Configure Product Analytics & Conversion Funnel",
+      "Complete 15 Mom Test Customer Discovery Interviews",
+      "Publish Launch Post on Reddit and Twitter",
+    ];
+  }, [launchChecklist]);
+
+  // Normalize platforms list
+  const platformsList = useMemo(() => {
+    const raw = goToMarket?.platforms;
+    if (Array.isArray(raw)) {
+      return raw.map((p) => {
+        if (!p) return { name: "Channel", why: "Strategic distribution channel" };
+        if (typeof p === "string") return { name: p, why: "Target organic and community growth." };
+        if (typeof p === "object") {
+          return {
+            name: typeof p.name === "string" ? p.name : p.platform || p.title || p.channel || "Channel",
+            why: typeof p.why === "string" ? p.why : p.strategy || p.reason || (typeof p.description === "string" ? p.description : "High-intent customer acquisition channel."),
+          };
+        }
+        return { name: String(p), why: "" };
+      });
+    }
+    if (raw && typeof raw === "object") {
+      return Object.entries(raw).map(([key, val]) => ({
+        name: key,
+        why: typeof val === "string" ? val : typeof val?.why === "string" ? val.why : JSON.stringify(val),
+      }));
+    }
+    if (typeof raw === "string" && raw.trim()) {
+      return raw.split(",").map((s) => ({ name: s.trim(), why: "Growth channel" }));
+    }
+    return [
+      { name: "LinkedIn", why: "Direct outreach to economic buyers and clinical operators." },
+      { name: "Reddit", why: "Community-driven feedback in niche healthcare forums." },
+    ];
+  }, [goToMarket?.platforms]);
+
+  // Normalize LinkedIn search queries
+  const linkedInQueries = useMemo(() => {
+    const raw = goToMarket?.linkedInSearchStrategy;
+    if (Array.isArray(raw)) {
+      return raw
+        .map((q) => {
+          if (typeof q === "string") return q;
+          if (q && typeof q === "object") return q.query || q.search || q.title || JSON.stringify(q);
+          return String(q ?? "");
+        })
+        .filter(Boolean);
+    }
+    if (typeof raw === "string" && raw.trim()) {
+      return [raw.trim()];
+    }
+    if (raw && typeof raw === "object") {
+      return Object.values(raw)
+        .map((v) => (typeof v === "string" ? v : JSON.stringify(v)))
+        .filter(Boolean);
+    }
+    return [];
+  }, [goToMarket?.linkedInSearchStrategy]);
+
+  const coldEmailText = formatTemplateContent(goToMarket?.coldEmailTemplate);
+  const linkedInDmText = formatTemplateContent(goToMarket?.linkedInDmTemplate);
+  const redditPostText = formatTemplateContent(goToMarket?.redditLaunchPost);
+  const twitterPostText = formatTemplateContent(goToMarket?.twitterLaunchPost);
 
   const toggleComplete = (idx) => {
     setCompletedItems((prev) => {
@@ -1909,7 +2058,7 @@ function GoToMarketSection({ goToMarket, launchChecklist = [], pitch, onToast, o
 
   const handleSaveEdit = (idx) => {
     if (editText.trim() && onUpdateChecklist) {
-      const updated = [...launchChecklist];
+      const updated = [...safeChecklist];
       updated[idx] = editText.trim();
       onUpdateChecklist(updated);
     }
@@ -1918,22 +2067,22 @@ function GoToMarketSection({ goToMarket, launchChecklist = [], pitch, onToast, o
 
   const handleDeleteItem = (idx) => {
     if (onUpdateChecklist) {
-      const updated = launchChecklist.filter((_, i) => i !== idx);
+      const updated = safeChecklist.filter((_, i) => i !== idx);
       onUpdateChecklist(updated);
     }
   };
 
   const handleAddItem = () => {
     if (newItemText.trim() && onUpdateChecklist) {
-      const updated = [...launchChecklist, newItemText.trim()];
+      const updated = [...safeChecklist, newItemText.trim()];
       onUpdateChecklist(updated);
       setNewItemText("");
       setIsAdding(false);
     }
   };
 
-  const totalCount = launchChecklist?.length || 0;
-  const completedCount = completedItems.size;
+  const totalCount = safeChecklist.length;
+  const completedCount = Array.from(completedItems).filter((idx) => idx < totalCount).length;
   const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
@@ -1950,13 +2099,13 @@ function GoToMarketSection({ goToMarket, launchChecklist = [], pitch, onToast, o
           detailsText="Founder-led outbound playbook to secure the first 20 design partners with zero paid ad spend."
         >
           <div className="space-y-3 text-xs">
-            {goToMarket?.coldEmailTemplate && (
+            {coldEmailText ? (
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-bold text-slate-900">Cold Email Template</span>
                   <button
                     onClick={() => {
-                      navigator.clipboard?.writeText(goToMarket.coldEmailTemplate);
+                      navigator.clipboard?.writeText(coldEmailText);
                       onToast?.("Cold email copied to clipboard");
                     }}
                     className="text-[11px] font-mono text-orange-600 font-bold hover:underline cursor-pointer"
@@ -1964,17 +2113,17 @@ function GoToMarketSection({ goToMarket, launchChecklist = [], pitch, onToast, o
                     Copy
                   </button>
                 </div>
-                <p className="text-slate-600 font-mono text-[11px] whitespace-pre-wrap">{goToMarket.coldEmailTemplate}</p>
+                <p className="text-slate-600 font-mono text-[11px] whitespace-pre-wrap">{coldEmailText}</p>
               </div>
-            )}
+            ) : null}
 
-            {goToMarket?.linkedInDmTemplate && (
+            {linkedInDmText ? (
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-bold text-slate-900">LinkedIn DM Template</span>
                   <button
                     onClick={() => {
-                      navigator.clipboard?.writeText(goToMarket.linkedInDmTemplate);
+                      navigator.clipboard?.writeText(linkedInDmText);
                       onToast?.("LinkedIn DM copied to clipboard");
                     }}
                     className="text-[11px] font-mono text-orange-600 font-bold hover:underline cursor-pointer"
@@ -1982,9 +2131,9 @@ function GoToMarketSection({ goToMarket, launchChecklist = [], pitch, onToast, o
                     Copy
                   </button>
                 </div>
-                <p className="text-slate-600 font-mono text-[11px] whitespace-pre-wrap">{goToMarket.linkedInDmTemplate}</p>
+                <p className="text-slate-600 font-mono text-[11px] whitespace-pre-wrap">{linkedInDmText}</p>
               </div>
-            )}
+            ) : null}
           </div>
         </StatCard>
 
@@ -1993,13 +2142,17 @@ function GoToMarketSection({ goToMarket, launchChecklist = [], pitch, onToast, o
           title="Acquisition Channels"
           icon={Rocket}
           iconColor="text-orange-500"
-          stat={`${goToMarket?.platforms?.length || 0} Channels`}
+          stat={`${platformsList.length} Channels`}
           subtitle="Growth Flywheel"
           detailsTitle="Target Audience"
-          detailsText={goToMarket?.targetAudience || "Blend high-intent organic search with community distribution."}
+          detailsText={
+            typeof goToMarket?.targetAudience === "string"
+              ? goToMarket.targetAudience
+              : (goToMarket?.targetAudience ? JSON.stringify(goToMarket.targetAudience) : "Blend high-intent organic search with community distribution.")
+          }
         >
           <div className="space-y-2 text-xs">
-            {(goToMarket?.platforms || []).map((p, i) => (
+            {platformsList.map((p, i) => (
               <div key={i} className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
                 <div className="flex justify-between font-bold">
                   <span>{p.name}</span>
@@ -2024,13 +2177,13 @@ function GoToMarketSection({ goToMarket, launchChecklist = [], pitch, onToast, o
           detailsText="Pre-written launch posts optimized for each platform's audience and algorithm."
         >
           <div className="space-y-3 text-xs">
-            {goToMarket?.redditLaunchPost && (
+            {redditPostText ? (
               <div className="p-3 rounded-xl bg-orange-50/50 border border-orange-100">
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-bold text-slate-900">🟠 Reddit Launch Post</span>
                   <button
                     onClick={() => {
-                      navigator.clipboard?.writeText(goToMarket.redditLaunchPost);
+                      navigator.clipboard?.writeText(redditPostText);
                       onToast?.("Reddit post copied to clipboard");
                     }}
                     className="text-[11px] font-mono text-orange-600 font-bold hover:underline cursor-pointer"
@@ -2038,17 +2191,17 @@ function GoToMarketSection({ goToMarket, launchChecklist = [], pitch, onToast, o
                     Copy
                   </button>
                 </div>
-                <p className="text-slate-700 font-mono text-[11px] whitespace-pre-wrap leading-relaxed">{goToMarket.redditLaunchPost}</p>
+                <p className="text-slate-700 font-mono text-[11px] whitespace-pre-wrap leading-relaxed">{redditPostText}</p>
               </div>
-            )}
+            ) : null}
 
-            {goToMarket?.twitterLaunchPost && (
+            {twitterPostText ? (
               <div className="p-3 rounded-xl bg-sky-50/50 border border-sky-100">
                 <div className="flex justify-between items-center mb-1">
                   <span className="font-bold text-slate-900">𝕏 Twitter Launch Post</span>
                   <button
                     onClick={() => {
-                      navigator.clipboard?.writeText(goToMarket.twitterLaunchPost);
+                      navigator.clipboard?.writeText(twitterPostText);
                       onToast?.("Twitter post copied to clipboard");
                     }}
                     className="text-[11px] font-mono text-sky-600 font-bold hover:underline cursor-pointer"
@@ -2056,15 +2209,15 @@ function GoToMarketSection({ goToMarket, launchChecklist = [], pitch, onToast, o
                     Copy
                   </button>
                 </div>
-                <p className="text-slate-700 font-mono text-[11px] whitespace-pre-wrap leading-relaxed">{goToMarket.twitterLaunchPost}</p>
+                <p className="text-slate-700 font-mono text-[11px] whitespace-pre-wrap leading-relaxed">{twitterPostText}</p>
               </div>
-            )}
+            ) : null}
 
-            {goToMarket?.linkedInSearchStrategy?.length > 0 && (
+            {linkedInQueries.length > 0 && (
               <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
                 <span className="font-bold text-slate-900 block mb-1">🔍 LinkedIn Search Queries</span>
                 <div className="space-y-1">
-                  {goToMarket.linkedInSearchStrategy.map((q, i) => (
+                  {linkedInQueries.map((q, i) => (
                     <div key={i} className="text-slate-600 font-mono text-[11px] bg-white p-1.5 rounded border border-slate-100">
                       {q}
                     </div>
@@ -2097,7 +2250,7 @@ function GoToMarketSection({ goToMarket, launchChecklist = [], pitch, onToast, o
         </div>
 
         <div className="space-y-1.5 text-xs">
-          {launchChecklist.map((item, idx) => (
+          {safeChecklist.map((item, idx) => (
             <div
               key={idx}
               className={`group flex items-center justify-between gap-2.5 p-3 rounded-xl border transition-all ${
