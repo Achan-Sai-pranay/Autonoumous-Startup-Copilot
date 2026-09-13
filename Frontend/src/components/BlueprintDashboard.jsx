@@ -119,10 +119,32 @@ export default function BlueprintDashboard({
   viewMode: controlledViewMode,
   setViewMode: setControlledViewMode,
 }) {
-  const [internalActiveSection, setInternalActiveSection] = useState("finances");
+  const [internalActiveSection, setInternalActiveSection] = useState("standard-analysis");
   const activeSection =
     controlledActiveSection !== undefined ? controlledActiveSection : internalActiveSection;
   const setActiveSection = setControlledActiveSection || setInternalActiveSection;
+
+  const sectionHeaderRef = useRef(null);
+  const prevBlueprintRef = useRef(blueprint);
+  const isFirstMountRef = useRef(true);
+
+  // Smart scroll management:
+  // - On initial generation or new blueprint load: start at the very top (Startup Brief #326 & black box)
+  // - On clicking a sub-section (Finances, Path to MVP, etc.): scroll directly to that section header
+  useEffect(() => {
+    if (prevBlueprintRef.current !== blueprint || isFirstMountRef.current) {
+      prevBlueprintRef.current = blueprint;
+      isFirstMountRef.current = false;
+      const mainEl = document.querySelector("main.overflow-y-auto") || document.querySelector("main");
+      if (mainEl) mainEl.scrollTop = 0;
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      return;
+    }
+
+    if (sectionHeaderRef.current) {
+      sectionHeaderRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [activeSection, blueprint]);
 
   const [internalViewMode, setInternalViewMode] = useState("dashboard");
   const viewMode = controlledViewMode !== undefined ? controlledViewMode : internalViewMode;
@@ -267,18 +289,18 @@ export default function BlueprintDashboard({
           {/* ------------------------------------------------------------- */}
           {/* MAIN CONTENT AREA */}
           {/* ------------------------------------------------------------- */}
-          <main className="w-full min-w-0">
+          <div className="w-full min-w-0">
             {/* Top Venture Banner Card (Matching Screenshot Header) */}
             <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-6 sm:p-7 mb-7 shadow-md relative overflow-hidden">
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white truncate">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start sm:items-center gap-3">
+                    <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight break-words">
                       {ventureTitle}
                     </h1>
                     <button
                       onClick={() => showToast("Venture title is locked to analysis thesis")}
-                      className="h-7 w-7 rounded-lg bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-xs"
+                      className="h-7 w-7 rounded-lg bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-xs mt-1 sm:mt-0"
                       title="Edit venture details"
                     >
                       <Edit2 size={13} />
@@ -301,7 +323,11 @@ export default function BlueprintDashboard({
             </div>
 
             {/* Section Header with Star and < Previous / Next > Navigation */}
-            <div className="flex items-center justify-between mb-6 pb-2">
+            <div
+              id="blueprint-section-anchor"
+              ref={sectionHeaderRef}
+              className="flex items-center justify-between mb-6 pb-2 scroll-mt-6"
+            >
               <div className="flex items-center gap-2">
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
                   <span>{currentSectionObj.title}</span>
@@ -418,7 +444,7 @@ export default function BlueprintDashboard({
                 )}
               </SectionErrorBoundary>
             </div>
-          </main>
+          </div>
         </div>
       )}
 
@@ -478,7 +504,7 @@ function HorizontalCardTrack({ children }) {
       {/* Horizontal Track with Snapping and Smooth Scroll */}
       <div
         ref={scrollRef}
-        className="flex overflow-x-auto gap-6 pb-6 pt-1 px-1 scrollbar-thin scroll-smooth snap-x"
+        className="flex items-start overflow-x-auto gap-6 pb-6 pt-1 px-1 scrollbar-thin scroll-smooth snap-x"
         style={{ scrollbarWidth: "thin" }}
       >
         {children}
@@ -513,34 +539,32 @@ function StatCard({
 }) {
   return (
     <div
-      className={`w-[340px] sm:w-[410px] lg:w-[430px] shrink-0 snap-start p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-slate-300 hover:shadow-sm transition-all duration-200 ${className}`}
+      className={`w-[340px] sm:w-[410px] lg:w-[430px] shrink-0 snap-start p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col hover:border-slate-300 hover:shadow-sm transition-all duration-200 ${className}`}
     >
-      <div>
-        {/* Top Header Row */}
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-sm font-bold text-slate-900 tracking-tight">{title}</h3>
-          {Icon && <Icon size={18} className={iconColor} />}
-        </div>
-
-        {/* Big Stat & Subtitle */}
-        <div className="mb-5">
-          <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono tracking-tight leading-tight">
-            {stat}
-          </div>
-          {subtitle && (
-            <p className="text-xs text-slate-500 mt-1 font-medium">{subtitle}</p>
-          )}
-        </div>
-
-        {/* Middle Visual / Structured Content */}
-        {children && <div className="mb-6">{children}</div>}
+      {/* Top Header Row */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-bold text-slate-900 tracking-tight">{title}</h3>
+        {Icon && <Icon size={18} className={iconColor} />}
       </div>
+
+      {/* Big Stat & Subtitle */}
+      <div className="mb-5">
+        <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 font-mono tracking-tight leading-tight">
+          {stat}
+        </div>
+        {subtitle && (
+          <p className="text-xs text-slate-500 mt-1 font-medium">{subtitle}</p>
+        )}
+      </div>
+
+      {/* Middle Visual / Structured Content */}
+      {children && <div className="mb-5">{children}</div>}
 
       {/* Bottom Detailed Narrative Breakdown */}
       {(detailsTitle || detailsText) && (
-        <div className="pt-4 border-t border-slate-100 mt-auto">
+        <div className="pt-4 border-t border-slate-100">
           {detailsTitle && (
-            <h4 className="text-xs font-bold text-slate-900 mb-2">{detailsTitle}</h4>
+            <h4 className="text-xs font-bold text-slate-900 mb-1.5">{detailsTitle}</h4>
           )}
           {detailsText && (
             <p className="text-xs text-slate-600 leading-relaxed font-sans">{detailsText}</p>

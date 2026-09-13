@@ -7,7 +7,7 @@
 // 3. 'Analyze New Venture' Prompt Studio with live 12-agent streaming pipeline
 // 4. Interactive Synthesized Blueprint Dashboard with SWOT, Viability, and PDF Export
 // ---------------------------------------------------------------------------
-import { useState, useRef, useEffect, useMemo } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import LoadingTimeline from "./LoadingTimeline.jsx";
 import BlueprintDashboard, { BUSINESS_SECTIONS } from "./BlueprintDashboard.jsx";
 import { useSpeechToText } from "../hooks/useSpeechToText.js";
@@ -99,12 +99,21 @@ export default function WorkspacePage({
   onSignOut,
 }) {
   const inputRef = useRef(null);
+  const mainScrollRef = useRef(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [exportingId, setExportingId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const userDropdownRef = useRef(null);
+
+  // Scroll to the very top (Startup Brief header banner)
+  const scrollToTop = useCallback(() => {
+    if (mainScrollRef.current) {
+      mainScrollRef.current.scrollTop = 0;
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, []);
 
   // Active view inside the platform:
   // "startups" (Your Startups hub) | "new" (Analyze new startup prompt) | "blueprint" (Viewing current blueprint)
@@ -116,7 +125,7 @@ export default function WorkspacePage({
   });
 
   // Business Analysis navigation & viewMode for Blueprint
-  const [activeSection, setActiveSection] = useState("finances");
+  const [activeSection, setActiveSection] = useState("standard-analysis");
   const [viewMode, setViewMode] = useState("dashboard"); // "dashboard" | "prd"
   const [isBusinessOpen, setIsBusinessOpen] = useState(true);
 
@@ -126,8 +135,25 @@ export default function WorkspacePage({
       setActiveView("new");
     } else if (blueprint) {
       setActiveView("blueprint");
+      setActiveSection("standard-analysis");
+      scrollToTop();
     }
-  }, [isLoading, blueprint]);
+  }, [isLoading, blueprint, scrollToTop]);
+
+  // Ensure scroll container is always reset to the top when navigating to a blueprint
+  useEffect(() => {
+    if (activeView === "blueprint") {
+      scrollToTop();
+      const t1 = setTimeout(scrollToTop, 20);
+      const t2 = setTimeout(scrollToTop, 100);
+      const t3 = setTimeout(scrollToTop, 300);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    }
+  }, [activeView, blueprint, scrollToTop]);
 
   useEffect(() => {
     function handleClickOutside(e) {
@@ -147,7 +173,9 @@ export default function WorkspacePage({
   const handleStartNew = () => {
     setBlueprint(null);
     setActiveView("new");
+    setActiveSection("standard-analysis");
     setError("");
+    scrollToTop();
     setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
@@ -161,8 +189,9 @@ export default function WorkspacePage({
       setBlueprint(entry.blueprint);
     }
     setActiveView("blueprint");
-    setActiveSection("finances");
+    setActiveSection("standard-analysis");
     setViewMode("dashboard");
+    scrollToTop();
     showToast(`Loaded "${entry.idea.slice(0, 30)}..."`);
   };
 
@@ -321,6 +350,7 @@ export default function WorkspacePage({
                     setActiveView("blueprint");
                     setActiveSection("dashboard");
                     setViewMode("dashboard");
+                    scrollToTop();
                   }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     activeView === "blueprint" && viewMode === "dashboard" && activeSection === "dashboard"
@@ -733,7 +763,7 @@ export default function WorkspacePage({
         {/* ------------------------------------------------------------------- */}
         {/* 3. PLATFORM VIEW SWITCHER                                           */}
         {/* ------------------------------------------------------------------- */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8">
+        <main ref={mainScrollRef} className="flex-1 overflow-y-auto p-4 sm:p-8">
           {/* VIEW A: "YOUR STARTUPS" DASHBOARD */}
           {activeView === "startups" && (
             <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
