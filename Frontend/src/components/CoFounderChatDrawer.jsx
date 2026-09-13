@@ -354,22 +354,17 @@ export default function CoFounderChatDrawer({ blueprint = null, originalIdea = "
           <button
             id="open-cofounder-chat-btn"
             onClick={() => setIsOpen(true)}
-            className="group relative flex items-center gap-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white px-4 py-3 rounded-2xl shadow-xl shadow-orange-500/25 border border-orange-400/30 transition-all duration-200 active:scale-95 cursor-pointer"
-            title="Open AI Co-Founder Chatbot"
+            className="group relative flex items-center gap-2.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-700 hover:to-amber-700 text-white pl-2.5 pr-4 py-2 rounded-2xl shadow-xl shadow-orange-500/25 border border-orange-400/30 transition-all duration-200 active:scale-95 cursor-pointer"
+            title="Open Co - Founder"
           >
-            <span className="relative flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-300 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+            <img
+              src="/chatbot-logo.png"
+              alt="Co - Founder"
+              className="w-8 h-8 rounded-full object-contain bg-white/20 p-0.5 shadow-xs shrink-0"
+            />
+            <span className="text-sm font-bold tracking-tight text-white whitespace-nowrap">
+              Co - Founder
             </span>
-            <div className="flex flex-col text-left">
-              <span className="text-xs font-extrabold tracking-tight flex items-center gap-1">
-                <Sparkles size={12} className="text-amber-200" />
-                AI Co-Founder
-              </span>
-              <span className="text-[10px] text-orange-100 font-mono">
-                {activeStartupName ? "Blueprint Aware" : "Ready to consult"}
-              </span>
-            </div>
           </button>
         </div>
       )}
@@ -392,13 +387,17 @@ export default function CoFounderChatDrawer({ blueprint = null, originalIdea = "
             {/* Top Navigation Bar */}
             <div className="px-5 py-4 border-b border-slate-100 bg-white flex items-center justify-between gap-3 shrink-0">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="h-9 w-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-600 shrink-0 shadow-2xs">
-                  <Bot size={18} />
+                <div className="h-9 w-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center shrink-0 shadow-2xs overflow-hidden">
+                  <img
+                    src="/chatbot-logo.png"
+                    alt="Co - Founder"
+                    className="h-full w-full object-contain p-0.5"
+                  />
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="text-sm font-bold text-slate-900 tracking-tight">
-                      LaunchPilot <span className="text-orange-600">Co-Founder</span>
+                      Co - Founder
                     </h3>
                     <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -467,8 +466,15 @@ export default function CoFounderChatDrawer({ blueprint = null, originalIdea = "
                     } group`}
                   >
                     <div className="flex items-center gap-1.5 mb-1 px-1">
-                      <span className="text-[10px] font-mono text-slate-400">
-                        {isAssistant ? "AI Co-Founder" : "You"}
+                      {isAssistant && (
+                        <img
+                          src="/chatbot-logo.png"
+                          alt="Co - Founder"
+                          className="w-3.5 h-3.5 rounded-full object-contain"
+                        />
+                      )}
+                      <span className="text-[10px] font-mono text-slate-500 font-semibold">
+                        {isAssistant ? "Co - Founder" : "You"}
                       </span>
                       <span className="text-[10px] text-slate-300">•</span>
                       <span className="text-[10px] font-mono text-slate-400">{msg.timestamp}</span>
