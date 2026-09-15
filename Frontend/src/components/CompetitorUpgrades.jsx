@@ -7,7 +7,7 @@
 // 4. ChatPRD: Document-meets-Dashboard Continuous Executive PRD Dossier
 // ---------------------------------------------------------------------------
 
-import { useState, useMemo, memo, useCallback } from "react";
+import { useState, useMemo, memo, useCallback, useRef, useEffect } from "react";
 import {
   ShieldCheck,
   TrendingUp,
@@ -19,6 +19,7 @@ import {
   DollarSign,
   Calculator,
   ArrowRight,
+  ArrowDown,
   Sparkles,
   Layers,
   FileText,
@@ -201,17 +202,91 @@ export const VenturusMarketSizeBubbleChart = memo(function VenturusMarketSizeBub
       : ideaTitle
     : "this Venture";
 
+  const containerRef = useRef(null);
+  const tamBubbleRef = useRef(null);
+  const samBubbleRef = useRef(null);
+  const somBubbleRef = useRef(null);
+  const tamCardRef = useRef(null);
+  const samCardRef = useRef(null);
+  const somCardRef = useRef(null);
+
+  const [coords, setCoords] = useState(null);
+  const [activeHover, setActiveHover] = useState(null);
+
+  const updateCoords = useCallback(() => {
+    if (!containerRef.current) return;
+    const cRect = containerRef.current.getBoundingClientRect();
+    if (!cRect.width) return;
+
+    const getXCenter = (el) => {
+      if (!el) return 0;
+      const r = el.getBoundingClientRect();
+      return r.left + r.width / 2 - cRect.left;
+    };
+
+    setCoords({
+      tamTop: getXCenter(tamBubbleRef.current),
+      samTop: getXCenter(samBubbleRef.current),
+      somTop: getXCenter(somBubbleRef.current),
+      tamBottom: getXCenter(tamCardRef.current),
+      samBottom: getXCenter(samCardRef.current),
+      somBottom: getXCenter(somCardRef.current),
+      width: cRect.width,
+    });
+  }, []);
+
+  useEffect(() => {
+    updateCoords();
+    const handleResize = () => updateCoords();
+    window.addEventListener("resize", handleResize);
+
+    let ro;
+    if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+      ro = new ResizeObserver(() => updateCoords());
+      ro.observe(containerRef.current);
+    }
+
+    // Secondary measurement after font/layout stabilizes
+    const t = setTimeout(updateCoords, 100);
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (ro) ro.disconnect();
+      clearTimeout(t);
+    };
+  }, [updateCoords]);
+
+  const svgH = 38;
+  const cWidth = coords?.width || 500;
+  // Fallback points if measurement not ready
+  const tamTop = coords?.tamTop ?? cWidth * 0.32;
+  const samTop = coords?.samTop ?? cWidth * 0.5;
+  const somTop = coords?.somTop ?? cWidth * 0.68;
+  const tamBottom = coords?.tamBottom ?? cWidth * 0.167;
+  const samBottom = coords?.samBottom ?? cWidth * 0.5;
+  const somBottom = coords?.somBottom ?? cWidth * 0.833;
+
   return (
-    <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between">
-      {/* Chart Title matching screenshot */}
+    <div
+      ref={containerRef}
+      className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between relative overflow-hidden"
+    >
+      {/* Chart Title */}
       <h3 className="text-base sm:text-lg font-bold text-slate-900 text-center tracking-tight mb-2">
         Market size estimations for {cleanTitle}
       </h3>
 
-      {/* 3 Overlapping Orange Bubble Circles — guaranteed round with shrink-0 & aspect-square */}
-      <div className="flex items-end justify-center -space-x-4 sm:-space-x-6 pt-6 pb-4 my-auto">
+      {/* 3 Overlapping Orange Bubble Circles */}
+      <div className="flex items-end justify-center -space-x-4 sm:-space-x-6 pt-6 pb-2 my-auto">
         {/* TAM Circle: Largest, Vibrant Brand Orange */}
-        <div className="w-36 h-36 sm:w-44 sm:h-44 shrink-0 aspect-square rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white flex flex-col items-center justify-center shadow-lg shadow-orange-500/20 hover:scale-105 transition-transform duration-300 z-10 select-none text-center px-2 border-2 border-orange-400/40">
+        <div
+          ref={tamBubbleRef}
+          onMouseEnter={() => setActiveHover("tam")}
+          onMouseLeave={() => setActiveHover(null)}
+          className={`w-36 h-36 sm:w-44 sm:h-44 shrink-0 aspect-square rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white flex flex-col items-center justify-center shadow-lg shadow-orange-500/20 hover:scale-105 transition-all duration-300 z-10 select-none text-center px-2 border-2 border-orange-400/40 cursor-pointer ${
+            activeHover === "tam" ? "ring-4 ring-orange-400/50 scale-105" : ""
+          }`}
+        >
           <span className="text-2xl sm:text-3xl font-black font-mono tracking-tight leading-none">
             {tam.value}
           </span>
@@ -221,7 +296,14 @@ export const VenturusMarketSizeBubbleChart = memo(function VenturusMarketSizeBub
         </div>
 
         {/* SAM Circle: Medium, Warm Amber-Orange */}
-        <div className="w-28 h-28 sm:w-36 sm:h-36 shrink-0 aspect-square rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white flex flex-col items-center justify-center shadow-md shadow-orange-500/15 hover:scale-105 transition-transform duration-300 z-20 select-none text-center px-2 border-2 border-amber-300/40">
+        <div
+          ref={samBubbleRef}
+          onMouseEnter={() => setActiveHover("sam")}
+          onMouseLeave={() => setActiveHover(null)}
+          className={`w-28 h-28 sm:w-36 sm:h-36 shrink-0 aspect-square rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white flex flex-col items-center justify-center shadow-md shadow-orange-500/15 hover:scale-105 transition-all duration-300 z-20 select-none text-center px-2 border-2 border-amber-300/40 cursor-pointer ${
+            activeHover === "sam" ? "ring-4 ring-amber-400/50 scale-105" : ""
+          }`}
+        >
           <span className="text-xl sm:text-2xl font-black font-mono tracking-tight leading-none">
             {sam.value}
           </span>
@@ -231,7 +313,14 @@ export const VenturusMarketSizeBubbleChart = memo(function VenturusMarketSizeBub
         </div>
 
         {/* SOM Circle: Smallest, Deep Terracotta Burnt Orange */}
-        <div className="w-24 h-24 sm:w-28 sm:h-28 shrink-0 aspect-square rounded-full bg-gradient-to-br from-orange-800 to-amber-900 text-white flex flex-col items-center justify-center shadow-sm hover:scale-105 transition-transform duration-300 z-30 select-none text-center px-1 border-2 border-orange-700/40">
+        <div
+          ref={somBubbleRef}
+          onMouseEnter={() => setActiveHover("som")}
+          onMouseLeave={() => setActiveHover(null)}
+          className={`w-24 h-24 sm:w-28 sm:h-28 shrink-0 aspect-square rounded-full bg-gradient-to-br from-orange-800 to-amber-900 text-white flex flex-col items-center justify-center shadow-sm hover:scale-105 transition-all duration-300 z-30 select-none text-center px-1 border-2 border-orange-700/40 cursor-pointer ${
+            activeHover === "som" ? "ring-4 ring-orange-800/50 scale-105" : ""
+          }`}
+        >
           <span className="text-lg sm:text-xl font-black font-mono tracking-tight leading-none">
             {som.value}
           </span>
@@ -241,37 +330,131 @@ export const VenturusMarketSizeBubbleChart = memo(function VenturusMarketSizeBub
         </div>
       </div>
 
-      {/* Downward Stem Lines and Clean Explanatory Notes */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mt-4 pt-4 border-t border-slate-100 text-center">
-        {/* TAM Stem + Note */}
-        <div className="flex flex-col items-center">
-          <div className="w-0.5 h-6 sm:h-8 bg-orange-500 mb-1" />
+      {/* Dynamic Connecting Arrow Bridge (Desktop / Tablet) */}
+      <div className="hidden sm:block w-full pointer-events-none -my-1">
+        <svg
+          width="100%"
+          height={svgH}
+          viewBox={`0 0 ${cWidth} ${svgH}`}
+          className="overflow-visible"
+        >
+          {/* TAM Arrow: starts at TAM bubble bottom, curves gracefully to TAM card top */}
+          <g className={activeHover === "tam" ? "opacity-100" : "opacity-85 hover:opacity-100"}>
+            <circle cx={tamTop} cy={2} r={3} fill="#ea580c" />
+            <path
+              d={`M ${tamTop} 3 C ${tamTop} ${svgH * 0.6}, ${tamBottom} ${svgH * 0.4}, ${tamBottom} ${svgH - 7}`}
+              fill="none"
+              stroke="#ea580c"
+              strokeWidth={activeHover === "tam" ? 2.5 : 1.75}
+              className="transition-all duration-200"
+            />
+            <polygon
+              points={`${tamBottom - 4.5},${svgH - 7} ${tamBottom + 4.5},${svgH - 7} ${tamBottom},${svgH - 1}`}
+              fill="#ea580c"
+            />
+          </g>
+
+          {/* SAM Arrow: starts at SAM bubble bottom, goes straight down to SAM card top */}
+          <g className={activeHover === "sam" ? "opacity-100" : "opacity-85 hover:opacity-100"}>
+            <circle cx={samTop} cy={2} r={3} fill="#d97706" />
+            <path
+              d={`M ${samTop} 3 L ${samBottom} ${svgH - 7}`}
+              fill="none"
+              stroke="#d97706"
+              strokeWidth={activeHover === "sam" ? 2.5 : 1.75}
+              className="transition-all duration-200"
+            />
+            <polygon
+              points={`${samBottom - 4.5},${svgH - 7} ${samBottom + 4.5},${svgH - 7} ${samBottom},${svgH - 1}`}
+              fill="#d97706"
+            />
+          </g>
+
+          {/* SOM Arrow: starts at SOM bubble bottom, curves gracefully to SOM card top */}
+          <g className={activeHover === "som" ? "opacity-100" : "opacity-85 hover:opacity-100"}>
+            <circle cx={somTop} cy={2} r={3} fill="#9a3412" />
+            <path
+              d={`M ${somTop} 3 C ${somTop} ${svgH * 0.6}, ${somBottom} ${svgH * 0.4}, ${somBottom} ${svgH - 7}`}
+              fill="none"
+              stroke="#9a3412"
+              strokeWidth={activeHover === "som" ? 2.5 : 1.75}
+              className="transition-all duration-200"
+            />
+            <polygon
+              points={`${somBottom - 4.5},${svgH - 7} ${somBottom + 4.5},${svgH - 7} ${somBottom},${svgH - 1}`}
+              fill="#9a3412"
+            />
+          </g>
+        </svg>
+      </div>
+
+      {/* Explanatory Cards Aligned Under Arrow Pointers */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-2 text-center">
+        {/* TAM Card */}
+        <div
+          ref={tamCardRef}
+          onMouseEnter={() => setActiveHover("tam")}
+          onMouseLeave={() => setActiveHover(null)}
+          className={`p-3.5 sm:p-4 rounded-2xl transition-all duration-200 flex flex-col items-center justify-start cursor-pointer ${
+            activeHover === "tam"
+              ? "bg-orange-50/90 border border-orange-300 shadow-sm ring-2 ring-orange-400/20"
+              : "bg-slate-50/70 border border-slate-200/80 hover:bg-orange-50/50 hover:border-orange-300/80"
+          }`}
+        >
+          {/* Mobile Arrow Indicator */}
+          <div className="sm:hidden flex items-center justify-center mb-1.5 text-orange-500">
+            <ArrowDown size={14} />
+          </div>
           <span className="text-[11px] font-mono uppercase tracking-wider text-orange-600 font-bold block">
             TAM (Total Addressable Market)
           </span>
-          <p className="text-xs text-slate-600 mt-1 leading-relaxed font-sans">
+          <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans">
             {tam.description}
           </p>
         </div>
 
-        {/* SAM Stem + Note */}
-        <div className="flex flex-col items-center">
-          <div className="w-0.5 h-6 sm:h-8 bg-amber-500 mb-1" />
+        {/* SAM Card */}
+        <div
+          ref={samCardRef}
+          onMouseEnter={() => setActiveHover("sam")}
+          onMouseLeave={() => setActiveHover(null)}
+          className={`p-3.5 sm:p-4 rounded-2xl transition-all duration-200 flex flex-col items-center justify-start cursor-pointer ${
+            activeHover === "sam"
+              ? "bg-amber-50/90 border border-amber-300 shadow-sm ring-2 ring-amber-400/20"
+              : "bg-slate-50/70 border border-slate-200/80 hover:bg-amber-50/50 hover:border-amber-300/80"
+          }`}
+        >
+          {/* Mobile Arrow Indicator */}
+          <div className="sm:hidden flex items-center justify-center mb-1.5 text-amber-500">
+            <ArrowDown size={14} />
+          </div>
           <span className="text-[11px] font-mono uppercase tracking-wider text-amber-700 font-bold block">
             SAM (Serviceable Available Market)
           </span>
-          <p className="text-xs text-slate-600 mt-1 leading-relaxed font-sans">
+          <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans">
             {sam.description}
           </p>
         </div>
 
-        {/* SOM Stem + Note */}
-        <div className="flex flex-col items-center">
-          <div className="w-0.5 h-6 sm:h-8 bg-orange-800 mb-1" />
+        {/* SOM Card */}
+        <div
+          ref={somCardRef}
+          onMouseEnter={() => setActiveHover("som")}
+          onMouseLeave={() => setActiveHover(null)}
+          className={`p-3.5 sm:p-4 rounded-2xl transition-all duration-200 flex flex-col items-center justify-start cursor-pointer ${
+            activeHover === "som"
+              ? "bg-orange-100/70 border border-orange-800/40 shadow-sm ring-2 ring-orange-800/20"
+              : "bg-slate-50/70 border border-slate-200/80 hover:bg-orange-50/50 hover:border-orange-800/40"
+          }`}
+        >
+          {/* Mobile Arrow Indicator */}
+          <div className="sm:hidden flex items-center justify-center mb-1.5 text-orange-800">
+            <ArrowDown size={14} />
+          </div>
           <span className="text-[11px] font-mono uppercase tracking-wider text-orange-800 font-bold block">
             SOM (Serviceable Obtainable Market)
           </span>
-          <p className="text-xs text-slate-600 mt-1 leading-relaxed font-sans">
+          <p className="text-xs text-slate-600 mt-1.5 leading-relaxed font-sans">
             {som.description}
           </p>
         </div>
