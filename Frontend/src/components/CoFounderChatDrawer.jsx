@@ -187,7 +187,7 @@ export default function CoFounderChatDrawer({ blueprint = null, originalIdea = "
           role: "assistant",
           content: startupContext
             ? `👋 Hi founder! I've loaded your blueprint for **${startupContext}**.\n\nI'm your dedicated AI Co-Founder and YC-grade strategic partner. What would you like to stress-test or execute today?`
-            : "👋 Hi founder! I'm your LaunchPilot AI Co-Founder.\n\nDescribe your business concept, ask me to grill your assumptions, or test your monetization strategy.",
+            : "👋 Hi founder! I'm your IdeaPulse AI Co-Founder.\n\nDescribe your business concept, ask me to grill your assumptions, or test your monetization strategy.",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
         },
       ]);

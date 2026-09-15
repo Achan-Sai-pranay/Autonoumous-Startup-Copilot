@@ -36,27 +36,27 @@ app.use(express.json());
 // Global API rate limiter (protects server against spam)
 const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 150, // 150 requests per 15 minutes per IP
+  max: 300, // 300 requests per 15 minutes per IP
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: "Too many requests from this IP. Please slow down and try again shortly." },
+  message: { error: "Too many requests. Please slow down and try again shortly." },
 });
 
 // Blueprint generation rate limiter (expensive multi-agent calls)
 const blueprintLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20, // 20 full blueprint runs per 15 minutes
+  max: 60, // 60 full blueprint runs per 15 minutes per IP
   standardHeaders: true,
   legacyHeaders: false,
   message: {
-    error: "Blueprint generation limit reached (max 20 blueprints per 15 minutes). Please wait before generating another.",
+    error: "You have reached the temporary beta blueprint generation rate limit. Please wait a few minutes before generating another.",
   },
 });
 
 // Chat & Consultant rate limiter
 const chatLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 80, // 80 chat turns per 15 minutes
+  max: 120, // 120 chat turns per 15 minutes
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -68,7 +68,7 @@ app.use("/api/", globalLimiter);
 
 // Simple health check — useful to confirm the server is up.
 app.get("/", (req, res) => {
-  res.send("LaunchPilot AI backend is running.");
+  res.send("IdeaPulse AI backend is running.");
 });
 
 // The one and only API endpoint. Streams progress, then the final result.
@@ -117,7 +117,7 @@ app.post("/api/chat-agent", chatLimiter, async (req, res) => {
   const { messages = [], blueprintContext = null } = req.body;
 
   let systemPrompt =
-    "You are the LaunchPilot Startup Assistant, a helpful, polite, and concise AI co-founder on our website. " +
+    "You are the IdeaPulse Startup Assistant, a helpful, polite, and concise AI co-founder on our website. " +
     "CRITICAL FORMATTING & STYLE RULES: " +
     "1. Keep answers SHORT, CRISP, DIRECT, and ACTIONABLE (2 to 4 sentences max, or 2-3 brief lines). " +
     "2. NEVER use markdown hashtags (#, ##, ###, ####). " +
@@ -157,7 +157,7 @@ app.post("/api/consultant", chatLimiter, async (req, res) => {
 
   // Prepare system prompt with active blueprint context
   let systemPrompt = [
-    "You are the elite LaunchPilot AI Co-Founder, YC partner, and senior startup growth strategist.",
+    "You are the elite IdeaPulse AI Co-Founder, YC partner, and senior startup growth strategist.",
     "Your mission: partner with the founder to test assumptions, sharpen product positioning, pressure-test unit economics, dissect competitive defensibility, and design aggressive go-to-market strategies.",
     "Tone & Style Guidelines:",
     "- High-signal, authoritative, supportive yet rigorous and intellectually honest (like a top Y Combinator partner during office hours).",
@@ -193,5 +193,5 @@ app.post("/api/consultant", chatLimiter, async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`LaunchPilot AI backend running on http://localhost:${PORT}`);
+  console.log(`IdeaPulse AI backend running on http://localhost:${PORT}`);
 });

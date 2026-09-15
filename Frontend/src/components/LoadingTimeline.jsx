@@ -28,10 +28,23 @@ export const AGENT_STEP_NAMES = [
 // steps: [{ name: string, status: "pending" | "running" | "done" | "failed" }]
 export default function LoadingTimeline({ steps }) {
   const [elapsed, setElapsed] = useState(0);
+  const [tipIndex, setTipIndex] = useState(0);
+
+  const FOUNDER_TIPS = [
+    "💡 Lean Tip: Never ask users 'Would you buy this?' Ask what specific workaround they paid for last month.",
+    "⚡ MVP Rule: An MVP should take under 4 weeks to build. We are scoping your core feature set now.",
+    "💰 Unit Economics: Calculating your cloud and server costs at 100, 500, and 5,000 active users.",
+    "🎯 Defensibility: Identifying structural blind spots and user complaints from direct competitors.",
+    "🚀 Distribution: Drafting ready-to-send LinkedIn outreach, Reddit launch copy, and email hooks.",
+  ];
 
   useEffect(() => {
     const timer = setInterval(() => setElapsed((prev) => prev + 1), 1000);
-    return () => clearInterval(timer);
+    const tipTimer = setInterval(() => setTipIndex((prev) => (prev + 1) % 5), 7000);
+    return () => {
+      clearInterval(timer);
+      clearInterval(tipTimer);
+    };
   }, []);
 
   const totalSteps = steps.length;
@@ -39,6 +52,7 @@ export default function LoadingTimeline({ steps }) {
   const runningStepIndex = steps.findIndex((s) => s.status === "running");
   const runningStep = runningStepIndex !== -1 ? steps[runningStepIndex] : null;
   const progressPercent = Math.round((completedSteps / totalSteps) * 100);
+  const estimatedRemaining = Math.max(0, 35 - elapsed);
 
   const formatTime = (secs) => {
     const m = Math.floor(secs / 60);
@@ -70,9 +84,17 @@ export default function LoadingTimeline({ steps }) {
             </div>
           </div>
 
-          <div className="text-right">
-            <span className="font-mono text-xs text-slate-400">Elapsed</span>
-            <p className="font-mono text-sm font-bold text-slate-900">{formatTime(elapsed)}</p>
+          <div className="text-right flex items-center gap-4">
+            <div>
+              <span className="font-mono text-[10px] text-slate-400 block uppercase">Est. Left</span>
+              <p className="font-mono text-xs font-bold text-orange-600">
+                ~{estimatedRemaining > 0 ? `${estimatedRemaining}s` : "Wrapping up"}
+              </p>
+            </div>
+            <div>
+              <span className="font-mono text-[10px] text-slate-400 block uppercase">Elapsed</span>
+              <p className="font-mono text-xs font-bold text-slate-900">{formatTime(elapsed)}</p>
+            </div>
           </div>
         </div>
 
@@ -82,6 +104,12 @@ export default function LoadingTimeline({ steps }) {
             className="bg-gradient-to-r from-orange-500 to-amber-500 h-full transition-all duration-500 ease-out rounded-full"
             style={{ width: `${Math.max(progressPercent, 8)}%` }}
           />
+        </div>
+
+        {/* Dynamic Founder Tip Box */}
+        <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-start gap-2 text-xs text-slate-600">
+          <Sparkles size={13} className="text-orange-500 shrink-0 mt-0.5" />
+          <span className="leading-snug animate-fade-in font-medium">{FOUNDER_TIPS[tipIndex]}</span>
         </div>
       </div>
 

@@ -351,7 +351,7 @@ export async function chatGemini(messages = [], systemPrompt = "") {
     });
     contents.push({
       role: "model",
-      parts: [{ text: "Understood. I am your LaunchPilot autonomous startup co-founder and AI strategic advisor powered by Gemini 3.7 Flash. How can I assist you with your startup?" }],
+      parts: [{ text: "Understood. I am your IdeaPulse autonomous startup co-founder and AI strategic advisor powered by Gemini 3.7 Flash. How can I assist you with your startup?" }],
     });
   }
 
@@ -420,7 +420,7 @@ export async function streamChatGemini(messages = [], systemPrompt = "", onChunk
       role: "model",
       parts: [
         {
-          text: "Understood. I am your LaunchPilot AI Co-Founder and YC-grade strategic advisor. I have deeply analyzed your startup blueprint and data, and I am ready to provide direct, high-impact, actionable guidance.",
+          text: "Understood. I am your IdeaPulse AI Co-Founder and YC-grade strategic advisor. I have deeply analyzed your startup blueprint and data, and I am ready to provide direct, high-impact, actionable guidance.",
         },
       ],
     });

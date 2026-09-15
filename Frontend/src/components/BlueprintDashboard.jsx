@@ -352,6 +352,7 @@ export default function BlueprintDashboard({
   const viewMode = controlledViewMode !== undefined ? controlledViewMode : internalViewMode;
   const setViewMode = setControlledViewMode || setInternalViewMode;
 
+  const [isFounderMode, setIsFounderMode] = useState(true);
   const [exporting, setExporting] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -458,7 +459,7 @@ export default function BlueprintDashboard({
 
   // Real venture header details
   const ventureTitle =
-    customTitle || pitch?.elevatorPitch || originalIdea || "LaunchPilot Venture Blueprint";
+    customTitle || pitch?.elevatorPitch || originalIdea || "IdeaPulse Venture Blueprint";
 
   const industryDomain =
     ideaAnalysis?.domain || "Startup Analysis";
@@ -517,12 +518,46 @@ export default function BlueprintDashboard({
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Founder vs Investor Mode Toggle */}
+          <div className="inline-flex p-0.5 bg-slate-100 rounded-xl border border-slate-200 text-xs shadow-2xs">
+            <button
+              type="button"
+              onClick={() => {
+                setIsFounderMode(true);
+                showToast("Switched to Plain-English Founder Mode");
+              }}
+              className={`px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-all cursor-pointer ${
+                isFounderMode
+                  ? "bg-white text-orange-600 shadow-2xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Plain-English terms without MBA jargon"
+            >
+              💡 Founder Mode
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setIsFounderMode(false);
+                showToast("Switched to VC & Investor Mode");
+              }}
+              className={`px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-all cursor-pointer ${
+                !isFounderMode
+                  ? "bg-white text-orange-600 shadow-2xs"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+              title="Standard institutional & VC terms (TAM/SAM/SOM, Porter's, etc.)"
+            >
+              📊 Investor Mode
+            </button>
+          </div>
+
           <button
             onClick={handleCopySummary}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:text-orange-600 hover:border-orange-300 transition-colors cursor-pointer shadow-2xs"
           >
             <Copy size={13} />
-            <span>Copy Brief</span>
+            <span className="hidden sm:inline">Copy Brief</span>
           </button>
           <ExportButton
             icon={FileText}
@@ -663,6 +698,12 @@ export default function BlueprintDashboard({
                     originalIdea={originalIdea}
                     pitch={pitch}
                     ventureTitle={ventureTitle}
+                    customerPersona={customerPersona}
+                    productPlan={productPlan}
+                    businessStrategy={businessStrategy}
+                    roadmap={roadmap}
+                    launchChecklist={launchChecklist}
+                    isFounderMode={isFounderMode}
                   />
                 )}
 
@@ -843,12 +884,71 @@ function StatCard({
 // ============================================================================
 // SECTION 1: EXECUTIVE OVERVIEW & VIABILITY
 // ============================================================================
-function OverviewSection({ viabilityScorecard, ideaAnalysis, marketSizing, originalIdea, pitch, ventureTitle }) {
+function OverviewSection({
+  viabilityScorecard,
+  ideaAnalysis,
+  marketSizing,
+  originalIdea,
+  pitch,
+  ventureTitle,
+  customerPersona,
+  productPlan,
+  businessStrategy,
+  roadmap,
+  launchChecklist,
+  isFounderMode = true,
+}) {
   const score = viabilityScorecard?.score ?? 84;
   const verdict = viabilityScorecard?.verdict || "Proceed";
 
   return (
     <div className="space-y-6">
+      {/* 🚀 Instant Action Deck: What to build & ship first */}
+      <div className="bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-white rounded-2xl p-5 border border-orange-200/90 shadow-2xs">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="flex items-center justify-center h-6 w-6 rounded-lg bg-orange-600 text-white">
+            <Zap size={13} />
+          </span>
+          <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-orange-800">
+            Executive Action Deck • Your Core Next Steps
+          </h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+          <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
+            <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
+              🎯 Target Customer
+            </span>
+            <p className="font-semibold text-slate-800 line-clamp-2">
+              {customerPersona?.targetUsers?.[0] || customerPersona?.userProfile || "Early Adopter"}
+            </p>
+          </div>
+          <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
+            <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
+              🛠️ Core MVP Scope
+            </span>
+            <p className="font-semibold text-slate-800 line-clamp-2">
+              {productPlan?.mvpFeatures?.slice(0, 2).join(", ") || "Production MVP"}
+            </p>
+          </div>
+          <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
+            <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
+              💰 Monetization Model
+            </span>
+            <p className="font-semibold text-slate-800 line-clamp-2">
+              {businessStrategy?.pricingIdea || businessStrategy?.revenueModel || "Subscription Tier"}
+            </p>
+          </div>
+          <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
+            <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
+              🚀 Priority This Week
+            </span>
+            <p className="font-semibold text-orange-700 line-clamp-2">
+              {roadmap?.milestones?.[0]?.tasks?.[0] || launchChecklist?.[0] || "Validate Mom Test questions"}
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Hero Charts: Viability Gauge + TAM/SAM/SOM Bubbles — Side by Side on Large Screens */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <VenturusViabilityGaugeChart viabilityScorecard={viabilityScorecard} ideaTitle={ventureTitle} />
@@ -859,12 +959,12 @@ function OverviewSection({ viabilityScorecard, ideaAnalysis, marketSizing, origi
       <ResponsiveCardGrid>
         {/* Card 1: Venture Viability Scorecard */}
         <StatCard
-          title="Venture Viability Scorecard"
+          title={isFounderMode ? "Startup Viability & Survival Score" : "Venture Viability Scorecard"}
           icon={ShieldCheck}
           iconColor="text-orange-500"
           stat={`${score} / 100`}
           subtitle={`Verdict: ${verdict}`}
-          detailsTitle="Executive Investment Thesis"
+          detailsTitle={isFounderMode ? "Why this verdict?" : "Executive Investment Thesis"}
           detailsText={
             viabilityScorecard?.verdictReasoning ||
             "Strong domain potential with verified market tailwinds and rapid time-to-MVP."

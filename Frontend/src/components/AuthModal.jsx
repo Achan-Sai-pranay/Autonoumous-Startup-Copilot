@@ -338,7 +338,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialMode
           </div>
 
           <p className="text-[11px] text-slate-400 text-center mt-4">
-            By continuing, you agree to LaunchPilot's Terms of Service and Privacy Policy.
+            By continuing, you agree to IdeaPulse's Terms of Service and Privacy Policy.
           </p>
         </div>
       </div>

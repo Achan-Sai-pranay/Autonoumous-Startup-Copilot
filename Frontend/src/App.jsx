@@ -1,6 +1,6 @@
 // App.jsx
 // ---------------------------------------------------------------------------
-// LaunchPilot AI — Complete White + Orange Homepage inspired by VenturusAI
+// LaunchPilot AI — Autonomous AI Co-Founder Platform
 // Features 12 Autonomous AI Co-Founders, Interactive Auth (Sign In / Sign Out),
 // Real-time NDJSON streaming pipeline, Project Vault, and Full Marketing Suite.
 // ---------------------------------------------------------------------------
@@ -22,15 +22,14 @@ import {
   PricingSection,
   FaqSection,
   FullFooter,
-  FloatingChatWidget,
 } from "./components/MarketingSections.jsx";
 import { getHistory, saveToHistory, deleteFromHistory, syncHistoryFromCloud } from "./lib/projectHistory.js";
 import { getCurrentUser, logout } from "./lib/authContext.js";
+import { getWeeklyUsage, incrementWeeklyUsage } from "./lib/quotaManager.js";
 import { useSpeechToText } from "./hooks/useSpeechToText.js";
+import { useScrollReveal } from "./hooks/useScrollReveal.js";
 import {
   History,
-  Mic,
-  MicOff,
   ArrowRight,
   Sparkles,
   Check,
@@ -39,6 +38,8 @@ import {
   LogOut,
   ChevronDown,
   Zap,
+  Rocket,
+  ShieldCheck,
 } from "lucide-react";
 
 const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001/api/generate-blueprint";
@@ -51,6 +52,8 @@ function buildInitialSteps() {
 }
 
 export default function App() {
+  useScrollReveal();
+
   const [currentView, setCurrentView] = useState(() => {
     if (typeof window !== "undefined") {
       const path = window.location.pathname;
@@ -79,26 +82,33 @@ export default function App() {
   // --- Startup History & Saved Projects -----------------------------------
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
+  const [quota, setQuota] = useState(() => getWeeklyUsage(null));
 
   useEffect(() => {
     getCurrentUser().then((user) => {
       if (user) {
         setCurrentUser(user);
         setHistory(getHistory(user.id));
-        // Auto-navigate to dashboard if user has active session
-        setCurrentView("workspace");
-        if (typeof window !== "undefined") {
-          window.history.replaceState({ view: "workspace" }, "", "/app");
-        }
+        setQuota(getWeeklyUsage(user.id));
       } else {
         setHistory(getHistory(null));
+        setQuota(getWeeklyUsage(null));
       }
     });
   }, []);
 
   useEffect(() => {
     setHistory(getHistory(currentUser?.id));
+    setQuota(getWeeklyUsage(currentUser?.id));
   }, [currentUser]);
+
+  function handleProtectedStart() {
+    if (!currentUser) {
+      handleOpenAuth("signup");
+    } else {
+      navigateTo("workspace");
+    }
+  }
 
   function navigateTo(view, updateHistory = true, replace = false) {
     setCurrentView(view);
@@ -115,27 +125,15 @@ export default function App() {
 
   useEffect(() => {
     function handlePopState(e) {
-      if (currentUser) {
-        // Authenticated user always stays inside workspace dashboard
-        setCurrentView("workspace");
-        if (typeof window !== "undefined" && window.location.pathname !== "/app") {
-          window.history.replaceState({ view: "workspace" }, "", "/app");
-        }
-        return;
-      }
+      const path = window.location.pathname;
+      const hash = window.location.hash;
       const view =
-        e.state?.view ||
-        (window.location.pathname === "/app" || window.location.hash === "#app"
-          ? "workspace"
-          : "home");
+        e.state?.view || (path === "/app" || hash === "#app" ? "workspace" : "home");
       setCurrentView(view);
     }
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [currentUser]);
-
-  const generatorRef = useRef(null);
-  const inputRef = useRef(null);
+  }, []);
 
   async function handleOpenHistory() {
     setHistory(getHistory(currentUser?.id));
@@ -170,6 +168,7 @@ export default function App() {
     setBlueprint(null);
     setIdea("");
     setHistory(getHistory(null));
+    setQuota(getWeeklyUsage(null));
     navigateTo("home", true, true);
   }
 
@@ -177,6 +176,7 @@ export default function App() {
     setCurrentUser(user);
     setShowAuthModal(false);
     setHistory(getHistory(user?.id));
+    setQuota(getWeeklyUsage(user?.id));
     navigateTo("workspace", true, true);
   }
 
@@ -188,8 +188,20 @@ export default function App() {
   }
 
   async function handleGenerate() {
+    if (!currentUser) {
+      setError("Please sign in or create a free account to validate your idea (3 free ideas per week).");
+      handleOpenAuth("signup");
+      return;
+    }
+
     if (!idea.trim()) {
       setError("Please describe your startup idea first.");
+      return;
+    }
+
+    const currentQuota = getWeeklyUsage(currentUser?.id);
+    if (currentQuota.remaining <= 0) {
+      setError(`You have reached your limit of ${currentQuota.limit} free blueprints this week. Quota resets in 7 days, or upgrade to Pro (10 ideas/week for ₹149/mo) coming soon!`);
       return;
     }
 
@@ -221,13 +233,15 @@ export default function App() {
         onResult: (data) => {
           setBlueprint(data);
           setHistory(saveToHistory(idea.trim(), data, currentUser?.id));
+          const updatedQuota = incrementWeeklyUsage(currentUser?.id);
+          setQuota(updatedQuota);
         },
         onError: (message) => setError(message),
       });
     } catch (err) {
       setError(
         err.message ||
-          "Something went wrong while generating your blueprint. Is the backend running on port 5001?"
+          "Unable to generate your startup blueprint. The AI pipeline may be experiencing high demand. Please try again shortly."
       );
     } finally {
       setIsLoading(false);
@@ -257,6 +271,7 @@ export default function App() {
           currentUser={currentUser}
           onOpenAuth={handleOpenAuth}
           onSignOut={handleSignOut}
+          quota={quota}
         />
 
         <CoFounderChatDrawer blueprint={blueprint} originalIdea={idea} />
@@ -279,13 +294,13 @@ export default function App() {
     );
   }
 
-  // --- VIEW 2: VENTURUSAI-IDENTICAL HOMEPAGE (/) -----------------------------
+  // --- VIEW 2: ORIGINAL LAUNCHPILOT HOMEPAGE (/) -----------------------------
   return (
     <div className="relative min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased">
       <SplineBackground />
 
       {/* 1. Top Announcement Bar */}
-      <AnnouncementBanner onCtaClick={() => navigateTo("workspace")} />
+      <AnnouncementBanner onCtaClick={handleProtectedStart} />
 
       {/* 2. Sticky Glass Navbar */}
       <Navbar
@@ -295,36 +310,38 @@ export default function App() {
         onOpenAuth={handleOpenAuth}
         onSignOut={handleSignOut}
         onCtaClick={handleLiveDemo}
-        onStartClick={() => navigateTo("workspace")}
+        onStartClick={handleProtectedStart}
+        onNavigateHome={() => navigateTo("home")}
       />
 
+      {/* 3. Main Content Container */}
       <main className="relative z-10 flex-1 flex flex-col items-center w-full">
-        {/* 3. VenturusAI Hero Section (Exact Match) */}
+        {/* Hero Section */}
         <Hero
-          onStartClick={() => navigateTo("workspace")}
+          onStartClick={handleProtectedStart}
           onDemoClick={handleLiveDemo}
         />
 
-        {/* 4. VenturusAI Marketing Sections Suite */}
+        {/* Feature & Value Sections */}
         <div className="w-full">
           <MarqueeLogos />
           <div id="how-it-works">
             <StatsSection />
           </div>
           <FeaturesGrid />
-          <div id="audience">
-            <AudienceTabs onSelectTab={() => navigateTo("workspace")} />
+          <div id="samples">
+            <AudienceTabs onSelectTab={handleProtectedStart} />
           </div>
           <TestimonialsSection />
-          <PricingSection onSelectPlan={() => navigateTo("workspace")} />
-          <FaqSection onCtaClick={() => navigateTo("workspace")} />
+          <PricingSection onSelectPlan={handleProtectedStart} />
+          <FaqSection onCtaClick={handleProtectedStart} />
         </div>
       </main>
 
-      {/* 6. Full Clean Footer */}
+      {/* 4. Full Clean Footer */}
       <FullFooter />
 
-      {/* 7. Floating Gemini 3.7 Flash AI Co-Founder Chat Drawer */}
+      {/* 5. Floating Gemini AI Co-Founder Chat Drawer */}
       <CoFounderChatDrawer blueprint={blueprint} originalIdea={idea} />
 
       {/* Modals & Overlays */}
@@ -382,6 +399,7 @@ function Navbar({
   onSignOut,
   onCtaClick,
   onStartClick,
+  onNavigateHome,
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -398,49 +416,57 @@ function Navbar({
 
   return (
     <header className="w-full border-b border-gray-200 bg-white/95 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between sticky top-0 z-40 transition-all">
-      {/* Brand Logo & Live Demo Link (matching VenturusAI) */}
+      {/* Brand Logo */}
       <div className="flex items-center gap-5">
-        <a href="/" className="flex items-center gap-2 group">
-          <div className="h-8 w-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-bold text-xs shadow-sm group-hover:scale-105 transition-transform">
-            LP
+        <button
+          onClick={onNavigateHome}
+          className="flex items-center gap-2.5 group cursor-pointer"
+        >
+          <div className="h-8 w-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-xs shadow-sm group-hover:scale-105 transition-transform animate-idea-pulse">
+            IP
           </div>
           <span className="font-extrabold text-lg tracking-tight text-gray-900">
-            Launch<span className="text-orange-600">Pilot</span>
+            Idea<span className="text-orange-600">Pulse</span>
           </span>
-        </a>
+        </button>
 
         <button
           onClick={onCtaClick}
-          className="font-bold text-sm text-orange-600 hover:text-orange-700 cursor-pointer hidden xs:inline-block transition-colors"
+          className="font-bold text-xs text-orange-600 hover:text-orange-700 cursor-pointer hidden sm:inline-block transition-colors bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full"
         >
-          Live demo
+          ⚡ Live Demo
         </button>
       </div>
 
-      {/* Nav Links (VenturusAI exact style) */}
+      {/* Nav Links */}
       <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-gray-700">
-        <a href="#features" className="hover:text-orange-600 transition-colors">
-          Features
-        </a>
         <a href="#how-it-works" className="hover:text-orange-600 transition-colors">
-          How it Works
+          How It Works
         </a>
-        <a href="#audience" className="hover:text-orange-600 transition-colors">
-          Audience
+        <a href="#features" className="hover:text-orange-600 transition-colors">
+          12 AI Co-Founders
+        </a>
+        <a href="#samples" className="hover:text-orange-600 transition-colors">
+          Sample Output
         </a>
         <a href="#pricing" className="hover:text-orange-600 transition-colors">
           Pricing
-        </a>
-        <a href="#testimonials" className="hover:text-orange-600 transition-colors">
-          Reviews
         </a>
         <a href="#faq" className="hover:text-orange-600 transition-colors">
           FAQ
         </a>
       </nav>
 
-      {/* Right Actions: Unblocked Start / Profile */}
+      {/* Right Actions: Launch Studio / Profile */}
       <div className="flex items-center gap-2.5 sm:gap-3.5">
+        <button
+          onClick={onStartClick}
+          className="hidden xs:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 shadow-xs transition-all cursor-pointer active:scale-95"
+        >
+          <Zap size={13} />
+          <span>Launch Studio</span>
+        </button>
+
         {currentUser ? (
           <div className="relative" ref={dropdownRef}>
             <button
@@ -464,10 +490,20 @@ function Navbar({
                   <p className="text-xs font-bold text-gray-900 truncate">{currentUser.name}</p>
                   <p className="text-[11px] text-gray-500 truncate">{currentUser.email}</p>
                   <span className="inline-block mt-1 text-[10px] font-mono text-orange-600 bg-orange-50 border border-orange-200 px-2 py-0.2 rounded font-semibold">
-                    {currentUser.plan || "Free Starter"}
+                    {currentUser.plan || "Community Free (3/wk)"}
                   </span>
                 </div>
                 <div className="py-1">
+                  <button
+                    onClick={() => {
+                      setDropdownOpen(false);
+                      onStartClick();
+                    }}
+                    className="w-full px-4 py-2 text-left text-xs text-gray-700 hover:bg-orange-50 hover:text-orange-700 flex items-center gap-2 cursor-pointer font-semibold"
+                  >
+                    <Zap size={13} className="text-orange-600" />
+                    <span>Launch Studio</span>
+                  </button>
                   <button
                     onClick={() => {
                       setDropdownOpen(false);
@@ -501,10 +537,10 @@ function Navbar({
               Sign In
             </button>
             <button
-              onClick={() => onOpenAuth?.("signup")}
-              className="inline-flex items-center justify-center rounded-lg text-xs sm:text-sm font-semibold transition-all bg-orange-600 text-white shadow-xs hover:bg-orange-700 h-9 sm:h-10 px-3 sm:px-4 py-2 cursor-pointer active:scale-95"
+              onClick={onStartClick}
+              className="inline-flex items-center justify-center rounded-lg text-xs sm:text-sm font-bold transition-all bg-orange-600 text-white shadow-xs hover:bg-orange-700 h-9 sm:h-10 px-3.5 sm:px-4 py-2 cursor-pointer active:scale-95"
             >
-              <span>Create Account</span>
+              <span>Get Started Free</span>
             </button>
           </div>
         )}
@@ -513,68 +549,62 @@ function Navbar({
   );
 }
 
-// --- VenturusAI Hero Section (Exact Match) ----------------------------------
+// --- IdeaPulse Hero Section --------------------------------------
 function Hero({ onStartClick, onDemoClick }) {
   return (
-    <section className="relative z-10 text-center max-w-5xl pt-10 sm:pt-14 pb-4 px-4 w-full">
-      {/* Two-tone Headline with Blinking Cursor */}
-      <div className="text-4xl xs:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-none text-gray-900 mb-6">
-        <div className="flex space-x-1 my-0 justify-center items-center">
-          <span className="text-orange-600 inline-block font-extrabold">
-            All-in-One solution
-          </span>
-          <span className="inline-block rounded-sm w-[4px] bg-orange-500 h-8 xs:h-10 md:h-14 lg:h-16 ml-1 animate-pulse"></span>
-        </div>
-        <span className="block text-gray-900 mt-2 font-black">
-          for your business
-        </span>
+    <section className="relative z-10 text-center max-w-5xl pt-12 sm:pt-16 pb-8 px-4 w-full">
+      {/* Pill Badge */}
+      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-mono font-bold mb-6 reveal-on-scroll">
+        <Sparkles size={13} className="text-orange-600" />
+        <span>Know What the Market Thinks • v1 Beta</span>
       </div>
 
-      {/* Subtitle matching VenturusAI exact copy */}
-      <p className="mb-6 lg:mb-8 font-medium md:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-        <span>Revolutionize Your Business Strategies with LaunchPilot:</span>
-        <br />
-        <span>Analyze, Enhance, and Drive Growth with AI-Powered Insights.</span>
+      {/* Main Headline */}
+      <h1 className="text-4xl xs:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 mb-6 leading-tight reveal-on-scroll">
+        Know what the market thinks.
+        <span className="block text-orange-600 mt-2">Validate before you build.</span>
+      </h1>
+
+      {/* Subtitle */}
+      <p className="mb-8 font-normal text-base md:text-lg lg:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed reveal-on-scroll">
+        Enter your raw startup concept. 12 autonomous AI specialists simulate your co-founding team —
+        benchmarking competitors, modeling financial viability, predicting market sentiment, and engineering your launch roadmap in 30 seconds.
       </p>
 
-      {/* Action Buttons */}
-      <div className="flex flex-col space-y-3 xs:flex-row xs:space-y-0 xs:space-x-4 justify-center items-center mb-8">
+      {/* CTA Buttons */}
+      <div className="flex flex-col space-y-3 xs:flex-row xs:space-y-0 xs:space-x-4 justify-center items-center mb-8 reveal-on-scroll">
         <button
           onClick={onStartClick}
-          className="inline-flex justify-center items-center py-3.5 px-7 text-base font-semibold text-center rounded-lg bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-600/25 transition-all cursor-pointer active:scale-95"
+          className="inline-flex justify-center items-center py-3.5 px-8 text-sm font-bold text-center rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-600/25 transition-all cursor-pointer active:scale-95"
         >
-          <span>Start for free</span>
-          <ArrowRight size={18} className="ml-2" />
+          <Zap size={16} className="mr-2" />
+          <span>Validate Your Idea (3 Free / Week)</span>
+          <ArrowRight size={16} className="ml-2" />
         </button>
 
         <button
           onClick={onDemoClick}
-          className="inline-flex justify-center items-center py-3.5 px-6 text-base font-semibold text-center text-gray-900 rounded-lg border border-gray-300 hover:bg-gray-50 transition-all cursor-pointer active:scale-95"
+          className="inline-flex justify-center items-center py-3.5 px-6 text-sm font-semibold text-center text-slate-700 rounded-xl border border-slate-300 hover:bg-slate-50 transition-all cursor-pointer active:scale-95 bg-white"
         >
-          Live Demo
+          View Live Demo
         </button>
       </div>
 
-      {/* Trust & Social Proof with Real Downloaded Avatars */}
-      <div className="flex flex-col items-center space-y-2.5 mt-4">
-        {/* Line 1: No credit card required with circular checkmark */}
-        <p className="text-sm text-gray-600 flex items-center font-medium">
-          <span className="inline-flex items-center justify-center w-5 h-5 mr-1.5 border border-gray-400 rounded-full text-gray-600">
-            <Check size={11} strokeWidth={3} />
-          </span>
-          No credit card required
-        </p>
-
-        {/* Line 2: Authentic founder-focused trust signal */}
-        <div className="flex flex-wrap xs:flex-nowrap items-center justify-center gap-2.5 pt-1">
-          <span className="text-sm text-gray-600 flex items-center font-medium">
-            <span className="inline-flex items-center justify-center w-5 h-5 mr-1.5 border border-gray-400 rounded-full text-gray-600">
-              <Heart size={11} fill="currentColor" />
-            </span>
-            <span>Empowering early-stage founders & builders to launch faster</span>
-          </span>
-        </div>
+      {/* Trust & Transparency */}
+      <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-slate-500 font-medium pt-2">
+        <span className="flex items-center gap-1.5">
+          <Check size={14} className="text-emerald-600" />
+          <span>Zero credit card required</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Check size={14} className="text-emerald-600" />
+          <span>100% Free Public Beta</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <Check size={14} className="text-emerald-600" />
+          <span>Full PDF & Markdown export</span>
+        </span>
       </div>
     </section>
   );
-}
+}

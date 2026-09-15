@@ -1,7 +1,7 @@
 {
-  "name": "launchpilot-frontend",
+  "name": "ideapulse-frontend",
   "version": "1.0.0",
-  "description": "LaunchPilot AI - frontend (React + Vite + Tailwind)",
+  "description": "IdeaPulse AI - frontend (React + Vite + Tailwind)",
   "type": "module",
   "scripts": {
     "dev": "vite",

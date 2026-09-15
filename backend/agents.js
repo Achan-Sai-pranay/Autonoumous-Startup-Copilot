@@ -97,7 +97,7 @@ const STEP_START_KEYS = [
 // ---------------------------------------------------------------------------
 function buildMegaPrompt(idea) {
   return `
-You are LaunchPilot AI, an elite autonomous startup co-founder and venture creation engine.
+You are IdeaPulse AI, an elite autonomous startup co-founder and venture creation engine.
 Given a single startup idea, generate a world-class, institutional-grade startup blueprint
 and execution plan. Reason through all specialist roles below and return everything as ONE JSON object.
 

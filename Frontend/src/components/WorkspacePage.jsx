@@ -98,6 +98,7 @@ export default function WorkspacePage({
   currentUser,
   onOpenAuth,
   onSignOut,
+  quota,
 }) {
   const inputRef = useRef(null);
   const mainScrollRef = useRef(null);
@@ -257,16 +258,16 @@ export default function WorkspacePage({
         {/* Workspace Brand Header */}
         <div className="h-14 border-b border-slate-100 flex items-center justify-between px-3.5">
           <div className="flex items-center gap-2.5 overflow-hidden">
-            <div className="h-8 w-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-bold text-xs shadow-xs shrink-0">
-              LP
+            <div className="h-8 w-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-xs shadow-xs shrink-0 animate-idea-pulse">
+              IP
             </div>
             {sidebarOpen && (
               <div className="flex flex-col truncate">
                 <span className="font-extrabold text-sm tracking-tight text-slate-900 truncate">
-                  {currentUser?.name ? `${currentUser.name.split(" ")[0]}'s Studio` : "LaunchPilot"}
+                  {currentUser?.name ? `${currentUser.name.split(" ")[0]}'s Studio` : "IdeaPulse Studio"}
                 </span>
                 <span className="text-[10px] font-mono text-orange-600 font-semibold truncate">
-                  {currentUser?.plan || "Free Starter"}
+                  {currentUser?.plan || "Community Free (3/wk)"}
                 </span>
               </div>
             )}
@@ -322,6 +323,15 @@ export default function WorkspacePage({
               >
                 <PlusCircle size={16} className={activeView === "new" ? "text-orange-600" : "text-slate-400"} />
                 {sidebarOpen && <span>Analyze new venture</span>}
+              </button>
+
+              <button
+                onClick={onBackToHome}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent transition-all cursor-pointer"
+                title="Back to Website"
+              >
+                <Home size={16} className="text-slate-400" />
+                {sidebarOpen && <span>Website Homepage</span>}
               </button>
             </nav>
           </div>
@@ -503,31 +513,29 @@ export default function WorkspacePage({
             </div>
           )}
 
-          {/* Section 3: Lite Plan Quota Card */}
+          {/* Section 3: Honest Plan Status Card */}
           {sidebarOpen && (
-            <div className="pt-3 border-t border-slate-100 space-y-2.5">
+            <div className="pt-3 border-t border-slate-100 space-y-2">
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-900">
-                <span>Lite plan</span>
+                <span>Free Plan</span>
                 <span className="text-[10px] font-mono text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded font-bold">
-                  Active
+                  {quota?.remaining ?? 3}/3 Left
                 </span>
               </div>
-              <div>
-                <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-                  <span>Standard reports</span>
-                  <span className="font-mono font-bold text-slate-700">10/10 left</span>
+              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-[11px] text-slate-500 space-y-1.5">
+                <div className="flex justify-between text-[10px]">
+                  <span>Weekly Free Ideas:</span>
+                  <span className="font-bold text-slate-700 font-mono">{quota?.remaining ?? 3} of 3</span>
                 </div>
-                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-orange-500 rounded-full w-full" />
+                <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-orange-500 rounded-full transition-all"
+                    style={{ width: `${Math.min(100, Math.round(((3 - (quota?.remaining ?? 3)) / 3) * 100))}%` }}
+                  />
                 </div>
-              </div>
-              <div>
-                <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-                  <span>Premium reports</span>
-                  <span className="font-mono font-bold text-slate-700">20/22 left</span>
-                </div>
-                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-purple-500 rounded-full w-[90%]" />
+                <div className="flex justify-between pt-1 text-[10px] text-slate-400">
+                  <span>Saved in Vault:</span>
+                  <span className="font-mono">{historyCount}</span>
                 </div>
               </div>
             </div>
@@ -979,11 +987,11 @@ export default function WorkspacePage({
                   Analyze New Startup
                 </span>
                 <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-                  Synthesize Your Next Business Blueprint
+                  What do you want to build?
                 </h1>
                 <p className="text-xs sm:text-base text-slate-500 mt-2 max-w-xl mx-auto leading-relaxed">
-                  Describe your idea, target customer, or unfair advantage. 12 autonomous AI co-founders
-                  will build your SWOT matrix, viability score, financial models, and tech PRD.
+                  Type your idea in plain English. 12 autonomous AI specialists will test market demand,
+                  calculate bottom-up TAM, model unit economics, and scope your MVP build plan.
                 </p>
               </div>
 
@@ -995,6 +1003,9 @@ export default function WorkspacePage({
                   onGenerate={onGenerate}
                   isLoading={isLoading}
                   inputRef={inputRef}
+                  currentUser={currentUser}
+                  onOpenAuth={onOpenAuth}
+                  quota={quota}
                 />
 
                 {/* Error Banner */}
@@ -1117,7 +1128,16 @@ export default function WorkspacePage({
 }
 
 // --- Internal Workspace IdeaInput ---
-function WorkspaceInput({ idea, setIdea, onGenerate, isLoading, inputRef }) {
+function WorkspaceInput({
+  idea,
+  setIdea,
+  onGenerate,
+  isLoading,
+  inputRef,
+  currentUser,
+  onOpenAuth,
+  quota,
+}) {
   const {
     isSupported: micSupported,
     isListening,
@@ -1136,6 +1156,27 @@ function WorkspaceInput({ idea, setIdea, onGenerate, isLoading, inputRef }) {
     }
   };
 
+  const QUICK_TAGS = [
+    "B2B SaaS",
+    "Consumer Mobile",
+    "AI Tool",
+    "Marketplace",
+    "HealthTech",
+    "FinTech",
+    "DevTool",
+    "Local Service",
+  ];
+
+  const handleAddTag = (tag) => {
+    setIdea((prev) => {
+      const trimmed = prev.trim();
+      if (!trimmed) return `[${tag}] `;
+      if (trimmed.includes(`[${tag}]`)) return trimmed;
+      return `${trimmed} [${tag}]`;
+    });
+    inputRef.current?.focus();
+  };
+
   return (
     <div className="bg-white rounded-3xl p-4 sm:p-5 border-2 border-slate-200 shadow-xl shadow-orange-500/5 focus-within:border-orange-500 focus-within:ring-4 focus-within:ring-orange-500/15 transition-all">
       <div className="relative">
@@ -1144,11 +1185,33 @@ function WorkspaceInput({ idea, setIdea, onGenerate, isLoading, inputRef }) {
           value={idea}
           onChange={(e) => setIdea(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Describe your startup concept, target problem, or technical thesis... (e.g. 'An autonomous AI accounting platform for freelancers with automated receipt OCR and tax filing')"
+          placeholder="What startup or problem do you want to build? (e.g. 'A mobile app to connect dog walkers with busy pet owners' or 'A micro-SaaS that monitors website downtime and alerts via WhatsApp')"
           rows={4}
           disabled={isLoading}
-          className="w-full resize-none bg-transparent px-3.5 pt-2 pb-8 text-sm sm:text-base text-slate-900 placeholder-slate-400 focus:outline-none disabled:opacity-50 font-sans leading-relaxed"
+          className="w-full resize-none bg-transparent px-3.5 pt-2 pb-3 text-sm sm:text-base text-slate-900 placeholder-slate-400 focus:outline-none disabled:opacity-50 font-sans leading-relaxed"
         />
+
+        {/* Quick Tag Pills */}
+        <div className="flex flex-wrap items-center gap-1.5 px-3.5 pb-3">
+          <span className="text-[10px] font-mono uppercase text-slate-400 font-bold mr-1">
+            Category Tags:
+          </span>
+          {QUICK_TAGS.map((tag) => (
+            <button
+              key={tag}
+              type="button"
+              onClick={() => handleAddTag(tag)}
+              disabled={isLoading}
+              className={`text-[11px] font-medium px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
+                idea.includes(`[${tag}]`)
+                  ? "bg-orange-100 border-orange-300 text-orange-800 font-semibold"
+                  : "bg-slate-50 border-slate-200 text-slate-600 hover:border-orange-300 hover:bg-orange-50/50"
+              }`}
+            >
+              +{tag}
+            </button>
+          ))}
+        </div>
 
         {/* Bottom Deck Actions */}
         <div className="flex items-center justify-between px-2 pt-3 border-t border-slate-100">
@@ -1185,17 +1248,40 @@ function WorkspaceInput({ idea, setIdea, onGenerate, isLoading, inputRef }) {
               </button>
             )}
 
-            <button
-              onClick={onGenerate}
-              disabled={isLoading || !idea.trim()}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-orange-600 hover:bg-orange-700 text-white disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed shadow-md shadow-orange-500/20 transition-all cursor-pointer active:scale-95"
-            >
-              <Zap size={15} className={isLoading ? "animate-spin" : ""} />
-              <span>{isLoading ? "Synthesizing…" : "Generate Blueprint"}</span>
-              <span className="hidden sm:inline-flex px-1.5 py-0.2 rounded bg-orange-700/60 text-[10px] font-mono text-orange-100">
-                ⌘↵
-              </span>
-            </button>
+            {!currentUser ? (
+              <button
+                type="button"
+                onClick={() => onOpenAuth?.("signup")}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-500/20 transition-all cursor-pointer active:scale-95"
+              >
+                <User size={15} />
+                <span>Sign in to Generate</span>
+              </button>
+            ) : (quota?.remaining ?? 3) <= 0 ? (
+              <button
+                type="button"
+                onClick={() =>
+                  alert(
+                    "You've used all 3 free blueprints for this week! Pro Founder with 10 ideas/week for ₹149/mo is launching in Version 2."
+                  )
+                }
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-200 text-slate-500 cursor-not-allowed shadow-none"
+              >
+                <span>Limit Reached (3/3 this week)</span>
+              </button>
+            ) : (
+              <button
+                onClick={onGenerate}
+                disabled={isLoading || !idea.trim()}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-orange-600 hover:bg-orange-700 text-white disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed shadow-md shadow-orange-500/20 transition-all cursor-pointer active:scale-95"
+              >
+                <Zap size={15} className={isLoading ? "animate-spin" : ""} />
+                <span>{isLoading ? "Synthesizing…" : "Generate Blueprint"}</span>
+                <span className="hidden sm:inline-flex px-1.5 py-0.2 rounded bg-orange-700/60 text-[10px] font-mono text-orange-100">
+                  ⌘↵
+                </span>
+              </button>
+            )}
           </div>
         </div>
       </div>
