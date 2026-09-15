@@ -103,17 +103,17 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialMode
       <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden">
         {/* Top Header */}
         <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-orange-600 flex items-center justify-center text-white font-bold text-xs shadow-sm">
-              LP
+          <div className="flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-xs shadow-sm animate-idea-pulse">
+              IP
             </div>
-            <span className="font-bold text-slate-900 text-base">
-              Launch<span className="text-orange-600">Pilot</span> AI
+            <span className="font-extrabold text-slate-900 text-base tracking-tight">
+              Idea<span className="text-orange-600">Pulse</span>
             </span>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X size={18} />
           </button>
@@ -121,14 +121,6 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialMode
 
         {/* Modal Body */}
         <div className="p-6">
-          {!appwriteReady && (
-            <div className="mb-4 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-center gap-2">
-              <AlertCircle size={14} className="shrink-0 text-amber-600" />
-              <span>
-                <strong>Demo Mode</strong>: Add your Appwrite Project ID to <code>Frontend/.env</code> to activate live Appwrite Cloud auth.
-              </span>
-            </div>
-          )}
 
           {/* Tab Switcher */}
           <div className="flex bg-slate-100 p-1 rounded-xl mb-6">

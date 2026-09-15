@@ -52,8 +52,6 @@ function buildInitialSteps() {
 }
 
 export default function App() {
-  useScrollReveal();
-
   const [currentView, setCurrentView] = useState(() => {
     if (typeof window !== "undefined") {
       const path = window.location.pathname;
@@ -62,6 +60,8 @@ export default function App() {
     }
     return "home";
   });
+
+  useScrollReveal(currentView);
 
   const [idea, setIdea] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -72,9 +72,9 @@ export default function App() {
   // --- Auth & Session State ------------------------------------------------
   const [currentUser, setCurrentUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState("login");
+  const [authModalMode, setAuthModalMode] = useState("signup");
 
-  function handleOpenAuth(mode = "login") {
+  function handleOpenAuth(mode = "signup") {
     setAuthModalMode(mode);
     setShowAuthModal(true);
   }
@@ -101,6 +101,13 @@ export default function App() {
     setHistory(getHistory(currentUser?.id));
     setQuota(getWeeklyUsage(currentUser?.id));
   }, [currentUser]);
+
+  useEffect(() => {
+    // Compulsory authentication enforcement: direct workspace access requires account
+    if (currentView === "workspace" && !currentUser) {
+      handleOpenAuth("signup");
+    }
+  }, [currentView, currentUser]);
 
   function handleProtectedStart() {
     if (!currentUser) {
@@ -178,13 +185,6 @@ export default function App() {
     setHistory(getHistory(user?.id));
     setQuota(getWeeklyUsage(user?.id));
     navigateTo("workspace", true, true);
-  }
-
-  function handleLiveDemo() {
-    setIdea(
-      "An AI-powered B2B platform that audits enterprise vendor contracts, flags compliance risks, and benchmarks pricing automatically."
-    );
-    navigateTo("workspace");
   }
 
   async function handleGenerate() {
@@ -309,7 +309,6 @@ export default function App() {
         currentUser={currentUser}
         onOpenAuth={handleOpenAuth}
         onSignOut={handleSignOut}
-        onCtaClick={handleLiveDemo}
         onStartClick={handleProtectedStart}
         onNavigateHome={() => navigateTo("home")}
       />
@@ -319,7 +318,6 @@ export default function App() {
         {/* Hero Section */}
         <Hero
           onStartClick={handleProtectedStart}
-          onDemoClick={handleLiveDemo}
         />
 
         {/* Feature & Value Sections */}
@@ -397,7 +395,6 @@ function Navbar({
   currentUser,
   onOpenAuth,
   onSignOut,
-  onCtaClick,
   onStartClick,
   onNavigateHome,
 }) {
@@ -428,13 +425,6 @@ function Navbar({
           <span className="font-extrabold text-lg tracking-tight text-gray-900">
             Idea<span className="text-orange-600">Pulse</span>
           </span>
-        </button>
-
-        <button
-          onClick={onCtaClick}
-          className="font-bold text-xs text-orange-600 hover:text-orange-700 cursor-pointer hidden sm:inline-block transition-colors bg-orange-50 border border-orange-200 px-2.5 py-1 rounded-full"
-        >
-          ⚡ Live Demo
         </button>
       </div>
 
@@ -550,29 +540,29 @@ function Navbar({
 }
 
 // --- IdeaPulse Hero Section --------------------------------------
-function Hero({ onStartClick, onDemoClick }) {
+function Hero({ onStartClick }) {
   return (
     <section className="relative z-10 text-center max-w-5xl pt-12 sm:pt-16 pb-8 px-4 w-full">
       {/* Pill Badge */}
-      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-mono font-bold mb-6 reveal-on-scroll">
+      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-mono font-bold mb-6 animate-slide-up">
         <Sparkles size={13} className="text-orange-600" />
         <span>Know What the Market Thinks • v1 Beta</span>
       </div>
 
       {/* Main Headline */}
-      <h1 className="text-4xl xs:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 mb-6 leading-tight reveal-on-scroll">
+      <h1 className="text-4xl xs:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 mb-6 leading-tight animate-slide-up">
         Know what the market thinks.
         <span className="block text-orange-600 mt-2">Validate before you build.</span>
       </h1>
 
       {/* Subtitle */}
-      <p className="mb-8 font-normal text-base md:text-lg lg:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed reveal-on-scroll">
+      <p className="mb-8 font-normal text-base md:text-lg lg:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed animate-slide-up">
         Enter your raw startup concept. 12 autonomous AI specialists simulate your co-founding team —
         benchmarking competitors, modeling financial viability, predicting market sentiment, and engineering your launch roadmap in 30 seconds.
       </p>
 
       {/* CTA Buttons */}
-      <div className="flex flex-col space-y-3 xs:flex-row xs:space-y-0 xs:space-x-4 justify-center items-center mb-8 reveal-on-scroll">
+      <div className="flex flex-col space-y-3 xs:flex-row xs:space-y-0 xs:space-x-4 justify-center items-center mb-8 animate-slide-up">
         <button
           onClick={onStartClick}
           className="inline-flex justify-center items-center py-3.5 px-8 text-sm font-bold text-center rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-600/25 transition-all cursor-pointer active:scale-95"
@@ -582,12 +572,12 @@ function Hero({ onStartClick, onDemoClick }) {
           <ArrowRight size={16} className="ml-2" />
         </button>
 
-        <button
-          onClick={onDemoClick}
-          className="inline-flex justify-center items-center py-3.5 px-6 text-sm font-semibold text-center text-slate-700 rounded-xl border border-slate-300 hover:bg-slate-50 transition-all cursor-pointer active:scale-95 bg-white"
+        <a
+          href="#how-it-works"
+          className="inline-flex justify-center items-center py-3.5 px-6 text-sm font-semibold text-center text-slate-700 rounded-xl border border-slate-300 hover:bg-slate-50 transition-all cursor-pointer active:scale-95 bg-white shadow-2xs"
         >
-          View Live Demo
-        </button>
+          Explore How It Works
+        </a>
       </div>
 
       {/* Trust & Transparency */}
