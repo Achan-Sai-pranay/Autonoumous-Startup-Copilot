@@ -75,27 +75,9 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialMode
 
   function handleSocial(provider) {
     setError("");
-    if (appwriteReady) {
-      setOauthNotice({
-        provider,
-        message: `${provider} OAuth is disabled by default in Appwrite. To enable it, go to Appwrite Console > Auth > Settings > OAuth2 Providers. For immediate access, use Email & Password above!`,
-      });
-    } else {
-      const user = mockSocialLogin(provider);
-      onLoginSuccess(user);
-      onClose();
-    }
-  }
-
-  function handleForceSocial(provider) {
-    setLoading(true);
-    setError("");
-    try {
-      loginWithOAuth(provider);
-    } catch (err) {
-      setError(err?.message || `Failed to sign in with ${provider}.`);
-      setLoading(false);
-    }
+    const user = mockSocialLogin(provider);
+    onLoginSuccess(user);
+    onClose();
   }
 
   return (
@@ -268,28 +250,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialMode
             </span>
           </div>
 
-          {oauthNotice && (
-            <div className="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-              <div className="flex items-start gap-2">
-                <AlertCircle size={15} className="shrink-0 text-amber-600 mt-0.5" />
-                <div className="flex-1 text-[11px] leading-relaxed">
-                  <p className="font-semibold text-amber-900 mb-0.5">{oauthNotice.provider} Notice</p>
-                  <p className="text-amber-800">{oauthNotice.message}</p>
-                  <div className="mt-2">
-                    <button
-                      type="button"
-                      onClick={() => handleForceSocial(oauthNotice.provider)}
-                      className="text-[11px] font-semibold text-amber-900 underline hover:text-amber-700 cursor-pointer"
-                    >
-                      Proceed to {oauthNotice.provider} anyway &rarr;
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3 mb-2">
+          <div className="grid grid-cols-2 gap-3 mb-3">
             <button
               type="button"
               onClick={() => handleSocial("Google")}
@@ -329,7 +290,23 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialMode
             </button>
           </div>
 
-          <p className="text-[11px] text-slate-400 text-center mt-4">
+          <div className="pt-2 border-t border-slate-100 text-center">
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                if (typeof window !== "undefined") {
+                  window.location.pathname = "/app";
+                }
+              }}
+              className="w-full py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-xs font-bold text-slate-700 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>Continue as Guest (Try 1 Free Idea)</span>
+              <ArrowRight size={13} />
+            </button>
+          </div>
+
+          <p className="text-[11px] text-slate-400 text-center mt-3">
             By continuing, you agree to IdeaPulse's Terms of Service and Privacy Policy.
           </p>
         </div>

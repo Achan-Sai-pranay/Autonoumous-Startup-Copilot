@@ -558,58 +558,48 @@ export function PricingSection({ onSelectPlan }) {
             </button>
           </div>
 
-          {/* Card 2: Version 2 Pro Founder (10 ideas/week - ₹149/mo) */}
-          <div className="rounded-3xl p-8 bg-slate-50 border border-slate-200 flex flex-col justify-between">
+          {/* Card 2: Pro Founder (10 ideas/week - ₹149/mo) */}
+          <div className="rounded-3xl p-8 bg-slate-900 text-white flex flex-col justify-between relative shadow-xl border border-slate-800">
+            <span className="absolute -top-3 right-6 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-600 text-white font-mono shadow-xs">
+              Popular with Founders
+            </span>
+
             <div>
               <div className="flex items-baseline justify-between mb-2">
-                <h3 className="text-xl font-bold text-slate-900">Pro Founder (V2)</h3>
+                <h3 className="text-xl font-bold text-white">Pro Founder</h3>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-slate-900 font-mono">₹149</span>
-                  <span className="text-xs text-slate-500 font-mono">/ month</span>
+                  <span className="text-3xl font-black text-white font-mono">₹149</span>
+                  <span className="text-xs text-slate-400 font-mono">/ month</span>
                 </div>
               </div>
-              <p className="text-xs text-slate-500 mb-6 leading-relaxed">
-                Launching in Version 2. For active builders and venture creators wanting more power:
+              <p className="text-xs text-slate-400 mb-6 leading-relaxed">
+                For active venture creators, solo founders, and agency builders wanting high-volume validation:
               </p>
 
-              <ul className="space-y-3 mb-8 text-xs text-slate-600">
+              <ul className="space-y-3 mb-8 text-xs text-slate-300">
                 {[
                   "10 Startup Blueprints per week",
-                  "Priority Gemini 2.0 AI processing",
-                  "Live automated competitor web scraping",
-                  "1-Click Pitch Deck Google Slides export",
-                  "Automated Next.js GitHub repo scaffolding",
+                  "Priority AI inference with zero queueing",
+                  "Unlimited Co-Founder & YC Partner chat",
+                  "Full PDF & PRD dossier export suite",
+                  "Priority cloud vault backup",
                 ].map((feat, idx) => (
                   <li key={idx} className="flex items-center gap-2.5">
-                    <Sparkles size={15} className="text-slate-400 shrink-0" />
+                    <Sparkles size={15} className="text-orange-400 shrink-0" />
                     <span>{feat}</span>
                   </li>
                 ))}
               </ul>
             </div>
 
-            {waitlistSubmitted ? (
-              <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-bold text-emerald-800 text-center">
-                ✓ You're on the priority V2 waitlist!
-              </div>
-            ) : (
-              <form onSubmit={handleWaitlistSubmit} className="flex gap-2">
-                <input
-                  type="email"
-                  required
-                  placeholder="Enter your email"
-                  value={waitlistEmail}
-                  onChange={(e) => setWaitlistEmail(e.target.value)}
-                  className="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white text-xs text-slate-900 focus:outline-none focus:border-orange-500"
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors shrink-0"
-                >
-                  Join V2 (₹149)
-                </button>
-              </form>
-            )}
+            <button
+              type="button"
+              onClick={() => onSelectPlan?.("pro")}
+              className="w-full py-3 px-6 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95"
+            >
+              <Zap size={16} />
+              <span>Upgrade to Pro (₹149 / mo)</span>
+            </button>
           </div>
         </div>
       </div>

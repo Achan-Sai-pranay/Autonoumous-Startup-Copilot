@@ -99,6 +99,7 @@ export default function WorkspacePage({
   onOpenAuth,
   onSignOut,
   quota,
+  onOpenPayment,
 }) {
   const inputRef = useRef(null);
   const mainScrollRef = useRef(null);
@@ -517,22 +518,49 @@ export default function WorkspacePage({
           {sidebarOpen && (
             <div className="pt-3 border-t border-slate-100 space-y-2">
               <div className="flex items-center justify-between text-[11px] font-bold text-slate-900">
-                <span>Free Plan</span>
+                <span className="flex items-center gap-1.5">
+                  {quota?.isPro ? (
+                    <span className="text-orange-600 flex items-center gap-1">
+                      <Sparkles size={12} /> Pro Founder
+                    </span>
+                  ) : (
+                    <span>Free Plan</span>
+                  )}
+                </span>
                 <span className="text-[10px] font-mono text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded font-bold">
-                  {quota?.remaining ?? 3}/3 Left
+                  {quota?.remaining ?? (quota?.isPro ? 10 : 3)}/{quota?.total ?? (quota?.isPro ? 10 : 3)} Left
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-[11px] text-slate-500 space-y-1.5">
                 <div className="flex justify-between text-[10px]">
-                  <span>Weekly Free Ideas:</span>
-                  <span className="font-bold text-slate-700 font-mono">{quota?.remaining ?? 3} of 3</span>
+                  <span>Weekly Limit:</span>
+                  <span className="font-bold text-slate-700 font-mono">
+                    {quota?.remaining ?? 3} of {quota?.total ?? 3}
+                  </span>
                 </div>
                 <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-orange-500 rounded-full transition-all"
-                    style={{ width: `${Math.min(100, Math.round(((3 - (quota?.remaining ?? 3)) / 3) * 100))}%` }}
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.round(
+                          (((quota?.total || 3) - (quota?.remaining ?? 3)) / (quota?.total || 3)) * 100
+                        )
+                      )}%`,
+                    }}
                   />
                 </div>
+                {!quota?.isPro && (
+                  <button
+                    type="button"
+                    onClick={onOpenPayment}
+                    className="w-full mt-1.5 py-1.5 px-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold text-[10px] transition-colors flex items-center justify-center gap-1 cursor-pointer shadow-xs"
+                  >
+                    <Zap size={11} />
+                    <span>Upgrade to Pro (₹149)</span>
+                  </button>
+                )}
                 <div className="flex justify-between pt-1 text-[10px] text-slate-400">
                   <span>Saved in Vault:</span>
                   <span className="font-mono">{historyCount}</span>
@@ -1006,6 +1034,7 @@ export default function WorkspacePage({
                   currentUser={currentUser}
                   onOpenAuth={onOpenAuth}
                   quota={quota}
+                  onOpenPayment={onOpenPayment}
                 />
 
                 {/* Error Banner */}
@@ -1137,6 +1166,7 @@ function WorkspaceInput({
   currentUser,
   onOpenAuth,
   quota,
+  onOpenPayment,
 }) {
   const {
     isSupported: micSupported,
@@ -1234,7 +1264,7 @@ function WorkspaceInput({
                 type="button"
                 onClick={toggleListening}
                 disabled={isLoading}
-                title={isListening ? "Stop recording" : "Dictate your idea"}
+                title={isListening ? "Stop recording" : "Dictate your idea (Chrome/Edge)"}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
                   isListening
                     ? "bg-red-50 text-red-600 border border-red-200 animate-pulse"
@@ -1248,26 +1278,20 @@ function WorkspaceInput({
               </button>
             )}
 
-            {!currentUser ? (
+            {(quota?.remaining ?? 3) <= 0 ? (
               <button
                 type="button"
-                onClick={() => onOpenAuth?.("signup")}
+                onClick={() => {
+                  if (!currentUser) {
+                    onOpenAuth?.("signup");
+                  } else {
+                    onOpenPayment?.();
+                  }
+                }}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-500/20 transition-all cursor-pointer active:scale-95"
               >
-                <User size={15} />
-                <span>Sign in to Generate</span>
-              </button>
-            ) : (quota?.remaining ?? 3) <= 0 ? (
-              <button
-                type="button"
-                onClick={() =>
-                  alert(
-                    "You've used all 3 free blueprints for this week! Pro Founder with 10 ideas/week for ₹149/mo is launching in Version 2."
-                  )
-                }
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-200 text-slate-500 cursor-not-allowed shadow-none"
-              >
-                <span>Limit Reached (3/3 this week)</span>
+                <Zap size={15} />
+                <span>{currentUser ? "Upgrade to Pro (10 Ideas)" : "Sign Up for 3 Free Ideas"}</span>
               </button>
             ) : (
               <button

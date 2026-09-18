@@ -901,6 +901,8 @@ export default function BlueprintDashboard({
                     goToMarket={goToMarket}
                     launchChecklist={launchChecklist}
                     pitch={pitch}
+                    ideaAnalysis={ideaAnalysis}
+                    customerPersona={blueprint?.customerPersona}
                     onToast={showToast}
                     onUpdateChecklist={(val) => updateRootField("launchChecklist", val)}
                   />
@@ -2231,6 +2233,13 @@ function FinancesSection({
         productPlan={productPlan}
         marketResearch={marketResearch}
         costEstimator={costEstimator}
+        businessStrategy={businessStrategy}
+        swotAnalysis={blueprint?.swotAnalysis}
+        pitch={blueprint?.pitch}
+        goToMarket={blueprint?.goToMarket}
+        customerPersona={blueprint?.customerPersona}
+        viabilityScorecard={blueprint?.viabilityScorecard}
+        competitorWeaknessAnalysis={blueprint?.competitorWeaknessAnalysis}
       />
     </div>
   );
@@ -2244,25 +2253,26 @@ function formatTemplateContent(content) {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
     return content
-      .map((c) => (typeof c === "object" ? JSON.stringify(c, null, 2) : String(c)))
+      .map((c) => (typeof c === "object" ? formatTemplateContent(c) : String(c)))
+      .filter(Boolean)
       .join("\n\n");
   }
   if (typeof content === "object") {
-    if (content.subject && content.body) {
-      return `Subject: ${content.subject}\n\n${content.body}`;
+    // Subject + Body variations
+    const subject = content.subject || content.subjectLine || content.headline || content.title;
+    const body = content.body || content.emailBody || content.content || content.text || content.message || content.post;
+    if (subject && body) {
+      return `Subject: ${subject}\n\n${body}`;
     }
-    if (content.title && content.post) {
-      return `Title: ${content.title}\n\n${content.post}`;
-    }
-    if (content.title && content.body) {
-      return `Title: ${content.title}\n\n${content.body}`;
+    if (body) {
+      return String(body);
     }
     if (content.hook && content.thread) {
       const threadStr = Array.isArray(content.thread) ? content.thread.join("\n\n") : content.thread;
       return `${content.hook}\n\n${threadStr}`;
     }
-    if (content.tweet) {
-      return content.tweet;
+    if (content.tweet || content.post) {
+      return String(content.tweet || content.post);
     }
     return Object.entries(content)
       .map(([k, v]) => `${k.toUpperCase()}:\n${typeof v === "object" ? JSON.stringify(v, null, 2) : v}`)
@@ -2271,7 +2281,7 @@ function formatTemplateContent(content) {
   return String(content);
 }
 
-function GoToMarketSection({ goToMarket, launchChecklist, pitch, onToast, onUpdateChecklist }) {
+function GoToMarketSection({ goToMarket, launchChecklist, pitch, ideaAnalysis, customerPersona, onToast, onUpdateChecklist }) {
   const [completedItems, setCompletedItems] = useState(() => new Set());
   const [editingIdx, setEditingIdx] = useState(null);
   const [editText, setEditText] = useState("");
@@ -2310,7 +2320,7 @@ function GoToMarketSection({ goToMarket, launchChecklist, pitch, onToast, onUpda
     ];
   }, [launchChecklist]);
 
-  // Normalize platforms list
+  // Normalize platforms list with dynamic domain awareness
   const platformsList = useMemo(() => {
     const raw = goToMarket?.platforms;
     if (Array.isArray(raw)) {
@@ -2335,11 +2345,13 @@ function GoToMarketSection({ goToMarket, launchChecklist, pitch, onToast, onUpda
     if (typeof raw === "string" && raw.trim()) {
       return raw.split(",").map((s) => ({ name: s.trim(), why: "Growth channel" }));
     }
+    const domainLabel = ideaAnalysis?.domain || "target industry";
     return [
-      { name: "LinkedIn", why: "Direct outreach to economic buyers and clinical operators." },
-      { name: "Reddit", why: "Community-driven feedback in niche healthcare forums." },
+      { name: "LinkedIn Outbound", why: `Direct outreach to economic buyers and operational leads in ${domainLabel}.` },
+      { name: "Reddit & Communities", why: "Community-driven feedback and organic word-of-mouth in niche practitioner forums." },
+      { name: "High-Intent SEO & X", why: "Programmatic search landing pages capturing solution-seeking decision makers." }
     ];
-  }, [goToMarket?.platforms]);
+  }, [goToMarket?.platforms, ideaAnalysis?.domain]);
 
   // Normalize LinkedIn search queries
   const linkedInQueries = useMemo(() => {
@@ -2364,10 +2376,46 @@ function GoToMarketSection({ goToMarket, launchChecklist, pitch, onToast, onUpda
     return [];
   }, [goToMarket?.linkedInSearchStrategy]);
 
-  const coldEmailText = formatTemplateContent(goToMarket?.coldEmailTemplate);
-  const linkedInDmText = formatTemplateContent(goToMarket?.linkedInDmTemplate);
-  const redditPostText = formatTemplateContent(goToMarket?.redditLaunchPost);
-  const twitterPostText = formatTemplateContent(goToMarket?.twitterLaunchPost);
+  // Extract raw templates with support for schema variations
+  const rawColdEmail = goToMarket?.coldEmailTemplate || goToMarket?.coldEmail || goToMarket?.emailTemplate || goToMarket?.email;
+  const rawLinkedInDm = goToMarket?.linkedInDmTemplate || goToMarket?.linkedInDm || goToMarket?.linkedInDM || goToMarket?.linkedIn;
+  const rawRedditPost = goToMarket?.redditLaunchPost || goToMarket?.redditPost || goToMarket?.reddit;
+  const rawTwitterPost = goToMarket?.twitterLaunchPost || goToMarket?.twitterPost || goToMarket?.xPost || goToMarket?.tweet || goToMarket?.twitter;
+
+  // Dynamic templates guaranteed to never be blank
+  const coldEmailText = useMemo(() => {
+    const formatted = formatTemplateContent(rawColdEmail);
+    if (formatted && formatted.trim()) return formatted;
+    const target = customerPersona?.targetUsers?.[0] || goToMarket?.targetAudience || "industry leaders";
+    const pain = ideaAnalysis?.problem ? ideaAnalysis.problem.slice(0, 100) : "repetitive, time-consuming manual workflows";
+    const elevator = pitch?.elevatorPitch || "an intelligent copilot designed to streamline mission-critical operations";
+    return `Subject: Quick question regarding ${pain.slice(0, 40)}...\n\nHi [First Name],\n\nI noticed you lead operations for [Company]. Many teams in ${target} run into significant friction with ${pain.toLowerCase()}.\n\nWe built a lightweight platform that ${elevator.toLowerCase()}.\n\nWould you be open to a brief 10-minute feedback call next Tuesday?\n\nBest,\n[Your Name] | Founder`;
+  }, [rawColdEmail, customerPersona?.targetUsers, goToMarket?.targetAudience, ideaAnalysis?.problem, pitch?.elevatorPitch]);
+
+  const linkedInDmText = useMemo(() => {
+    const formatted = formatTemplateContent(rawLinkedInDm);
+    if (formatted && formatted.trim()) return formatted;
+    const target = customerPersona?.targetUsers?.[0] || "operator";
+    const elevator = pitch?.elevatorPitch || "automating high-friction manual tasks";
+    return `Hi [First Name], saw your work as a ${target}. We just launched an autonomous tool designed for ${elevator.toLowerCase()}.\n\nWould love to get your brutal feedback if you have 5 mins to check out our early preview!`;
+  }, [rawLinkedInDm, customerPersona?.targetUsers, pitch?.elevatorPitch]);
+
+  const redditPostText = useMemo(() => {
+    const formatted = formatTemplateContent(rawRedditPost);
+    if (formatted && formatted.trim()) return formatted;
+    const title = ideaAnalysis?.goal
+      ? `Title: We built a tool to ${ideaAnalysis.goal.slice(0, 80)}`
+      : "Title: After months of frustration with manual workflows, we built a solution";
+    const problem = ideaAnalysis?.problem || "Current industry tools are clunky, slow, and disconnect during critical moments.";
+    return `${title}\n\nHey r/startups,\n\nLike many of you, we got tired of dealing with:\n> ${problem}\n\nSo we spent the last few weeks building an offline-first, streamlined platform.\n\nIt's live in early alpha — looking for honest feedback from anyone dealing with this daily. Link in comments!`;
+  }, [rawRedditPost, ideaAnalysis?.goal, ideaAnalysis?.problem]);
+
+  const twitterPostText = useMemo(() => {
+    const formatted = formatTemplateContent(rawTwitterPost);
+    if (formatted && formatted.trim()) return formatted;
+    const pitchText = pitch?.elevatorPitch || ideaAnalysis?.goal || "a new way to execute high-impact work faster";
+    return `Announcing the early alpha of our project: ${pitchText.slice(0, 140)}.\n\nBuilt for operators who want 10x faster execution without overhead.\n\nTry the live preview here 👇 #buildinpublic`;
+  }, [rawTwitterPost, pitch?.elevatorPitch, ideaAnalysis?.goal]);
 
   const toggleComplete = (idx) => {
     setCompletedItems((prev) => {

@@ -11,6 +11,7 @@ import WorkspacePage from "./components/WorkspacePage.jsx";
 import SplineBackground from "./components/SplineBackground.jsx";
 import HistoryPanel from "./components/HistoryPanel.jsx";
 import AuthModal from "./components/AuthModal.jsx";
+import PaymentModal from "./components/PaymentModal.jsx";
 import CoFounderChatDrawer from "./components/CoFounderChatDrawer.jsx";
 import {
   MarqueeLogos,
@@ -41,7 +42,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-const rawApiUrl = import.meta.env.VITE_API_URL || "http://localhost:5001/api/generate-blueprint";
+const rawApiUrl = import.meta.env.VITE_API_URL || "https://ideapulse-y1n5.onrender.com/api/generate-blueprint";
 const API_URL = rawApiUrl.endsWith("/api/generate-blueprint")
   ? rawApiUrl
   : `${rawApiUrl.replace(/\/+$/, "")}/api/generate-blueprint`;
@@ -73,6 +74,19 @@ export default function App() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("signup");
 
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+
+  function handleOpenPayment() {
+    setShowPaymentModal(true);
+  }
+
+  function handlePaymentSuccess(subscription) {
+    setQuota(getWeeklyUsage(currentUser?.id));
+    if (currentUser) {
+      setCurrentUser((prev) => (prev ? { ...prev, plan: "Pro Founder", isPro: true } : prev));
+    }
+  }
+
   function handleOpenAuth(mode = "signup") {
     setAuthModalMode(mode);
     setShowAuthModal(true);
@@ -101,19 +115,8 @@ export default function App() {
     setQuota(getWeeklyUsage(currentUser?.id));
   }, [currentUser]);
 
-  useEffect(() => {
-    // Compulsory authentication enforcement: direct workspace access requires account
-    if (currentView === "workspace" && !currentUser) {
-      handleOpenAuth("signup");
-    }
-  }, [currentView, currentUser]);
-
   function handleProtectedStart() {
-    if (!currentUser) {
-      handleOpenAuth("signup");
-    } else {
-      navigateTo("workspace");
-    }
+    navigateTo("workspace");
   }
 
   function navigateTo(view, updateHistory = true, replace = false) {
@@ -187,12 +190,6 @@ export default function App() {
   }
 
   async function handleGenerate() {
-    if (!currentUser) {
-      setError("Please sign in or create a free account to validate your idea (3 free ideas per week).");
-      handleOpenAuth("signup");
-      return;
-    }
-
     if (!idea.trim()) {
       setError("Please describe your startup idea first.");
       return;
@@ -200,7 +197,13 @@ export default function App() {
 
     const currentQuota = getWeeklyUsage(currentUser?.id);
     if (currentQuota.remaining <= 0) {
-      setError(`You have reached your limit of ${currentQuota.limit} free blueprints this week. Quota resets in 7 days, or upgrade to Pro (10 ideas/week for ₹149/mo) coming soon!`);
+      if (!currentUser) {
+        setError("You've tested your free guest idea! Create a free account to unlock 3 blueprints per week, or upgrade to Pro for 10 ideas.");
+        handleOpenAuth("signup");
+      } else {
+        setError(`You have used all ${currentQuota.total} blueprints for this week. Upgrade to Pro for 10 blueprints and priority AI inference.`);
+        setShowPaymentModal(true);
+      }
       return;
     }
 
@@ -271,6 +274,7 @@ export default function App() {
           onOpenAuth={handleOpenAuth}
           onSignOut={handleSignOut}
           quota={quota}
+          onOpenPayment={handleOpenPayment}
         />
 
         <CoFounderChatDrawer blueprint={blueprint} originalIdea={idea} />
@@ -280,6 +284,13 @@ export default function App() {
           initialMode={authModalMode}
           onClose={() => setShowAuthModal(false)}
           onLoginSuccess={handleAuthSuccess}
+        />
+
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          currentUser={currentUser}
+          onPaymentSuccess={handlePaymentSuccess}
         />
 
         <HistoryPanel
@@ -307,6 +318,7 @@ export default function App() {
         onSignOut={handleSignOut}
         onStartClick={handleProtectedStart}
         onNavigateHome={() => navigateTo("home")}
+        onOpenPayment={handleOpenPayment}
       />
 
       {/* 3. Main Content Container */}
@@ -327,7 +339,15 @@ export default function App() {
             <AudienceTabs onSelectTab={handleProtectedStart} />
           </div>
           <TestimonialsSection />
-          <PricingSection onSelectPlan={handleProtectedStart} />
+          <PricingSection
+            onSelectPlan={(plan) => {
+              if (plan === "pro" || (typeof plan === "string" && plan.toLowerCase().includes("pro"))) {
+                handleOpenPayment();
+              } else {
+                handleProtectedStart();
+              }
+            }}
+          />
           <FaqSection onCtaClick={handleProtectedStart} />
         </div>
       </main>
@@ -344,6 +364,13 @@ export default function App() {
         initialMode={authModalMode}
         onClose={() => setShowAuthModal(false)}
         onLoginSuccess={handleAuthSuccess}
+      />
+
+      <PaymentModal
+        isOpen={showPaymentModal}
+        onClose={() => setShowPaymentModal(false)}
+        currentUser={currentUser}
+        onPaymentSuccess={handlePaymentSuccess}
       />
 
       <HistoryPanel

@@ -38,6 +38,23 @@ function formattedDate() {
   return new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 }
 
+export function safeTemplateStr(val) {
+  if (!val) return "";
+  if (typeof val === "string") return val;
+  if (Array.isArray(val)) {
+    return val.map((v) => (typeof v === "object" ? safeTemplateStr(v) : String(v))).join("\n\n");
+  }
+  if (typeof val === "object") {
+    const subject = val.subject || val.subjectLine || val.headline || val.title;
+    const body = val.body || val.emailBody || val.content || val.text || val.message || val.post;
+    if (subject && body) return `Subject: ${subject}\n\n${body}`;
+    if (body) return String(body);
+    if (val.tweet || val.post) return String(val.tweet || val.post);
+    return Object.entries(val).map(([k, v]) => `${k.toUpperCase()}:\n${typeof v === "object" ? JSON.stringify(v) : v}`).join("\n\n");
+  }
+  return String(val);
+}
+
 // ---------------------------------------------------------------------------
 // Markdown export
 // ---------------------------------------------------------------------------
@@ -261,25 +278,39 @@ export function buildMarkdown(blueprint, idea) {
     push(`**LinkedIn Search Strategy:**`);
     (goToMarket.linkedInSearchStrategy || []).forEach((q) => push(`- ${q}`));
     push();
-    push(`**Cold Email Template:**`);
-    push("```");
-    push(goToMarket.coldEmailTemplate || "");
-    push("```");
-    push();
-    push(`**LinkedIn DM Template:**`);
-    push("```");
-    push(goToMarket.linkedInDmTemplate || "");
-    push("```");
-    push();
-    push(`**Reddit Launch Post:**`);
-    push("```");
-    push(goToMarket.redditLaunchPost || "");
-    push("```");
-    push();
-    push(`**X (Twitter) Launch Post:**`);
-    push("```");
-    push(goToMarket.twitterLaunchPost || "");
-    push("```");
+    const coldEmail = safeTemplateStr(goToMarket.coldEmailTemplate || goToMarket.coldEmail);
+    const linkedInDm = safeTemplateStr(goToMarket.linkedInDmTemplate || goToMarket.linkedInDm);
+    const redditPost = safeTemplateStr(goToMarket.redditLaunchPost || goToMarket.redditPost);
+    const twitterPost = safeTemplateStr(goToMarket.twitterLaunchPost || goToMarket.twitterPost || goToMarket.xPost);
+
+    if (coldEmail) {
+      push(`**Cold Email Template:**`);
+      push("```");
+      push(coldEmail);
+      push("```");
+      push();
+    }
+    if (linkedInDm) {
+      push(`**LinkedIn DM Template:**`);
+      push("```");
+      push(linkedInDm);
+      push("```");
+      push();
+    }
+    if (redditPost) {
+      push(`**Reddit Launch Post:**`);
+      push("```");
+      push(redditPost);
+      push("```");
+      push();
+    }
+    if (twitterPost) {
+      push(`**X (Twitter) Launch Post:**`);
+      push("```");
+      push(twitterPost);
+      push("```");
+      push();
+    }
   } else push(`_Unavailable._`);
   push();
 
@@ -882,10 +913,10 @@ export async function downloadPdf(blueprint, idea) {
     subheading("Platforms");
     (goToMarket.platforms || []).forEach((p) => paragraph(`${p.name}: ${p.why}`));
     subheading("LinkedIn Search Strategy"); bulletList(goToMarket.linkedInSearchStrategy);
-    subheading("Cold Email Template"); paragraph(goToMarket.coldEmailTemplate);
-    subheading("LinkedIn DM Template"); paragraph(goToMarket.linkedInDmTemplate);
-    subheading("Reddit Launch Post"); paragraph(goToMarket.redditLaunchPost);
-    subheading("X (Twitter) Launch Post"); paragraph(goToMarket.twitterLaunchPost);
+    subheading("Cold Email Template"); paragraph(safeTemplateStr(goToMarket.coldEmailTemplate || goToMarket.coldEmail));
+    subheading("LinkedIn DM Template"); paragraph(safeTemplateStr(goToMarket.linkedInDmTemplate || goToMarket.linkedInDm));
+    subheading("Reddit Launch Post"); paragraph(safeTemplateStr(goToMarket.redditLaunchPost || goToMarket.redditPost));
+    subheading("X (Twitter) Launch Post"); paragraph(safeTemplateStr(goToMarket.twitterLaunchPost || goToMarket.twitterPost || goToMarket.xPost));
   } else unavailable();
   divider();
 

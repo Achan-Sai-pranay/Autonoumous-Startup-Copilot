@@ -30,8 +30,8 @@
 
 import { jsonrepair } from "jsonrepair";
 
-const PRIMARY_MODEL = process.env.GEMINI_MODEL || "gemini-3.7-flash";
-const FALLBACK_MODEL = "gemini-3.6-flash";
+const PRIMARY_MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+const FALLBACK_MODEL = "gemini-flash-lite-latest";
 
 const MAX_RETRIES = 3; // retries AFTER the first attempt (4 attempts total)
 const BASE_DELAY_MS = 1000; // 1s, then 2s, then 4s

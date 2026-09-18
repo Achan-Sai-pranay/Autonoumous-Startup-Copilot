@@ -1362,7 +1362,115 @@ export const LeanCanvasMatrix = memo(function LeanCanvasMatrix({
   productPlan,
   marketResearch,
   costEstimator,
+  businessStrategy,
+  swotAnalysis,
+  pitch,
+  goToMarket,
+  customerPersona,
+  viabilityScorecard,
+  competitorWeaknessAnalysis,
 }) {
+  const problem = ideaAnalysis?.problem || "Severe operational friction and resource drain from legacy manual workflows.";
+  
+  const existingAlternatives = useMemo(() => {
+    if (Array.isArray(marketResearch?.competitors) && marketResearch.competitors.length > 0) {
+      return marketResearch.competitors.slice(0, 3).join(", ");
+    }
+    if (Array.isArray(competitorWeaknessAnalysis) && competitorWeaknessAnalysis.length > 0) {
+      return competitorWeaknessAnalysis.map((c) => c.competitor).filter(Boolean).slice(0, 3).join(", ");
+    }
+    return "Legacy spreadsheets, fragmented point solutions, manual ad-hoc methods.";
+  }, [marketResearch?.competitors, competitorWeaknessAnalysis]);
+
+  const solution = productPlan?.mvpFeatures?.[0] || ideaAnalysis?.goal || "Autonomous solution streamlining end-to-end workflows with intelligent automation.";
+  
+  const topFeatures = useMemo(() => {
+    if (Array.isArray(productPlan?.mvpFeatures) && productPlan.mvpFeatures.length > 1) {
+      return productPlan.mvpFeatures.slice(1, 3).join(" • ");
+    }
+    return productPlan?.developmentPriority || "Core automation engine with verified outputs.";
+  }, [productPlan?.mvpFeatures, productPlan?.developmentPriority]);
+
+  const keyMetrics = useMemo(() => {
+    const scores = [];
+    if (viabilityScorecard?.marketDemandScore) scores.push(`Demand Index: ${viabilityScorecard.marketDemandScore}/100`);
+    if (viabilityScorecard?.monetizationScore) scores.push(`Monetization: ${viabilityScorecard.monetizationScore}/100`);
+    if (scores.length > 0) return scores.join(" • ");
+    return "Time saved per workflow, Net Revenue Retention (NRR > 115%), LTV:CAC > 3:1";
+  }, [viabilityScorecard]);
+
+  const uvp = pitch?.elevatorPitch || ideaAnalysis?.goal || "10x faster execution and massive overhead reduction through domain-specific intelligence.";
+  
+  const highLevelConcept = ideaAnalysis?.domain
+    ? `The modern standard for ${ideaAnalysis.domain}.`
+    : (pitch?.executiveSummary ? pitch.executiveSummary.slice(0, 110) + "..." : "Turnkey high-leverage execution platform.");
+
+  const unfairMoat = useMemo(() => {
+    if (Array.isArray(swotAnalysis?.strengths) && swotAnalysis.strengths.length > 0) {
+      return swotAnalysis.strengths[0];
+    }
+    if (Array.isArray(competitorWeaknessAnalysis) && competitorWeaknessAnalysis[0]?.suggestedDifferentiation) {
+      return competitorWeaknessAnalysis[0].suggestedDifferentiation;
+    }
+    return "Proprietary vertical domain synthesis & defensible user workflow lock-in.";
+  }, [swotAnalysis?.strengths, competitorWeaknessAnalysis]);
+
+  const moatSecondary = useMemo(() => {
+    if (Array.isArray(swotAnalysis?.strengths) && swotAnalysis.strengths.length > 1) {
+      return swotAnalysis.strengths[1];
+    }
+    return "High customer switching barrier via compounding historical data and integrations.";
+  }, [swotAnalysis?.strengths]);
+
+  const channels = useMemo(() => {
+    if (Array.isArray(goToMarket?.platforms) && goToMarket.platforms.length > 0) {
+      return goToMarket.platforms.map((p) => (typeof p === "string" ? p : p?.name)).filter(Boolean).slice(0, 3).join(", ");
+    }
+    if (Array.isArray(businessStrategy?.marketingChannels) && businessStrategy.marketingChannels.length > 0) {
+      return businessStrategy.marketingChannels.slice(0, 3).join(", ");
+    }
+    return "Founder outbound, niche communities, programmatic search.";
+  }, [goToMarket?.platforms, businessStrategy?.marketingChannels]);
+
+  const channelAudience = typeof goToMarket?.targetAudience === "string" && goToMarket.targetAudience.trim()
+    ? goToMarket.targetAudience
+    : "High-intent early adopters searching for specialized solutions.";
+
+  const customerSegments = useMemo(() => {
+    if (Array.isArray(customerPersona?.targetUsers) && customerPersona.targetUsers.length > 0) {
+      return customerPersona.targetUsers.join(", ");
+    }
+    if (customerPersona?.userProfile) {
+      return customerPersona.userProfile.slice(0, 110) + "...";
+    }
+    return ideaAnalysis?.domain ? `Operators and leaders in ${ideaAnalysis.domain}` : "Primary operators and key economic decision makers.";
+  }, [customerPersona, ideaAnalysis?.domain]);
+
+  const earlyAdopters = useMemo(() => {
+    if (Array.isArray(customerPersona?.targetUsers) && customerPersona.targetUsers.length > 0) {
+      return `${customerPersona.targetUsers[0]} facing urgent workflow pain points.`;
+    }
+    return "Early-stage adopters actively seeking alternatives to legacy tooling.";
+  }, [customerPersona]);
+
+  const costStructure = useMemo(() => {
+    if (costEstimator?.estimatedMonthlyCost) {
+      return `Estimated Cloud Burn: ${costEstimator.estimatedMonthlyCost}/mo (Yearly: ${costEstimator.estimatedYearlyCost || "N/A"})`;
+    }
+    return "Serverless lean architecture (~$15-50/mo during initial pilot phase).";
+  }, [costEstimator]);
+
+  const revenueStreams = useMemo(() => {
+    if (businessStrategy?.revenueModel) return businessStrategy.revenueModel;
+    if (businessStrategy?.pricingIdea) return businessStrategy.pricingIdea.slice(0, 110);
+    return "Tiered SaaS subscription with usage-based expansion tiers.";
+  }, [businessStrategy]);
+
+  const pricingDetails = useMemo(() => {
+    if (businessStrategy?.pricingIdea) return businessStrategy.pricingIdea;
+    return "Self-serve starter tier + custom enterprise plan with SLA guarantees.";
+  }, [businessStrategy]);
+
   return (
     <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-sm mb-6">
       <div className="flex items-center justify-between mb-5 pb-4 border-b border-slate-100">
@@ -1386,74 +1494,157 @@ export const LeanCanvasMatrix = memo(function LeanCanvasMatrix({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-3.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
         {/* Box 1: Problem */}
-        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between">
+        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
           <div>
-            <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block mb-1">01. Problem</span>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">01. Problem</span>
+              <span className="text-[9px] font-mono font-bold text-slate-500 bg-slate-200/60 px-1.5 py-0.5 rounded">CORE PAIN</span>
+            </div>
             <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              {ideaAnalysis?.problem || "Inefficient manual workflows causing high operating overhead and delayed cycles."}
+              {problem}
             </p>
           </div>
           <div className="mt-3 pt-2 border-t border-slate-200/60">
             <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Existing Alternatives:</span>
-            <p className="text-[11px] text-slate-600">Manual spreadsheets, fragmented point-solutions.</p>
+            <p className="text-[11px] text-slate-600">{existingAlternatives}</p>
           </div>
         </div>
 
-        {/* Box 2: Solution & Metrics */}
-        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between">
+        {/* Box 2: Solution */}
+        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
           <div>
-            <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block mb-1">02. Solution</span>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">02. Solution</span>
+              <span className="text-[9px] font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">MVP WEDGE</span>
+            </div>
             <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              {productPlan?.mvpFeatures?.[0] || ideaAnalysis?.goal || "Autonomous copilot platform automating 80% of end-to-end workflows."}
+              {solution}
             </p>
           </div>
           <div className="mt-3 pt-2 border-t border-slate-200/60">
-            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Key Metrics (North Star):</span>
-            <p className="text-[11px] text-slate-600">Time saved per workflow, Net Revenue Retention (NRR &gt; 120%).</p>
+            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Key MVP Capabilities:</span>
+            <p className="text-[11px] text-slate-600">{topFeatures}</p>
           </div>
         </div>
 
-        {/* Box 3: Value Proposition */}
-        <div className="p-3.5 rounded-xl bg-orange-50/40 border border-orange-200/80 flex flex-col justify-between">
+        {/* Box 3: Unique Value Proposition (Highlighted) */}
+        <div className="p-3.5 rounded-xl bg-orange-50/40 border border-orange-200/80 flex flex-col justify-between min-h-[170px]">
           <div>
-            <span className="text-[10px] font-mono font-bold uppercase text-orange-600 block mb-1">03. Unique Value Prop</span>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-mono font-bold uppercase text-orange-600">03. Unique Value Prop</span>
+              <span className="text-[9px] font-mono font-bold text-orange-700 bg-orange-100/80 px-1.5 py-0.5 rounded">PRIMARY HOOK</span>
+            </div>
             <p className="text-xs text-slate-900 font-bold leading-relaxed">
-              High-conviction autonomous execution in seconds instead of months at 90% lower operational cost.
+              {uvp}
             </p>
           </div>
           <div className="mt-3 pt-2 border-t border-orange-200/60">
             <span className="text-[10px] font-mono text-orange-600 block mb-0.5">High-Level Pitch:</span>
-            <p className="text-[11px] text-slate-700">"The autonomous operating system for modern founders."</p>
+            <p className="text-[11px] text-slate-700 italic">"{highLevelConcept}"</p>
           </div>
         </div>
 
-        {/* Box 4: Unfair Advantage */}
-        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between">
+        {/* Box 4: Unfair Advantage (Moat) */}
+        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
           <div>
-            <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block mb-1">04. Unfair Moat</span>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">04. Unfair Moat</span>
+              <span className="text-[9px] font-mono font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">DEFENSIBILITY</span>
+            </div>
             <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              Proprietary multi-agent prompt synthesis &amp; domain benchmarking that generic wrappers cannot replicate.
+              {unfairMoat}
             </p>
           </div>
           <div className="mt-3 pt-2 border-t border-slate-200/60">
-            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Channels:</span>
-            <p className="text-[11px] text-slate-600">Product Hunt, Founder communities, programmatic SEO dossiers.</p>
+            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Defensive Wedge:</span>
+            <p className="text-[11px] text-slate-600">{moatSecondary}</p>
           </div>
         </div>
 
-        {/* Box 5: Economics */}
-        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between">
+        {/* Box 5: Customer Segments */}
+        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
           <div>
-            <span className="text-[10px] font-mono font-bold uppercase text-slate-400 block mb-1">05. Unit Economics</span>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">05. Customer Segments</span>
+              <span className="text-[9px] font-mono font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">TARGET ICP</span>
+            </div>
             <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              {costEstimator?.estimatedMonthlyCost ? `Estimated Cloud Burn: ${costEstimator.estimatedMonthlyCost}` : "85%+ Gross Margin recurring SaaS subscription tiers."}
+              {customerSegments}
             </p>
           </div>
           <div className="mt-3 pt-2 border-t border-slate-200/60">
-            <span className="text-[10px] font-mono text-emerald-600 font-bold block mb-0.5">Break-Even Point:</span>
-            <p className="text-[11px] text-slate-600">Covered with just 5-10 paying enterprise licenses.</p>
+            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Early Adopter Beachhead:</span>
+            <p className="text-[11px] text-slate-600">{earlyAdopters}</p>
+          </div>
+        </div>
+
+        {/* Box 6: Channels */}
+        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">06. Channels</span>
+              <span className="text-[9px] font-mono font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">DISTRIBUTION</span>
+            </div>
+            <p className="text-xs text-slate-800 font-medium leading-relaxed">
+              {channels}
+            </p>
+          </div>
+          <div className="mt-3 pt-2 border-t border-slate-200/60">
+            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Acquisition Focus:</span>
+            <p className="text-[11px] text-slate-600">{channelAudience}</p>
+          </div>
+        </div>
+
+        {/* Box 7: Key Metrics */}
+        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">07. Key Metrics</span>
+              <span className="text-[9px] font-mono font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">NORTH STAR</span>
+            </div>
+            <p className="text-xs text-slate-800 font-medium leading-relaxed">
+              {keyMetrics}
+            </p>
+          </div>
+          <div className="mt-3 pt-2 border-t border-slate-200/60">
+            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Target Benchmark:</span>
+            <p className="text-[11px] text-slate-600">LTV:CAC &gt; 3.0x, Payback &lt; 6 months, Low Monthly Churn.</p>
+          </div>
+        </div>
+
+        {/* Box 8: Cost Structure */}
+        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">08. Cost Structure</span>
+              <span className="text-[9px] font-mono font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">BURN &amp; CAPEX</span>
+            </div>
+            <p className="text-xs text-slate-800 font-medium leading-relaxed">
+              {costStructure}
+            </p>
+          </div>
+          <div className="mt-3 pt-2 border-t border-slate-200/60">
+            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Primary Cost Drivers:</span>
+            <p className="text-[11px] text-slate-600">Model inference, data storage, auth, domain, paid outbound.</p>
+          </div>
+        </div>
+
+        {/* Box 9: Revenue Streams */}
+        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">09. Revenue Streams</span>
+              <span className="text-[9px] font-mono font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">MONETIZATION</span>
+            </div>
+            <p className="text-xs text-slate-800 font-medium leading-relaxed">
+              {revenueStreams}
+            </p>
+          </div>
+          <div className="mt-3 pt-2 border-t border-slate-200/60">
+            <span className="text-[10px] font-mono text-emerald-600 font-bold block mb-0.5">Pricing Model:</span>
+            <p className="text-[11px] text-slate-600">{pricingDetails}</p>
           </div>
         </div>
       </div>
