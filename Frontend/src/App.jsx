@@ -13,7 +13,6 @@ import HistoryPanel from "./components/HistoryPanel.jsx";
 import AuthModal from "./components/AuthModal.jsx";
 import CoFounderChatDrawer from "./components/CoFounderChatDrawer.jsx";
 import {
-  AnnouncementBanner,
   MarqueeLogos,
   StatsSection,
   FeaturesGrid,
@@ -298,9 +297,6 @@ export default function App() {
   return (
     <div className="relative min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased">
       <SplineBackground />
-
-      {/* 1. Top Announcement Bar */}
-      <AnnouncementBanner onCtaClick={handleProtectedStart} />
 
       {/* 2. Sticky Glass Navbar */}
       <Navbar
