@@ -36,6 +36,69 @@ import {
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
+// Robust Normalization Helpers for Model JSON Discrepancies
+// ---------------------------------------------------------------------------
+function toSafeString(val, fallback = "") {
+  if (val === null || val === undefined) return fallback;
+  if (typeof val === "string") return val.trim();
+  if (typeof val === "number" || typeof val === "boolean") return String(val);
+  if (Array.isArray(val)) {
+    const list = val.map((item) => toSafeString(item)).filter(Boolean);
+    return list.length > 0 ? list.join(", ") : fallback;
+  }
+  if (typeof val === "object") {
+    const candidate =
+      val.text ||
+      val.title ||
+      val.name ||
+      val.task ||
+      val.item ||
+      val.description ||
+      val.problem ||
+      val.goal ||
+      val.summary ||
+      val.verdict ||
+      val.reasoning ||
+      val.role ||
+      val.userProfile ||
+      val.value ||
+      val.message;
+    if (candidate) return toSafeString(candidate, fallback);
+    try {
+      return Object.values(val).map((v) => toSafeString(v)).filter(Boolean).join(" • ") || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  return String(val);
+}
+
+function toSafeArray(val, fallback = []) {
+  if (!val) return fallback;
+  if (Array.isArray(val)) {
+    const mapped = val.map((item) => toSafeString(item)).filter(Boolean);
+    return mapped.length > 0 ? mapped : fallback;
+  }
+  if (typeof val === "string") {
+    const split = val
+      .split(/\n|•|;/)
+      .map((s) => s.replace(/^\s*[-*\d.]+\s*/, "").trim())
+      .filter(Boolean);
+    return split.length > 0 ? split : [val.trim()];
+  }
+  if (typeof val === "object") {
+    const candidateList = val.checklist || val.items || val.features || val.list || val.tasks || val.questions;
+    if (Array.isArray(candidateList)) {
+      const mapped = candidateList.map((item) => toSafeString(item)).filter(Boolean);
+      return mapped.length > 0 ? mapped : fallback;
+    }
+    const vals = Object.values(val).map((v) => toSafeString(v)).filter(Boolean);
+    return vals.length > 0 ? vals : fallback;
+  }
+  return fallback;
+}
+
+// ---------------------------------------------------------------------------
 // 1. VENTURUSAI FEATURE: Venture Viability Scorecard & 4-Quadrant SWOT Matrix
 // ---------------------------------------------------------------------------
 
@@ -71,11 +134,27 @@ export const VenturusViabilityGaugeChart = memo(function VenturusViabilityGaugeC
   viabilityScorecard,
   ideaTitle,
 }) {
-  const score = Math.max(0, Math.min(100, viabilityScorecard?.score ?? 84));
-  const marketScore = Math.max(0, Math.min(100, viabilityScorecard?.marketDemandScore ?? 88));
-  const techScore = Math.max(0, Math.min(100, viabilityScorecard?.technicalFeasibilityScore ?? 82));
-  const capitalScore = Math.max(0, Math.min(100, viabilityScorecard?.monetizationScore ?? 85));
-  const verdict = viabilityScorecard?.verdict || "Proceed";
+  const parseScore = (val, fallback) => {
+    if (typeof val === "number" && !isNaN(val)) return val;
+    if (typeof val === "string") {
+      const match = val.match(/\d+(\.\d+)?/);
+      if (match) return parseFloat(match[0]);
+    }
+    return fallback;
+  };
+
+  const score = Math.max(0, Math.min(100, parseScore(viabilityScorecard?.score, 84)));
+  const marketScore = Math.max(0, Math.min(100, parseScore(viabilityScorecard?.marketDemandScore, 88)));
+  const techScore = Math.max(0, Math.min(100, parseScore(viabilityScorecard?.technicalFeasibilityScore, 82)));
+  const capitalScore = Math.max(0, Math.min(100, parseScore(viabilityScorecard?.monetizationScore, 85)));
+  
+  const rawVerdict = viabilityScorecard?.verdict;
+  const verdict = toSafeString(
+    typeof rawVerdict === "string"
+      ? rawVerdict
+      : (rawVerdict?.verdict || rawVerdict?.title || rawVerdict?.name || "Proceed"),
+    "Proceed"
+  );
 
   // SVG Gauge geometry (viewBox 0 0 320 185)
   const cx = 160;
@@ -102,11 +181,8 @@ export const VenturusViabilityGaugeChart = memo(function VenturusViabilityGaugeC
   const base2Y = cy + 7 * Math.sin(perpRad);
   const needlePolygon = `${tipX.toFixed(1)},${tipY.toFixed(1)} ${base1X.toFixed(1)},${base1Y.toFixed(1)} ${base2X.toFixed(1)},${base2Y.toFixed(1)}`;
 
-  const cleanTitle = ideaTitle
-    ? ideaTitle.length > 55
-      ? ideaTitle.slice(0, 55) + "..."
-      : ideaTitle
-    : "this Venture";
+  const titleStr = toSafeString(ideaTitle, "this Venture");
+  const cleanTitle = titleStr.length > 55 ? titleStr.slice(0, 55) + "..." : titleStr;
 
   return (
     <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between">
@@ -183,24 +259,40 @@ export const VenturusMarketSizeBubbleChart = memo(function VenturusMarketSizeBub
   marketSizing,
   ideaTitle,
 }) {
-  const tam = marketSizing?.tam || {
-    value: "258M",
-    description: "Million potential customers globally across the total addressable market",
-  };
-  const sam = marketSizing?.sam || {
-    value: "51M",
-    description: "Million potential customers in primary beachhead language and ICP",
-  };
-  const som = marketSizing?.som || {
-    value: "13M",
-    description: "Million potential customers in initial 1–3 year serviceable target regions",
+  const extractMarketVal = (item, fallbackVal, fallbackDesc) => {
+    if (!item) return { value: fallbackVal, description: fallbackDesc };
+    if (typeof item === "string" || typeof item === "number") {
+      return { value: String(item), description: fallbackDesc };
+    }
+    if (typeof item === "object") {
+      const v = item.value ?? item.size ?? item.total ?? item.amount ?? item.marketSize ?? fallbackVal;
+      const d = item.description ?? item.rationale ?? item.explanation ?? item.notes ?? fallbackDesc;
+      return {
+        value: typeof v === "object" ? (v.value || v.amount || JSON.stringify(v)) : String(v ?? fallbackVal),
+        description: typeof d === "object" ? (d.description || d.text || JSON.stringify(d)) : String(d ?? fallbackDesc),
+      };
+    }
+    return { value: fallbackVal, description: fallbackDesc };
   };
 
-  const cleanTitle = ideaTitle
-    ? ideaTitle.length > 55
-      ? ideaTitle.slice(0, 55) + "..."
-      : ideaTitle
-    : "this Venture";
+  const tam = extractMarketVal(
+    marketSizing?.tam,
+    "258M",
+    "Million potential customers globally across the total addressable market"
+  );
+  const sam = extractMarketVal(
+    marketSizing?.sam,
+    "51M",
+    "Million potential customers in primary beachhead language and ICP"
+  );
+  const som = extractMarketVal(
+    marketSizing?.som,
+    "13M",
+    "Million potential customers in initial 1–3 year serviceable target regions"
+  );
+
+  const titleStr = toSafeString(ideaTitle, "this Venture");
+  const cleanTitle = titleStr.length > 55 ? titleStr.slice(0, 55) + "..." : titleStr;
 
   const containerRef = useRef(null);
   const tamBubbleRef = useRef(null);
@@ -842,8 +934,9 @@ export const SwotAnalysisMatrix = memo(function SwotAnalysisMatrix({
     );
     if (parsed.length >= 3) return parsed;
     const list = [...parsed];
-    if (marketResearch?.competitors?.length > 0) {
-      list.push(`Fast-follow feature replication and bundling from established incumbents like ${marketResearch.competitors.slice(0, 2).join(", ")}.`);
+    const compList = toSafeArray(marketResearch?.competitors, []);
+    if (compList.length > 0) {
+      list.push(`Fast-follow feature replication and bundling from established incumbents like ${compList.slice(0, 2).join(", ")}.`);
     }
     list.push("Foundation LLM providers natively integrating vertical capabilities into core base models.");
     list.push("Rising customer acquisition costs (CAC) across competitive search and paid social distribution channels.");
@@ -981,7 +1074,7 @@ export const PortersFiveForcesBreakdown = memo(function PortersFiveForcesBreakdo
   ];
 
   const getBadgeStyle = (level = "Moderate") => {
-    const l = level.toLowerCase();
+    const l = String(level || "Moderate").toLowerCase();
     if (l.includes("low")) return "bg-emerald-50 text-emerald-700 border-emerald-200";
     if (l.includes("high")) return "bg-rose-50 text-rose-700 border-rose-200";
     return "bg-amber-50 text-amber-700 border-amber-200";
@@ -1021,10 +1114,10 @@ export const PortersFiveForcesBreakdown = memo(function PortersFiveForcesBreakdo
                 {f.label}
               </span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border shrink-0 ${getBadgeStyle(f.data?.level)}`}>
-                {f.data?.level || "Moderate"}
+                {toSafeString(f.data?.level, "Moderate")}
               </span>
             </div>
-            <p className="text-xs text-slate-600 leading-relaxed font-sans">{f.data?.analysis}</p>
+            <p className="text-xs text-slate-600 leading-relaxed font-sans">{toSafeString(f.data?.analysis, "Moderate structural impact.")}</p>
           </div>
         ))}
       </div>
@@ -1037,18 +1130,18 @@ export const MarketSizingSection = memo(function MarketSizingSection({
   viabilityScorecard,
   ideaTitle,
 }) {
-  const tam = marketSizing?.tam || {
-    value: "$14.2B",
-    description: "TAM (Total Addressable Market): Global market size calculation rationale based on total sector software spend.",
-  };
-  const sam = marketSizing?.sam || {
-    value: "$2.1B",
-    description: "SAM (Serviceable Available Market): Addressable market segment matching beachhead ICP geography and vertical.",
-  };
-  const som = marketSizing?.som || {
-    value: "$48M",
-    description: "SOM (Serviceable Obtainable Market): Realistic 1–3 year capture target with focused founder-led sales.",
-  };
+  const tam = marketSizing?.tam || "$14.2B";
+  const sam = marketSizing?.sam || "$2.1B";
+  const som = marketSizing?.som || "$48M";
+
+  const tamVal = typeof tam === "string" ? tam : toSafeString(tam?.value, "$14.2B");
+  const tamDesc = typeof tam === "object" ? toSafeString(tam?.description, "TAM (Total Addressable Market): Global sector market opportunity.") : "TAM (Total Addressable Market): Global sector market opportunity.";
+
+  const samVal = typeof sam === "string" ? sam : toSafeString(sam?.value, "$2.1B");
+  const samDesc = typeof sam === "object" ? toSafeString(sam?.description, "SAM (Serviceable Available Market): Addressable beachhead segment.") : "SAM (Serviceable Available Market): Addressable beachhead segment.";
+
+  const somVal = typeof som === "string" ? som : toSafeString(som?.value, "$48M");
+  const somDesc = typeof som === "object" ? toSafeString(som?.description, "SOM (Serviceable Obtainable Market): Realistic 1–3 year capture target.") : "SOM (Serviceable Obtainable Market): Realistic 1–3 year capture target.";
 
   return (
     <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm mb-6">
@@ -1089,9 +1182,9 @@ export const MarketSizingSection = memo(function MarketSizingSection({
             </span>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight my-2">
-            {tam.value}
+            {tamVal}
           </div>
-          <p className="text-xs text-slate-600 leading-relaxed font-sans">{tam.description}</p>
+          <p className="text-xs text-slate-600 leading-relaxed font-sans">{tamDesc}</p>
         </div>
 
         {/* SAM */}
@@ -1105,9 +1198,9 @@ export const MarketSizingSection = memo(function MarketSizingSection({
             </span>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight my-2">
-            {sam.value}
+            {samVal}
           </div>
-          <p className="text-xs text-slate-600 leading-relaxed font-sans">{sam.description}</p>
+          <p className="text-xs text-slate-600 leading-relaxed font-sans">{samDesc}</p>
         </div>
 
         {/* SOM */}
@@ -1121,9 +1214,9 @@ export const MarketSizingSection = memo(function MarketSizingSection({
             </span>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-slate-900 font-mono tracking-tight my-2">
-            {som.value}
+            {somVal}
           </div>
-          <p className="text-xs text-slate-600 leading-relaxed font-sans">{som.description}</p>
+          <p className="text-xs text-slate-600 leading-relaxed font-sans">{somDesc}</p>
         </div>
       </div>
     </div>
@@ -1379,7 +1472,7 @@ export const UpmetricsFinancialSimulator = memo(function UpmetricsFinancialSimul
   // Extract initial monthly price from backend assumption if available
   const initialPrice = useMemo(() => {
     if (revenueSimulator?.pricingAssumption) {
-      const match = revenueSimulator.pricingAssumption.match(/\$(\d+)/);
+      const match = String(revenueSimulator.pricingAssumption).match(/\$(\d+)/);
       if (match && match[1]) {
         const p = parseInt(match[1], 10);
         if (p >= 5 && p <= 500) return p;
@@ -1395,7 +1488,7 @@ export const UpmetricsFinancialSimulator = memo(function UpmetricsFinancialSimul
   // Extract monthly infrastructure burn
   const monthlyCloudBurn = useMemo(() => {
     if (costEstimator?.estimatedMonthlyCost) {
-      const match = costEstimator.estimatedMonthlyCost.match(/\$(\d+)/);
+      const match = String(costEstimator.estimatedMonthlyCost).match(/\$(\d+)/);
       if (match && match[1]) return parseInt(match[1], 10);
     }
     return 15; // default lean baseline
@@ -1932,7 +2025,7 @@ export const FounderPalSwipeFile = memo(function FounderPalSwipeFile({ gtm, pitc
             {current.badge}
           </span>
           <span className="text-xs text-slate-400 font-mono">
-            {current.body.length} characters • ~{Math.ceil(current.body.split(/\s+/).length / 200)} min read
+            {toSafeString(current?.body).length} characters • ~{Math.ceil(String(current?.body || "").split(/\s+/).filter(Boolean).length / 200)} min read
           </span>
         </div>
 

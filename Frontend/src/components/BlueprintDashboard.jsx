@@ -56,6 +56,7 @@ import {
   Settings,
   HelpCircle,
   X,
+  Zap,
 } from "lucide-react";
 import { downloadMarkdown, downloadPdf } from "../components/exportBlueprint.js";
 import {
@@ -79,41 +80,180 @@ export const BUSINESS_SECTIONS = [
   { id: "gtm", label: "Go-to-Market", title: "Go-to-Market & Launch Execution" },
 ];
 
+// ---------------------------------------------------------------------------
+// Robust Normalization Helpers for Model JSON Discrepancies
+// ---------------------------------------------------------------------------
+export function toSafeString(val, fallback = "") {
+  if (val === null || val === undefined) return fallback;
+  if (typeof val === "string") return val.trim();
+  if (typeof val === "number" || typeof val === "boolean") return String(val);
+  if (Array.isArray(val)) {
+    const list = val.map((item) => toSafeString(item)).filter(Boolean);
+    return list.length > 0 ? list.join(", ") : fallback;
+  }
+  if (typeof val === "object") {
+    const candidate =
+      val.text ||
+      val.title ||
+      val.name ||
+      val.task ||
+      val.item ||
+      val.description ||
+      val.problem ||
+      val.goal ||
+      val.summary ||
+      val.verdict ||
+      val.reasoning ||
+      val.role ||
+      val.userProfile ||
+      val.value ||
+      val.message;
+    if (candidate) return toSafeString(candidate, fallback);
+    try {
+      return Object.values(val).map((v) => toSafeString(v)).filter(Boolean).join(" • ") || fallback;
+    } catch {
+      return fallback;
+    }
+  }
+  return String(val);
+}
+
+export function toSafeArray(val, fallback = []) {
+  if (!val) return fallback;
+  if (Array.isArray(val)) {
+    const mapped = val.map((item) => toSafeString(item)).filter(Boolean);
+    return mapped.length > 0 ? mapped : fallback;
+  }
+  if (typeof val === "string") {
+    const split = val
+      .split(/\n|•|;/)
+      .map((s) => s.replace(/^\s*[-*\d.]+\s*/, "").trim())
+      .filter(Boolean);
+    return split.length > 0 ? split : [val.trim()];
+  }
+  if (typeof val === "object") {
+    const candidateList = val.checklist || val.items || val.features || val.list || val.tasks || val.questions;
+    if (Array.isArray(candidateList)) {
+      const mapped = candidateList.map((item) => toSafeString(item)).filter(Boolean);
+      return mapped.length > 0 ? mapped : fallback;
+    }
+    const vals = Object.values(val).map((v) => toSafeString(v)).filter(Boolean);
+    return vals.length > 0 ? vals : fallback;
+  }
+  return fallback;
+}
+
+export class SafeChartWrapper extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(err, errInfo) {
+    console.warn("Chart render fallback:", err, errInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div className="p-6 rounded-2xl bg-white border border-slate-200 text-center text-xs text-slate-500">
+          <p className="font-semibold text-slate-700 mb-1">Chart visualization temporarily unavailable</p>
+          <p className="text-[11px] text-slate-400">All data metrics remain fully accessible in the cards below.</p>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 class SectionErrorBoundary extends Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false, error: null, retryKey: 0, isRetrying: false };
   }
 
   static getDerivedStateFromError(error) {
-    return { hasError: true, error };
+    return { hasError: true, error, isRetrying: false };
   }
 
   componentDidCatch(error, errorInfo) {
     console.error("Section render error:", error, errorInfo);
   }
 
+  handleRetry = () => {
+    this.setState({ isRetrying: true }, () => {
+      setTimeout(() => {
+        this.setState((prev) => ({
+          hasError: false,
+          error: null,
+          retryKey: prev.retryKey + 1,
+          isRetrying: false,
+        }));
+      }, 100);
+    });
+  };
+
+  handleHardRefresh = () => {
+    try {
+      sessionStorage.clear();
+    } catch {
+      // ignore
+    }
+    window.location.reload();
+  };
+
   render() {
-    if (this.state.hasError) {
+    if (this.state.isRetrying) {
       return (
-        <div className="p-8 rounded-2xl bg-white border border-rose-200 shadow-xs max-w-2xl">
-          <div className="flex items-center gap-3 text-rose-600 mb-2">
-            <AlertTriangle size={20} />
-            <h3 className="font-bold text-sm">Unable to display this section</h3>
-          </div>
-          <p className="text-xs text-slate-600 mb-4">
-            An unexpected error occurred while parsing the venture strategic data for this view.
-          </p>
-          <button
-            onClick={() => this.setState({ hasError: false, error: null })}
-            className="px-3 py-1.5 rounded-lg bg-orange-600 text-white text-xs font-semibold hover:bg-orange-700 transition-colors"
-          >
-            Retry Section
-          </button>
+        <div className="p-8 rounded-2xl bg-white border border-orange-200 shadow-xs max-w-xl text-center">
+          <Loader2 size={24} className="animate-spin text-orange-600 mx-auto mb-2" />
+          <p className="text-xs font-semibold text-slate-700">Re-rendering section components...</p>
         </div>
       );
     }
-    return this.props.children;
+
+    if (this.state.hasError) {
+      return (
+        <div className="p-6 sm:p-8 rounded-2xl bg-white border border-rose-200 shadow-xs max-w-3xl">
+          <div className="flex items-center gap-3 text-rose-600 mb-2">
+            <AlertTriangle size={22} className="shrink-0" />
+            <h3 className="font-bold text-base">Section Notice</h3>
+          </div>
+          <p className="text-xs text-slate-600 mb-3 leading-relaxed">
+            The view encountered a layout parsing difference from the AI model output. Click <strong>Retry Section</strong> to reload the components, or use <strong>Refresh Page</strong>.
+          </p>
+
+          {this.state.error && (
+            <div className="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-xl text-xs font-mono text-rose-800 whitespace-pre-wrap overflow-x-auto max-h-32">
+              {this.state.error?.message || String(this.state.error)}
+            </div>
+          )}
+
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={this.handleRetry}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-orange-600 text-white text-xs font-bold hover:bg-orange-700 active:scale-95 transition-all cursor-pointer shadow-xs"
+            >
+              <Rocket size={13} />
+              <span>Retry Section</span>
+            </button>
+            <button
+              type="button"
+              onClick={this.handleHardRefresh}
+              className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold hover:bg-slate-200 active:scale-95 transition-all cursor-pointer border border-slate-200"
+            >
+              Refresh Page
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return <div key={this.state.retryKey}>{this.props.children}</div>;
   }
 }
 
@@ -898,8 +1038,61 @@ function OverviewSection({
   launchChecklist,
   isFounderMode = true,
 }) {
-  const score = viabilityScorecard?.score ?? 84;
-  const verdict = viabilityScorecard?.verdict || "Proceed";
+  const parseNum = (val, fallback) => {
+    if (typeof val === "number" && !isNaN(val)) return val;
+    if (typeof val === "string") {
+      const match = val.match(/\d+(\.\d+)?/);
+      if (match) return parseFloat(match[0]);
+    }
+    return fallback;
+  };
+
+  const score = Math.max(0, Math.min(100, parseNum(viabilityScorecard?.score, 84)));
+  const marketDemandScore = Math.max(0, Math.min(100, parseNum(viabilityScorecard?.marketDemandScore, 88)));
+  const technicalFeasibilityScore = Math.max(0, Math.min(100, parseNum(viabilityScorecard?.technicalFeasibilityScore, 82)));
+  const monetizationScore = Math.max(0, Math.min(100, parseNum(viabilityScorecard?.monetizationScore, 85)));
+
+  const verdict = toSafeString(viabilityScorecard?.verdict, "Proceed");
+  const verdictReasoning = toSafeString(
+    viabilityScorecard?.verdictReasoning,
+    "Strong domain potential with verified market tailwinds and rapid time-to-MVP."
+  );
+
+  const targetCustomer = useMemo(() => {
+    const list = toSafeArray(customerPersona?.targetUsers, []);
+    if (list.length > 0) return list[0];
+    return toSafeString(customerPersona?.userProfile, "Early Adopter");
+  }, [customerPersona]);
+
+  const coreMvpScope = useMemo(() => {
+    const list = toSafeArray(productPlan?.mvpFeatures, []);
+    return list.slice(0, 2).join(", ") || "Production MVP";
+  }, [productPlan]);
+
+  const monetizationModel = useMemo(() => {
+    return toSafeString(
+      businessStrategy?.pricingIdea || businessStrategy?.revenueModel,
+      "Subscription Tier"
+    );
+  }, [businessStrategy]);
+
+  const priorityThisWeek = useMemo(() => {
+    const milestoneTask = roadmap?.milestones?.[0]?.tasks?.[0];
+    if (milestoneTask) return toSafeString(milestoneTask);
+    const checklistItems = toSafeArray(launchChecklist, []);
+    return toSafeString(checklistItems[0], "Validate Mom Test questions");
+  }, [roadmap, launchChecklist]);
+
+  const safeRiskTraps = useMemo(() => {
+    const traps = toSafeArray(viabilityScorecard?.fatalRiskTraps, []);
+    return traps.length > 0
+      ? traps
+      : [
+          "Over-indexing on polite hypothetical feedback without demanding upfront financial commitments.",
+          "Scope creep delaying production MVP launch beyond a disciplined 4-week shipping sprint.",
+          "Underestimating enterprise procurement, single sign-on (SSO), and data compliance review timelines.",
+        ];
+  }, [viabilityScorecard]);
 
   return (
     <div className="space-y-6">
@@ -919,7 +1112,7 @@ function OverviewSection({
               🎯 Target Customer
             </span>
             <p className="font-semibold text-slate-800 line-clamp-2">
-              {customerPersona?.targetUsers?.[0] || customerPersona?.userProfile || "Early Adopter"}
+              {targetCustomer}
             </p>
           </div>
           <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
@@ -927,7 +1120,7 @@ function OverviewSection({
               🛠️ Core MVP Scope
             </span>
             <p className="font-semibold text-slate-800 line-clamp-2">
-              {productPlan?.mvpFeatures?.slice(0, 2).join(", ") || "Production MVP"}
+              {coreMvpScope}
             </p>
           </div>
           <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
@@ -935,7 +1128,7 @@ function OverviewSection({
               💰 Monetization Model
             </span>
             <p className="font-semibold text-slate-800 line-clamp-2">
-              {businessStrategy?.pricingIdea || businessStrategy?.revenueModel || "Subscription Tier"}
+              {monetizationModel}
             </p>
           </div>
           <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
@@ -943,7 +1136,7 @@ function OverviewSection({
               🚀 Priority This Week
             </span>
             <p className="font-semibold text-orange-700 line-clamp-2">
-              {roadmap?.milestones?.[0]?.tasks?.[0] || launchChecklist?.[0] || "Validate Mom Test questions"}
+              {priorityThisWeek}
             </p>
           </div>
         </div>
@@ -951,8 +1144,12 @@ function OverviewSection({
 
       {/* Hero Charts: Viability Gauge + TAM/SAM/SOM Bubbles — Side by Side on Large Screens */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <VenturusViabilityGaugeChart viabilityScorecard={viabilityScorecard} ideaTitle={ventureTitle} />
-        <VenturusMarketSizeBubbleChart marketSizing={marketSizing} ideaTitle={ventureTitle} />
+        <SafeChartWrapper fallbackTitle="Viability Gauge">
+          <VenturusViabilityGaugeChart viabilityScorecard={viabilityScorecard} ideaTitle={ventureTitle} />
+        </SafeChartWrapper>
+        <SafeChartWrapper fallbackTitle="Market Sizing Bubbles">
+          <VenturusMarketSizeBubbleChart marketSizing={marketSizing} ideaTitle={ventureTitle} />
+        </SafeChartWrapper>
       </div>
 
       {/* Cards Grid */}
@@ -965,23 +1162,20 @@ function OverviewSection({
           stat={`${score} / 100`}
           subtitle={`Verdict: ${verdict}`}
           detailsTitle={isFounderMode ? "Why this verdict?" : "Executive Investment Thesis"}
-          detailsText={
-            viabilityScorecard?.verdictReasoning ||
-            "Strong domain potential with verified market tailwinds and rapid time-to-MVP."
-          }
+          detailsText={verdictReasoning}
         >
           <div className="space-y-3">
             <div>
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-slate-600 font-medium">Market Demand Score</span>
                 <span className="font-bold font-mono text-slate-900">
-                  {viabilityScorecard?.marketDemandScore ?? 88}%
+                  {marketDemandScore}%
                 </span>
               </div>
               <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-orange-500 rounded-full"
-                  style={{ width: `${viabilityScorecard?.marketDemandScore ?? 88}%` }}
+                  style={{ width: `${marketDemandScore}%` }}
                 />
               </div>
             </div>
@@ -989,13 +1183,13 @@ function OverviewSection({
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-slate-600 font-medium">Technical Feasibility</span>
                 <span className="font-bold font-mono text-slate-900">
-                  {viabilityScorecard?.technicalFeasibilityScore ?? 82}%
+                  {technicalFeasibilityScore}%
                 </span>
               </div>
               <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-orange-500 rounded-full"
-                  style={{ width: `${viabilityScorecard?.technicalFeasibilityScore ?? 82}%` }}
+                  style={{ width: `${technicalFeasibilityScore}%` }}
                 />
               </div>
             </div>
@@ -1003,13 +1197,13 @@ function OverviewSection({
               <div className="flex justify-between text-xs mb-1">
                 <span className="text-slate-600 font-medium">Monetization Engine</span>
                 <span className="font-bold font-mono text-slate-900">
-                  {viabilityScorecard?.monetizationScore ?? 85}%
+                  {monetizationScore}%
                 </span>
               </div>
               <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-amber-500 rounded-full"
-                  style={{ width: `${viabilityScorecard?.monetizationScore ?? 85}%` }}
+                  style={{ width: `${monetizationScore}%` }}
                 />
               </div>
             </div>
@@ -1020,14 +1214,7 @@ function OverviewSection({
                 Identified Risk Traps
               </span>
               <div className="space-y-1">
-                {(viabilityScorecard?.fatalRiskTraps?.length > 0
-                  ? viabilityScorecard.fatalRiskTraps
-                  : [
-                      "Over-indexing on polite hypothetical feedback without demanding upfront financial commitments.",
-                      "Scope creep delaying production MVP launch beyond a disciplined 4-week shipping sprint.",
-                      "Underestimating enterprise procurement, single sign-on (SSO), and data compliance review timelines."
-                    ]
-                ).map((risk, i) => (
+                {safeRiskTraps.map((risk, i) => (
                   <div key={i} className="text-xs text-rose-800 bg-rose-50/60 p-2 rounded-lg border border-rose-100 leading-snug">
                     • {risk}
                   </div>
@@ -1042,10 +1229,10 @@ function OverviewSection({
           title="Startup Idea Thesis"
           icon={Target}
           iconColor="text-orange-500"
-          stat={ideaAnalysis?.domain || "Core Thesis"}
+          stat={toSafeString(ideaAnalysis?.domain, "Core Thesis")}
           subtitle="Founder Problem & Mission"
           detailsTitle="Feasibility & Execution Speed"
-          detailsText={ideaAnalysis?.feasibility || "High feasibility with modern serverless architecture and production AI APIs."}
+          detailsText={toSafeString(ideaAnalysis?.feasibility, "High feasibility with modern serverless architecture and production AI APIs.")}
         >
           <div className="space-y-3 text-xs text-slate-700">
             <div>
@@ -1053,7 +1240,7 @@ function OverviewSection({
                 Founder Prompt / Idea
               </span>
               <p className="leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100 font-medium text-slate-800">
-                {originalIdea}
+                {toSafeString(originalIdea, "No idea prompt provided")}
               </p>
             </div>
             <div>
@@ -1061,7 +1248,10 @@ function OverviewSection({
                 Core Problem Statement
               </span>
               <p className="leading-relaxed text-slate-700">
-                {ideaAnalysis?.problem || "Founders and operators struggle with manual, fragmented workflows that introduce high operational overhead and slow delivery."}
+                {toSafeString(
+                  ideaAnalysis?.problem,
+                  "Founders and operators struggle with manual, fragmented workflows that introduce high operational overhead and slow delivery."
+                )}
               </p>
             </div>
             <div>
@@ -1069,7 +1259,10 @@ function OverviewSection({
                 Strategic Mission & Objectives
               </span>
               <p className="leading-relaxed text-slate-700">
-                {ideaAnalysis?.goal || "Deliver an autonomous copilot platform that eliminates 80% of repetitive operational tasks and accelerates time-to-market."}
+                {toSafeString(
+                  ideaAnalysis?.goal,
+                  "Deliver an autonomous copilot platform that eliminates 80% of repetitive operational tasks and accelerates time-to-market."
+                )}
               </p>
             </div>
           </div>
@@ -1083,11 +1276,14 @@ function OverviewSection({
           stat="Executive Pitch"
           subtitle="1-2 Sentence Hook"
           detailsTitle="Executive Summary"
-          detailsText={pitch?.executiveSummary || "Full executive summary synthesized from the venture analysis."}
+          detailsText={toSafeString(
+            pitch?.executiveSummary,
+            "Full executive summary synthesized from the venture analysis."
+          )}
         >
           <div className="text-xs text-slate-700">
             <p className="leading-relaxed bg-orange-50/50 p-3 rounded-xl border border-orange-100 font-medium text-slate-800 italic">
-              "{pitch?.elevatorPitch || originalIdea}"
+              "{toSafeString(pitch?.elevatorPitch || originalIdea, "High impact automated workflow copilot.")}"
             </p>
           </div>
         </StatCard>
@@ -1107,44 +1303,50 @@ function CustomerDiscoverySection({
   onUpdateRedFlags,
   onUpdateWtpSignals,
 }) {
-  const users = customerPersona?.targetUsers?.length > 0
-    ? customerPersona.targetUsers
-    : ["Early-Stage Founders & Builders", "Growth Operators & Product Leads"];
+  const users = useMemo(() => {
+    return toSafeArray(customerPersona?.targetUsers, [
+      "Early-Stage Founders & Builders",
+      "Growth Operators & Product Leads",
+    ]);
+  }, [customerPersona]);
 
-  const painPoints = customerPersona?.painPoints?.length > 0
-    ? customerPersona.painPoints
-    : [
-        "Excessive time lost to manual configuration and non-core operational setup.",
-        "High subscription spend across fragmented point-solutions that do not interoperate.",
-        "Uncertainty around genuine buyer willingness-to-pay before committing engineering burn."
-      ];
+  const painPoints = useMemo(() => {
+    return toSafeArray(customerPersona?.painPoints, [
+      "Excessive time lost to manual configuration and non-core operational setup.",
+      "High subscription spend across fragmented point-solutions that do not interoperate.",
+      "Uncertainty around genuine buyer willingness-to-pay before committing engineering burn.",
+    ]);
+  }, [customerPersona]);
 
-  const profile = customerPersona?.userProfile || "High-agency early-stage founder or team lead seeking maximum execution leverage and low initial burn.";
+  const profile = toSafeString(
+    customerPersona?.userProfile,
+    "High-agency early-stage founder or team lead seeking maximum execution leverage and low initial burn."
+  );
 
-  const interviewQuestions = customerDiscovery?.interviewQuestions?.length > 0
-    ? customerDiscovery.interviewQuestions
-    : [
-        "What is the hardest part about handling this workflow today?",
-        "When was the last time you encountered this issue, and what specific workaround did you use?",
-        "Why was that workaround frustrating or inadequate?",
-        "How much money or staff hours have you allocated to solve this problem over the past 6 months?",
-        "Where did you look to find current solutions, and why didn't existing tools satisfy you?"
-      ];
+  const interviewQuestions = useMemo(() => {
+    return toSafeArray(customerDiscovery?.interviewQuestions, [
+      "What is the hardest part about handling this workflow today?",
+      "When was the last time you encountered this issue, and what specific workaround did you use?",
+      "Why was that workaround frustrating or inadequate?",
+      "How much money or staff hours have you allocated to solve this problem over the past 6 months?",
+      "Where did you look to find current solutions, and why didn't existing tools satisfy you?",
+    ]);
+  }, [customerDiscovery]);
 
-  const redFlags = customerDiscovery?.redFlags?.length > 0
-    ? customerDiscovery.redFlags
-    : [
-        "\"I would definitely use something like that if it existed\" (Hypothetical praise with zero financial commitment).",
-        "\"Send me a link once you have version 1.0 launched\" (Polite deferral masking low purchasing urgency).",
-        "\"My team would love this\" from an employee with zero procurement authority or budget ownership."
-      ];
+  const redFlags = useMemo(() => {
+    return toSafeArray(customerDiscovery?.redFlags, [
+      "\"I would definitely use something like that if it existed\" (Hypothetical praise with zero financial commitment).",
+      "\"Send me a link once you have version 1.0 launched\" (Polite deferral masking low purchasing urgency).",
+      "\"My team would love this\" from an employee with zero procurement authority or budget ownership.",
+    ]);
+  }, [customerDiscovery]);
 
-  const wtpSignals = customerDiscovery?.willingnessToPaySignals?.length > 0
-    ? customerDiscovery.willingnessToPaySignals
-    : [
-        "Prospect signs a Letter of Intent (LOI) or pays a refundable pilot deposit before code is written.",
-        "Customer shares proprietary internal workflow files or commits their technical team to an onboarding working session."
-      ];
+  const wtpSignals = useMemo(() => {
+    return toSafeArray(customerDiscovery?.willingnessToPaySignals, [
+      "Prospect signs a Letter of Intent (LOI) or pays a refundable pilot deposit before code is written.",
+      "Customer shares proprietary internal workflow files or commits their technical team to an onboarding working session.",
+    ]);
+  }, [customerDiscovery]);
 
   return (
     <ResponsiveCardGrid>
@@ -1264,6 +1466,8 @@ function CustomerDiscoverySection({
   );
 }
 
+
+
 // ============================================================================
 // SECTION 3: MARKET & COMPETITIVE INTELLIGENCE
 // ============================================================================
@@ -1288,8 +1492,8 @@ function MarketCompetitorsSection({
         }
       }
     }
-    const level = obj?.level || obj?.intensity || obj?.rating || "Moderate";
-    const analysis = obj?.analysis || obj?.explanation || obj?.description || fallbackAnalysis;
+    const level = toSafeString(obj?.level || obj?.intensity || obj?.rating, "Moderate");
+    const analysis = toSafeString(obj?.analysis || obj?.explanation || obj?.description, fallbackAnalysis);
     return { level, analysis };
   };
 
@@ -1320,36 +1524,54 @@ function MarketCompetitorsSection({
   );
 
   // Competitor vulnerability matrix items with intelligent fallback synthesis if backend omitted it
-  const competitorsList = marketResearch?.competitors?.length > 0
-    ? marketResearch.competitors
-    : ["Legacy Incumbent", "Horizontal SaaS Platform", "Manual In-House Tools"];
+  const competitorsList = useMemo(() => {
+    return toSafeArray(marketResearch?.competitors, [
+      "Legacy Incumbent",
+      "Horizontal SaaS Platform",
+      "Manual In-House Tools",
+    ]);
+  }, [marketResearch?.competitors]);
 
   const vulnerabilities = useMemo(() => {
-    if (competitorWeaknessAnalysis?.length > 0) return competitorWeaknessAnalysis;
+    const rawList = Array.isArray(competitorWeaknessAnalysis)
+      ? competitorWeaknessAnalysis
+      : competitorWeaknessAnalysis && typeof competitorWeaknessAnalysis === "object"
+      ? Object.values(competitorWeaknessAnalysis)
+      : [];
+
+    if (rawList.length > 0) {
+      return rawList.map((c) => ({
+        competitor: toSafeString(c?.competitor || c?.name, "Market Incumbent"),
+        weaknesses: toSafeArray(c?.weaknesses || c?.weakness, [
+          "Bloated legacy codebase with slow feature turnaround and rigid multi-month deployment cycles.",
+        ]).join("; "),
+        missedOpportunities: toSafeArray(c?.missedOpportunities || c?.missedOpportunity, []).join("; "),
+        suggestedDifferentiation: toSafeString(
+          c?.suggestedDifferentiation || c?.differentiation,
+          "Deliver an autonomous, zero-configuration solution that deploys in seconds."
+        ),
+      }));
+    }
+
     return competitorsList.map((comp) => {
-      const name = typeof comp === "string" ? comp : comp?.name || "Market Incumbent";
+      const name = toSafeString(comp, "Market Incumbent");
       return {
         competitor: name,
-        weaknesses: [
-          "Bloated legacy codebase with slow feature turnaround and rigid multi-month deployment cycles.",
-          "Prohibitive enterprise pricing tiers and high consulting setup fees."
-        ],
-        missedOpportunities: [
-          "Neglected self-serve SMB and early-stage founder onboarding experience."
-        ],
-        suggestedDifferentiation: `Deliver an autonomous, zero-configuration solution that deploys in seconds at a fraction of ${name} costs.`
+        weaknesses: "Bloated legacy codebase with slow feature turnaround; High enterprise setup fees.",
+        missedOpportunities: "Neglected self-serve SMB and early-stage founder onboarding experience.",
+        suggestedDifferentiation: `Deliver an autonomous, zero-configuration solution that deploys in seconds at a fraction of ${name} costs.`,
       };
     });
   }, [competitorWeaknessAnalysis, competitorsList]);
 
   // Market opportunities with fallback
-  const marketOpps = marketResearch?.opportunities?.length > 0
-    ? marketResearch.opportunities
-    : [
-        "Accelerating demand for autonomous agentic workflows that eliminate manual operator overhead.",
-        "Unbundling of monolithic legacy software suites into fast, modular vertical copilots.",
-        "Growing willingness among founders and operators to pay for instant time-to-value solutions."
-      ];
+  const marketOpps = useMemo(() => {
+    return toSafeArray(marketResearch?.opportunities, [
+      "Accelerating demand for autonomous agentic workflows that eliminate manual operator overhead.",
+      "Unbundling of monolithic legacy software suites into fast, modular vertical copilots.",
+      "Growing willingness among founders and operators to pay for instant time-to-value solutions.",
+    ]);
+  }, [marketResearch?.opportunities]);
 
   return (
     <div className="space-y-6">
@@ -1573,30 +1795,30 @@ function ProductMvpSection({
           stat="Production Stack"
           subtitle="Cloud & AI Infrastructure"
           detailsTitle="Architecture Overview"
-          detailsText={technicalArchitecture?.architectureOverview || "Containerized cloud backend with modern reactive frontend."}
+          detailsText={toSafeString(technicalArchitecture?.architectureOverview, "Containerized cloud backend with modern reactive frontend.")}
         >
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-2 text-center">
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
                 <span className="text-[10px] text-slate-400 block font-mono uppercase">Frontend</span>
-                <span className="text-xs font-bold text-slate-800 block mt-0.5">{technicalArchitecture?.frontend || "React / Tailwind"}</span>
+                <span className="text-xs font-bold text-slate-800 block mt-0.5">{toSafeString(technicalArchitecture?.frontend, "React / Tailwind")}</span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
                 <span className="text-[10px] text-slate-400 block font-mono uppercase">Backend</span>
-                <span className="text-xs font-bold text-slate-800 block mt-0.5">{technicalArchitecture?.backend || "FastAPI / Python"}</span>
+                <span className="text-xs font-bold text-slate-800 block mt-0.5">{toSafeString(technicalArchitecture?.backend, "FastAPI / Python")}</span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
                 <span className="text-[10px] text-slate-400 block font-mono uppercase">Database</span>
-                <span className="text-xs font-bold text-slate-800 block mt-0.5">{technicalArchitecture?.database || "PostgreSQL / Vector"}</span>
+                <span className="text-xs font-bold text-slate-800 block mt-0.5">{toSafeString(technicalArchitecture?.database, "PostgreSQL / Vector")}</span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100">
                 <span className="text-[10px] text-slate-400 block font-mono uppercase">Cloud</span>
-                <span className="text-xs font-bold text-slate-800 block mt-0.5">{technicalArchitecture?.hosting || "AWS / Vercel"}</span>
+                <span className="text-xs font-bold text-slate-800 block mt-0.5">{toSafeString(technicalArchitecture?.hosting, "AWS / Vercel")}</span>
               </div>
             </div>
             <div className="p-2.5 rounded-xl bg-sky-50/50 border border-sky-100 text-xs text-slate-700">
               <span className="font-bold text-sky-800 block mb-0.5">AI Models & APIs:</span>
-              <span>{technicalArchitecture?.aiApis || "Anthropic Claude / OpenAI / Local Embeddings"}</span>
+              <span>{toSafeString(technicalArchitecture?.aiApis, "Anthropic Claude / OpenAI / Local Embeddings")}</span>
             </div>
           </div>
         </StatCard>
@@ -1609,14 +1831,14 @@ function ProductMvpSection({
           stat="Phase 2 & 3"
           subtitle="Scaling & Enterprise Expansion"
           detailsTitle="Launch Strategy"
-          detailsText={roadmap?.launchPlan || "Staged rollout to design partners followed by broad self-serve onboarding."}
+          detailsText={toSafeString(roadmap?.launchPlan, "Staged rollout to design partners followed by broad self-serve onboarding.")}
         >
           <div className="space-y-2">
             <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
               Future Expansion Roadmap (Editable)
             </span>
             <EditableList
-              items={productPlan?.futureFeatures || []}
+              items={toSafeArray(productPlan?.futureFeatures, [])}
               onUpdate={onUpdateFutureFeatures}
               placeholder="e.g. Enterprise RBAC & Audit Trails"
               addButtonLabel="Add Roadmap Item"
@@ -1628,7 +1850,7 @@ function ProductMvpSection({
       </ResponsiveCardGrid>
 
       {/* Milestones Timeline */}
-      {roadmap?.milestones?.length > 0 && (
+      {Array.isArray(roadmap?.milestones) && roadmap.milestones.length > 0 && (
         <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
           <h3 className="text-sm font-bold text-slate-900 mb-4 tracking-tight flex items-center gap-2">
             <Rocket size={16} className="text-sky-500" />
@@ -1638,14 +1860,14 @@ function ProductMvpSection({
             {roadmap.milestones.map((m, i) => (
               <div key={i} className="p-4 rounded-xl bg-slate-50 border border-slate-100 space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-sm text-slate-900">{m.title}</span>
-                  <span className="text-[10px] font-mono text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded font-bold">{m.week}</span>
+                  <span className="font-bold text-sm text-slate-900">{toSafeString(m.title, `Milestone ${i + 1}`)}</span>
+                  <span className="text-[10px] font-mono text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded font-bold">{toSafeString(m.week, `Sprint ${i + 1}`)}</span>
                 </div>
                 <ul className="space-y-0.5 text-xs text-slate-600">
-                  {(m.tasks || []).map((t, j) => (
+                  {toSafeArray(m.tasks, []).map((t, j) => (
                     <li key={j} className="flex items-start gap-1.5">
                       <span className="text-sky-500">›</span>
-                      <span>{t}</span>
+                      <span>{toSafeString(t)}</span>
                     </li>
                   ))}
                 </ul>
@@ -1757,7 +1979,7 @@ function FinancesSection({
   // Dynamic ARPU calculation
   const arpu = useMemo(() => {
     if (revenueSimulator?.pricingAssumption) {
-      const match = revenueSimulator.pricingAssumption.match(/\$(\d+)/);
+      const match = String(revenueSimulator.pricingAssumption).match(/\$(\d+)/);
       if (match && match[1]) return parseInt(match[1], 10);
     }
     return 29;
@@ -1766,7 +1988,7 @@ function FinancesSection({
   // Dynamic monthly infrastructure burn
   const monthlyBurn = useMemo(() => {
     if (costEstimator?.estimatedMonthlyCost) {
-      const match = costEstimator.estimatedMonthlyCost.match(/\$(\d+)/);
+      const match = String(costEstimator.estimatedMonthlyCost).match(/\$(\d+)/);
       if (match && match[1]) return parseInt(match[1], 10);
     }
     return 35;
@@ -1792,10 +2014,10 @@ function FinancesSection({
           title="Infrastructure & Cloud Costs"
           icon={DollarSign}
           iconColor="text-orange-500"
-          stat={costEstimator?.estimatedMonthlyCost || "$16-51"}
+          stat={toSafeString(costEstimator?.estimatedMonthlyCost, "$16-51")}
           subtitle="Estimated Monthly Cost"
           detailsTitle="Annual Projection"
-          detailsText={`Estimated yearly cloud burn: ${costEstimator?.estimatedYearlyCost || "$192-612"}. Highly cost-efficient serverless foundation with free tiers.`}
+          detailsText={`Estimated yearly cloud burn: ${toSafeString(costEstimator?.estimatedYearlyCost, "$192-612")}. Highly cost-efficient serverless foundation with free tiers.`}
         >
           <div className="space-y-1.5">
             {COST_KEYS.map((key) => {
@@ -1811,7 +2033,7 @@ function FinancesSection({
                       </span>
                     )}
                   </div>
-                  <span className="font-mono font-bold text-slate-800">{item.monthlyCost}</span>
+                  <span className="font-mono font-bold text-slate-800">{toSafeString(item.monthlyCost, "$0")}</span>
                 </div>
               );
             })}
@@ -1823,8 +2045,8 @@ function FinancesSection({
           title="Revenue Projections"
           icon={TrendingUp}
           iconColor="text-orange-500"
-          stat={revenueSimulator?.projections?.[2]?.annualRevenue || "$588,000"}
-          subtitle={revenueSimulator?.pricingAssumption || "Based on subscription model"}
+          stat={toSafeString(revenueSimulator?.projections?.[2]?.annualRevenue, "$588,000")}
+          subtitle={toSafeString(revenueSimulator?.pricingAssumption, "Based on subscription model")}
           detailsTitle="Pricing Assumption"
           detailsText={revenueSimulator?.pricingAssumption || businessStrategy?.pricingIdea || "Tiered B2B SaaS pricing model with self-serve starter and high-ticket growth plans."}
         >
@@ -2488,8 +2710,8 @@ function DashboardOverviewSection({
   revenueSimulator,
   ideaAnalysis,
 }) {
-  const score = viabilityScorecard?.score ?? 84;
-  const verdict = viabilityScorecard?.verdict || "Proceed";
+  const score = toSafeString(viabilityScorecard?.score, "84");
+  const verdict = toSafeString(viabilityScorecard?.verdict, "Proceed");
 
   return (
     <div className="space-y-6">
@@ -2512,7 +2734,7 @@ function DashboardOverviewSection({
             Total Addressable Market (TAM)
           </span>
           <div className="text-3xl sm:text-4xl font-black font-mono text-slate-900 my-1">
-            {marketSizing?.tam?.value || "$14.2B"}
+            {toSafeString(marketSizing?.tam?.value || marketSizing?.tam, "$14.2B")}
           </div>
           <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200">
             High Growth
@@ -2524,7 +2746,7 @@ function DashboardOverviewSection({
             Monthly Runway Budget
           </span>
           <div className="text-3xl sm:text-4xl font-black font-mono text-slate-900 my-1">
-            {costEstimator?.estimatedMonthlyCost || "$16-51"}
+            {toSafeString(costEstimator?.estimatedMonthlyCost, "$16-51")}
           </div>
           <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-50 text-slate-700 border border-slate-200">
             Lean Operations
