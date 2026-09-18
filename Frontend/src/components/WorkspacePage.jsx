@@ -55,6 +55,7 @@ import {
   Home,
   Crosshair,
 } from "lucide-react";
+import ResourcesModal from "./ResourcesModal.jsx";
 
 const SUGGESTIONS = [
   {
@@ -107,6 +108,7 @@ export default function WorkspacePage({
   const [searchQuery, setSearchQuery] = useState("");
   const [exportingId, setExportingId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
+  const [showResourcesModal, setShowResourcesModal] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const userDropdownRef = useRef(null);
 
@@ -484,31 +486,12 @@ export default function WorkspacePage({
 
                 {/* Resources */}
                 <button
-                  onClick={async () => {
-                    const targetBlueprint = blueprint || history[0]?.blueprint;
-                    const targetIdea = idea || history[0]?.idea;
-                    if (targetBlueprint) {
-                      setExportingId("current");
-                      try {
-                        await downloadPdf(targetBlueprint, targetIdea);
-                        showToast("Executive PDF exported successfully");
-                      } catch (e) {
-                        showToast("PDF export failed");
-                      } finally {
-                        setExportingId(null);
-                      }
-                    } else {
-                      showToast("Select or analyze a venture first");
-                    }
-                  }}
-                  disabled={exportingId === "current"}
+                  onClick={() => setShowResourcesModal(true)}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
-                  title="Resources"
+                  title="Founder Resources & Knowledge Vault"
                 >
                   <BookOpen size={16} className="text-slate-400" />
-                  {sidebarOpen && (
-                    <span>{exportingId === "current" ? "Exporting PDF..." : "Resources"}</span>
-                  )}
+                  {sidebarOpen && <span>Resources</span>}
                 </button>
               </nav>
             </div>
@@ -1152,6 +1135,15 @@ export default function WorkspacePage({
           </div>
         </div>
       )}
+
+      {/* Founder Resources & Knowledge Vault Modal */}
+      <ResourcesModal
+        isOpen={showResourcesModal}
+        onClose={() => setShowResourcesModal(false)}
+        blueprint={blueprint || history[0]?.blueprint}
+        idea={idea || history[0]?.idea}
+        onToast={showToast}
+      />
     </div>
   );
 }
