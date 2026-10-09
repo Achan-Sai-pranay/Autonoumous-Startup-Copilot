@@ -2,14 +2,14 @@
 // ---------------------------------------------------------------------------
 // Authentication manager backed by Appwrite Auth SDK.
 // Provides real registration, login, OAuth session redirects, and session checks.
-// Falls back smoothly to local session if Appwrite keys are not yet provided.
+// Eliminates deceptive mock logins from production flow.
 // ---------------------------------------------------------------------------
 import { account, avatars, ID, OAuthProvider, isAppwriteConfigured } from "./appwrite.js";
 
 const AUTH_STORAGE_KEY = "launchpilot_auth_user_v1";
 
 function formatAppwriteUser(appwriteUser) {
-  const name = appwriteUser.name || appwriteUser.email.split("@")[0];
+  const name = appwriteUser.name || (appwriteUser.email ? appwriteUser.email.split("@")[0] : "Founder");
   let avatarUrl = "";
   try {
     avatarUrl = avatars.getInitials(name).toString();
@@ -21,7 +21,7 @@ function formatAppwriteUser(appwriteUser) {
 
   return {
     id: appwriteUser.$id,
-    email: appwriteUser.email,
+    email: appwriteUser.email || "",
     name,
     avatarUrl,
     plan: "Free Starter",
@@ -42,7 +42,11 @@ export function getStoredUser() {
 
 export function saveUserSession(user) {
   try {
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    if (user) {
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    }
     return user;
   } catch {
     return user;
@@ -74,8 +78,23 @@ export async function getCurrentUser() {
     }
   }
 
-  // Fallback to local cached session when offline or during demo
+  // Fallback to local cached session only if Appwrite is not configured
   return getStoredUser();
+}
+
+/**
+ * Retrieves a short-lived Appwrite JWT to authenticate backend requests.
+ */
+export async function getAuthJwt() {
+  if (isAppwriteConfigured()) {
+    try {
+      const res = await account.createJWT();
+      return res?.jwt || null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
 }
 
 /**
@@ -83,7 +102,7 @@ export async function getCurrentUser() {
  */
 export async function loginWithEmail(email, password) {
   if (!isAppwriteConfigured()) {
-    return mockLogin(email);
+    throw new Error("Appwrite is not configured. Please set VITE_APPWRITE_PROJECT_ID.");
   }
 
   // Delete any lingering active session before creating a new one
@@ -105,7 +124,7 @@ export async function loginWithEmail(email, password) {
  */
 export async function registerWithEmail(email, password, name = "") {
   if (!isAppwriteConfigured()) {
-    return mockLogin(email, name);
+    throw new Error("Appwrite is not configured. Please set VITE_APPWRITE_PROJECT_ID.");
   }
 
   const cleanEmail = email.trim();
@@ -131,10 +150,11 @@ export async function registerWithEmail(email, password, name = "") {
 
 /**
  * OAuth2 Social Login (Google, GitHub)
+ * Triggers official Appwrite OAuth redirection flow.
  */
 export function loginWithOAuth(provider = "Google") {
   if (!isAppwriteConfigured()) {
-    return Promise.resolve(mockSocialLogin(provider));
+    throw new Error("Appwrite is not configured. Please set VITE_APPWRITE_PROJECT_ID in .env.");
   }
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
@@ -146,41 +166,19 @@ export function loginWithOAuth(provider = "Google") {
       ? OAuthProvider.Github
       : OAuthProvider.Google;
 
-  account.createOAuth2Session(targetProvider, successUrl, failureUrl);
+  return account.createOAuth2Session(targetProvider, successUrl, failureUrl);
 }
 
 /**
- * Sign out and invalidate session
+ * Sign out and invalidate session across Appwrite and client
  */
 export async function logout() {
   if (isAppwriteConfigured()) {
     try {
       await account.deleteSession("current");
     } catch (err) {
-      console.warn("Appwrite logout notice:", err.message);
+      console.warn("Appwrite logout notice:", err?.message || err);
     }
   }
   clearUserSession();
-}
-
-// --- Legacy / Mock Compatibility -------------------------------------------
-export function mockLogin(email, name = "") {
-  const user = {
-    id: `usr_${Date.now()}`,
-    email,
-    name: name || email.split("@")[0],
-    avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
-      name || email
-    )}&backgroundColor=ea580c,f97316`,
-    plan: "Free Starter",
-    createdAt: new Date().toISOString(),
-    isMock: true,
-  };
-  return saveUserSession(user);
-}
-
-export function mockSocialLogin(provider = "Google") {
-  const email = provider === "Google" ? "founder@gmail.com" : "builder@github.com";
-  const name = provider === "Google" ? "Alex Rivera" : "Tech Founder";
-  return mockLogin(email, name);
 }

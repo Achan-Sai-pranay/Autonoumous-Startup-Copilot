@@ -477,7 +477,9 @@ export function TestimonialsSection() {
                   <p className="font-bold text-slate-900 text-xs">{h.name}</p>
                   <p className="text-[11px] text-slate-400">{h.role}</p>
                 </div>
-                <span className="text-orange-500 text-xs font-bold">Verified Tester</span>
+                <span className="text-orange-600 bg-orange-50 px-2 py-0.5 rounded text-[11px] font-semibold border border-orange-200">
+                  Early Beta Feedback
+                </span>
               </div>
             </div>
           ))}
@@ -491,12 +493,36 @@ export function TestimonialsSection() {
 export function PricingSection({ onSelectPlan }) {
   const [waitlistEmail, setWaitlistEmail] = useState("");
   const [waitlistSubmitted, setWaitlistSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleWaitlistSubmit = (e) => {
+  const handleWaitlistSubmit = async (e) => {
     e.preventDefault();
-    if (waitlistEmail.trim()) {
-      setWaitlistSubmitted(true);
-    }
+    const email = waitlistEmail.trim();
+    if (!email || !email.includes("@")) return;
+
+    setIsSubmitting(true);
+    const payload = {
+      email,
+      source: "pricing_section_waitlist",
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const existing = JSON.parse(localStorage.getItem("ideapulse_waitlist_emails") || "[]");
+      existing.push(payload);
+      localStorage.setItem("ideapulse_waitlist_emails", JSON.stringify(existing));
+    } catch {}
+
+    try {
+      await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+    } catch {}
+
+    setIsSubmitting(false);
+    setWaitlistSubmitted(true);
   };
 
   return (
@@ -614,7 +640,7 @@ export function FaqSection({ onCtaClick }) {
   const faqs = [
     {
       q: "What is IdeaPulse and what does 'Know what the market thinks' mean?",
-      a: "IdeaPulse is an autonomous startup intelligence platform. Instead of spending weeks building in the dark, IdeaPulse runs 12 specialist AI co-founders to analyze real customer willingness-to-pay, competitor vulnerabilities, and bottom-up market size in 30 seconds.",
+      a: "IdeaPulse is an autonomous startup intelligence platform. Instead of spending weeks building in the dark, IdeaPulse runs a comprehensive 12-stage AI synthesis pipeline to model customer discovery questions, competitor vulnerabilities, and bottom-up market sizing simulations in seconds.",
     },
     {
       q: "How does the free quota work?",

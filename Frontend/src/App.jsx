@@ -23,7 +23,14 @@ import {
   FaqSection,
   FullFooter,
 } from "./components/MarketingSections.jsx";
-import { getHistory, saveToHistory, deleteFromHistory, syncHistoryFromCloud } from "./lib/projectHistory.js";
+import {
+  getHistory,
+  saveToHistory,
+  deleteFromHistory,
+  syncHistoryFromCloud,
+  migrateGuestHistoryToUser,
+  subscribeSyncStatus,
+} from "./lib/projectHistory.js";
 import { getCurrentUser, logout } from "./lib/authContext.js";
 import { getWeeklyUsage, incrementWeeklyUsage } from "./lib/quotaManager.js";
 import { useSpeechToText } from "./hooks/useSpeechToText.js";
@@ -40,6 +47,7 @@ import {
   Zap,
   Rocket,
   ShieldCheck,
+  AlertCircle,
 } from "lucide-react";
 
 const rawApiUrl = import.meta.env.VITE_API_URL || "https://ideapulse-y1n5.onrender.com/api/generate-blueprint";
@@ -73,6 +81,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("signup");
+  const [authBanner, setAuthBanner] = useState(null);
 
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
@@ -96,13 +105,35 @@ export default function App() {
   const [history, setHistory] = useState([]);
   const [showHistory, setShowHistory] = useState(false);
   const [quota, setQuota] = useState(() => getWeeklyUsage(null));
+  const [syncStatus, setSyncStatus] = useState("idle");
 
   useEffect(() => {
+    const unsub = subscribeSyncStatus(setSyncStatus);
+    return () => unsub();
+  }, []);
+
+  useEffect(() => {
+    // Check for social login redirect feedback in URL query
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("auth_error")) {
+        setAuthBanner({
+          type: "error",
+          message: "Google Sign-In was cancelled or failed. If configuring, please verify Google OAuth provider credentials in Appwrite Console.",
+        });
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+
     getCurrentUser().then((user) => {
       if (user) {
         setCurrentUser(user);
+        migrateGuestHistoryToUser(user.id);
         setHistory(getHistory(user.id));
         setQuota(getWeeklyUsage(user.id));
+        syncHistoryFromCloud(user.id).then((cloud) => {
+          if (cloud && cloud.length > 0) setHistory(cloud);
+        });
       } else {
         setHistory(getHistory(null));
         setQuota(getWeeklyUsage(null));
@@ -184,6 +215,12 @@ export default function App() {
   function handleAuthSuccess(user) {
     setCurrentUser(user);
     setShowAuthModal(false);
+    if (user?.id) {
+      migrateGuestHistoryToUser(user.id);
+      syncHistoryFromCloud(user.id).then((cloud) => {
+        if (cloud && cloud.length > 0) setHistory(cloud);
+      });
+    }
     setHistory(getHistory(user?.id));
     setQuota(getWeeklyUsage(user?.id));
     navigateTo("workspace", true, true);
@@ -320,6 +357,21 @@ export default function App() {
         onNavigateHome={() => navigateTo("home")}
         onOpenPayment={handleOpenPayment}
       />
+
+      {authBanner && (
+        <div className="relative z-50 w-full bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-between text-xs text-amber-900 animate-fade-in">
+          <div className="flex items-center gap-2 max-w-4xl mx-auto">
+            <AlertCircle size={15} className="text-amber-600 shrink-0" />
+            <span>{authBanner.message}</span>
+          </div>
+          <button
+            onClick={() => setAuthBanner(null)}
+            className="text-amber-700 hover:text-amber-900 p-1 rounded-md"
+          >
+            ✕
+          </button>
+        </div>
+      )}
 
       {/* 3. Main Content Container */}
       <main className="relative z-10 flex-1 flex flex-col items-center w-full">

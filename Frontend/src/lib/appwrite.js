@@ -2,7 +2,7 @@
 // ---------------------------------------------------------------------------
 // Appwrite Client SDK initialization for LaunchPilot AI authentication
 // ---------------------------------------------------------------------------
-import { Client, Account, Avatars, Databases, ID, OAuthProvider, Query } from "appwrite";
+import { Client, Account, Avatars, Databases, ID, OAuthProvider, Query, Permission, Role } from "appwrite";
 
 const endpoint = import.meta.env.VITE_APPWRITE_ENDPOINT || "https://sgp.cloud.appwrite.io/v1";
 const projectId = import.meta.env.VITE_APPWRITE_PROJECT_ID || "";
@@ -22,7 +22,7 @@ if (projectId && projectId !== "YOUR_APPWRITE_PROJECT_ID") {
 export const account = new Account(client);
 export const avatars = new Avatars(client);
 export const databases = new Databases(client);
-export { ID, OAuthProvider, Query };
+export { ID, OAuthProvider, Query, Permission, Role };
 
 export function isAppwriteConfigured() {
   return Boolean(

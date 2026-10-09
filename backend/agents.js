@@ -236,12 +236,16 @@ Return ONE JSON object with this exact structure:
   "marketSizing": {
     "tam": { "value": "$12.4B", "description": "TAM (Total Addressable Market): Global market size calculation rationale" },
     "sam": { "value": "$1.8B", "description": "SAM (Serviceable Available Market): Target sub-segment geography & tier" },
-    "som": { "value": "$45M", "description": "SOM (Serviceable Obtainable Market): Realistic 1-3 year capture target" }
+    "som": { "value": "$45M", "description": "SOM (Serviceable Obtainable Market): Realistic 1-3 year capture target" },
+    "methodology": "Bottom-up analytical estimation based on target accounts and projected ARPU/ACV",
+    "confidenceLevel": "Moderate (Analytical Model)",
+    "assumptions": ["Assumption on target buyer count", "Assumption on willingness-to-pay tier"]
   },
   "marketResearch": {
     "competitors": ["competitor 1", "competitor 2", "competitor 3"],
     "opportunities": ["opportunity 1", "opportunity 2", "opportunity 3"],
-    "marketDemand": "a short paragraph describing current market demand/trend"
+    "marketDemand": "a short paragraph describing current market demand/trend",
+    "researchDisclaimer": "AI market intelligence synthesized from industry benchmarks and public competitive positioning models. Validate with direct customer discovery."
   },
   "competitorWeaknessAnalysis": [
     {

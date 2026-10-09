@@ -42,6 +42,16 @@ export function getProSubscription(userId) {
 export function upgradeUserToPro(userId, details = {}) {
   const key = `${PRO_STORAGE_PREFIX}${userId || "guest"}`;
   const now = Date.now();
+  
+  // Require either an authorized voucher code or an explicit verified transaction
+  const validVouchers = ["FOUNDER_PASS", "IDEAPULSE2026", "BETA_PRO", "VIP_FOUNDER"];
+  const isVoucherValid = details.voucherCode && validVouchers.includes(details.voucherCode.toUpperCase());
+  const isVerifiedTx = Boolean(details.verifiedTransaction || details.paymentId?.startsWith("PAY-VERIFIED-") || details.paymentId?.startsWith("VOUCHER-"));
+
+  if (!isVoucherValid && !isVerifiedTx) {
+    throw new Error("Invalid entitlement proof: upgrade requires a verified transaction or early access pass.");
+  }
+
   const subscription = {
     planId: "pro_monthly",
     planName: "IdeaPulse Pro Founder",
@@ -49,8 +59,8 @@ export function upgradeUserToPro(userId, details = {}) {
     priceUsd: 4.99,
     activatedAt: new Date(now).toISOString(),
     expiresAt: new Date(now + THIRTY_DAYS_MS).toISOString(),
-    paymentMethod: details.paymentMethod || "UPI / Card",
-    paymentId: details.paymentId || `PAY-${Date.now().toString(36).toUpperCase()}`,
+    paymentMethod: details.paymentMethod || (isVoucherValid ? "VOUCHER" : "GATEWAY"),
+    paymentId: details.paymentId || (isVoucherValid ? `VOUCHER-${details.voucherCode}` : `PAY-${Date.now().toString(36).toUpperCase()}`),
     status: "active",
   };
 

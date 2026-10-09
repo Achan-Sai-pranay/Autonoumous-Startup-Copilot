@@ -1,4 +1,4 @@
-﻿// scripts/setup-appwrite.mjs
+// scripts/setup-appwrite.mjs
 const ENDPOINT = process.env.VITE_APPWRITE_ENDPOINT || "https://sgp.cloud.appwrite.io/v1";
 const PROJECT_ID = process.env.VITE_APPWRITE_PROJECT_ID || "6aa55b210036fc2efe89";
 const DATABASE_ID = "launchpilot_db";
@@ -50,23 +50,38 @@ async function run() {
     console.error(`   Failed to create database:`, dbRes.data?.message || dbRes.data);
   }
 
-  console.log(`\n2. Creating Collection '${COLLECTION_ID}'...`);
+  console.log(`\n2. Creating or updating Collection '${COLLECTION_ID}' with Document-Level Security...`);
   const colRes = await api(`/databases/${DATABASE_ID}/collections`, "POST", {
     collectionId: COLLECTION_ID,
     name: "blueprints",
     permissions: [
-      'read("any")',
-      'create("any")',
-      'update("any")',
-      'delete("any")',
+      'read("users")',
+      'create("users")',
+      'update("users")',
+      'delete("users")',
     ],
-    documentSecurity: false,
+    documentSecurity: true,
   });
 
   if (colRes.ok) {
-    console.log(`   Collection '${COLLECTION_ID}' created with permissions.`);
+    console.log(`   Collection '${COLLECTION_ID}' created with document-level security enabled.`);
   } else if (colRes.status === 409) {
-    console.log(`   Collection '${COLLECTION_ID}' already exists.`);
+    console.log(`   Collection '${COLLECTION_ID}' already exists. Updating permissions & enabling documentSecurity...`);
+    const updateRes = await api(`/databases/${DATABASE_ID}/collections/${COLLECTION_ID}`, "PUT", {
+      name: "blueprints",
+      permissions: [
+        'read("users")',
+        'create("users")',
+        'update("users")',
+        'delete("users")',
+      ],
+      documentSecurity: true,
+    });
+    if (updateRes.ok) {
+      console.log(`   Collection '${COLLECTION_ID}' updated: documentSecurity=true, permissions=users.`);
+    } else {
+      console.warn(`   Note on collection update:`, updateRes.data?.message || updateRes.data);
+    }
   } else {
     console.error(`   Failed to create collection:`, colRes.data?.message || colRes.data);
   }

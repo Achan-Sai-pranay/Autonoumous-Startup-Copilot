@@ -4,7 +4,6 @@ import {
   loginWithEmail,
   registerWithEmail,
   loginWithOAuth,
-  mockSocialLogin,
 } from "../lib/authContext.js";
 import { isAppwriteConfigured } from "../lib/appwrite.js";
 
@@ -73,11 +72,24 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialMode
     }
   }
 
-  function handleSocial(provider) {
+  async function handleSocial(provider) {
     setError("");
-    const user = mockSocialLogin(provider);
-    onLoginSuccess(user);
-    onClose();
+    if (!isAppwriteConfigured()) {
+      setError("Appwrite Cloud is not configured with an active Project ID in .env.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setOauthNotice(`Connecting to ${provider}...`);
+      await loginWithOAuth(provider);
+      // Browser redirects to the OAuth provider (e.g. Google)
+    } catch (err) {
+      console.error("OAuth error:", err);
+      setError(err?.message || `Failed to initiate ${provider} login.`);
+      setLoading(false);
+      setOauthNotice(null);
+    }
   }
 
   return (
@@ -249,6 +261,13 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialMode
               Or connect with
             </span>
           </div>
+
+          {oauthNotice && (
+            <div className="mb-3 p-2.5 rounded-xl bg-orange-50 border border-orange-200 flex items-center gap-2 text-xs text-orange-800 animate-fade-in">
+              <Loader2 size={14} className="animate-spin text-orange-600 shrink-0" />
+              <span>{oauthNotice}</span>
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-3 mb-3">
             <button
