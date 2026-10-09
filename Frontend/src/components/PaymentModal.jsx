@@ -58,21 +58,19 @@ export default function PaymentModal({
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
-      try {
-        const sub = upgradeUserToPro(currentUser?.id, {
-          paymentMethod: "VOUCHER",
-          paymentId: `VOUCHER-${code}`,
-          voucherCode: code,
-        });
-        setIsSubmitting(false);
-        setUnlockedSuccess(true);
-        onPaymentSuccess(sub);
-      } catch (err) {
-        setIsSubmitting(false);
-        setError("Activation failed. Please retry.");
-      }
-    }, 600);
+    try {
+      const sub = await upgradeUserToPro(currentUser?.id, {
+        paymentMethod: "VOUCHER",
+        paymentId: `VOUCHER-${code}`,
+        voucherCode: code,
+      });
+      setIsSubmitting(false);
+      setUnlockedSuccess(true);
+      onPaymentSuccess(sub);
+    } catch (err) {
+      setIsSubmitting(false);
+      setError("Activation failed. Please retry.");
+    }
   }
 
   async function handleJoinWaitlist(e) {

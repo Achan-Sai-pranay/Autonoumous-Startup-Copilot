@@ -129,22 +129,27 @@ export default function App() {
       if (user) {
         setCurrentUser(user);
         migrateGuestHistoryToUser(user.id);
-        setHistory(getHistory(user.id));
-        setQuota(getWeeklyUsage(user.id));
+        const localHist = getHistory(user.id);
+        setHistory(localHist);
+        setQuota(getWeeklyUsage(user.id, localHist));
         syncHistoryFromCloud(user.id).then((cloud) => {
-          if (cloud && cloud.length > 0) setHistory(cloud);
+          if (cloud && cloud.length > 0) {
+            setHistory(cloud);
+            setQuota(getWeeklyUsage(user.id, cloud));
+          }
         });
       } else {
-        setHistory(getHistory(null));
-        setQuota(getWeeklyUsage(null));
+        const guestHist = getHistory(null);
+        setHistory(guestHist);
+        setQuota(getWeeklyUsage(null, guestHist));
       }
     });
   }, []);
 
   useEffect(() => {
-    setHistory(getHistory(currentUser?.id));
-    setQuota(getWeeklyUsage(currentUser?.id));
-  }, [currentUser]);
+    const currentHist = history.length > 0 ? history : getHistory(currentUser?.id);
+    setQuota(getWeeklyUsage(currentUser?.id, currentHist));
+  }, [currentUser, history.length]);
 
   function handleProtectedStart() {
     navigateTo("workspace");
@@ -217,12 +222,19 @@ export default function App() {
     setShowAuthModal(false);
     if (user?.id) {
       migrateGuestHistoryToUser(user.id);
+      const localHist = getHistory(user.id);
+      setHistory(localHist);
+      setQuota(getWeeklyUsage(user.id, localHist));
       syncHistoryFromCloud(user.id).then((cloud) => {
-        if (cloud && cloud.length > 0) setHistory(cloud);
+        if (cloud && cloud.length > 0) {
+          setHistory(cloud);
+          setQuota(getWeeklyUsage(user.id, cloud));
+        }
       });
+    } else {
+      setHistory(getHistory(null));
+      setQuota(getWeeklyUsage(null));
     }
-    setHistory(getHistory(user?.id));
-    setQuota(getWeeklyUsage(user?.id));
     navigateTo("workspace", true, true);
   }
 
@@ -232,7 +244,7 @@ export default function App() {
       return;
     }
 
-    const currentQuota = getWeeklyUsage(currentUser?.id);
+    const currentQuota = getWeeklyUsage(currentUser?.id, history);
     if (currentQuota.remaining <= 0) {
       if (!currentUser) {
         setError("You've tested your free guest idea! Create a free account to unlock 3 blueprints per week, or upgrade to Pro for 10 ideas.");
@@ -271,8 +283,9 @@ export default function App() {
         },
         onResult: (data) => {
           setBlueprint(data);
-          setHistory(saveToHistory(idea.trim(), data, currentUser?.id));
-          const updatedQuota = incrementWeeklyUsage(currentUser?.id);
+          const updatedHistory = saveToHistory(idea.trim(), data, currentUser?.id);
+          setHistory(updatedHistory);
+          const updatedQuota = incrementWeeklyUsage(currentUser?.id, updatedHistory);
           setQuota(updatedQuota);
         },
         onError: (message) => setError(message),

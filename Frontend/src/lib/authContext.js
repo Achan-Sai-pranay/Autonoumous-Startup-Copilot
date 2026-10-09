@@ -21,12 +21,19 @@ function formatAppwriteUser(appwriteUser) {
     }
   }
 
+  const isPro = Boolean(
+    appwriteUser.prefs?.isPro &&
+    (!appwriteUser.prefs.proExpiresAt || new Date(appwriteUser.prefs.proExpiresAt).getTime() > Date.now())
+  );
+
   return {
     id: appwriteUser.$id,
     email: appwriteUser.email || "",
     name,
     avatarUrl,
-    plan: "Free Starter",
+    plan: isPro ? "Pro Founder" : "Free Starter",
+    isPro,
+    prefs: appwriteUser.prefs || {},
     createdAt: appwriteUser.$createdAt || new Date().toISOString(),
     isRealAuth: true,
   };
