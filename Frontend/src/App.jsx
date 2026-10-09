@@ -31,7 +31,7 @@ import {
   migrateGuestHistoryToUser,
   subscribeSyncStatus,
 } from "./lib/projectHistory.js";
-import { getCurrentUser, logout } from "./lib/authContext.js";
+import { getCurrentUser, logout, getStoredUser } from "./lib/authContext.js";
 import { getWeeklyUsage, incrementWeeklyUsage } from "./lib/quotaManager.js";
 import { useSpeechToText } from "./hooks/useSpeechToText.js";
 import { useScrollReveal } from "./hooks/useScrollReveal.js";
@@ -78,7 +78,7 @@ export default function App() {
   const [agentSteps, setAgentSteps] = useState(buildInitialSteps());
 
   // --- Auth & Session State ------------------------------------------------
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(() => getStoredUser());
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authModalMode, setAuthModalMode] = useState("signup");
   const [authBanner, setAuthBanner] = useState(null);
@@ -291,6 +291,20 @@ export default function App() {
   if (currentView === "workspace") {
     return (
       <div className="relative h-screen w-full bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased overflow-hidden">
+        {authBanner && (
+          <div className="relative z-50 w-full bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between text-xs text-amber-900 animate-fade-in shrink-0">
+            <div className="flex items-center gap-2 max-w-4xl mx-auto">
+              <AlertCircle size={15} className="text-amber-600 shrink-0" />
+              <span>{authBanner.message}</span>
+            </div>
+            <button
+              onClick={() => setAuthBanner(null)}
+              className="text-amber-700 hover:text-amber-900 p-1 rounded-md cursor-pointer font-bold"
+            >
+              ✕
+            </button>
+          </div>
+        )}
         <WorkspacePage
           idea={idea}
           setIdea={setIdea}

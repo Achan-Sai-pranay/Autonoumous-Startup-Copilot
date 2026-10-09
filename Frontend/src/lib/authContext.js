@@ -10,13 +10,15 @@ const AUTH_STORAGE_KEY = "launchpilot_auth_user_v1";
 
 function formatAppwriteUser(appwriteUser) {
   const name = appwriteUser.name || (appwriteUser.email ? appwriteUser.email.split("@")[0] : "Founder");
-  let avatarUrl = "";
-  try {
-    avatarUrl = avatars.getInitials(name).toString();
-  } catch {
-    avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
-      name
-    )}&backgroundColor=ea580c,f97316`;
+  let avatarUrl = appwriteUser.prefs?.avatar || "";
+  if (!avatarUrl) {
+    try {
+      avatarUrl = avatars.getInitials(name).toString();
+    } catch {
+      avatarUrl = `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(
+        name
+      )}&backgroundColor=ea580c,f97316`;
+    }
   }
 
   return {
@@ -63,10 +65,30 @@ export function clearUserSession() {
 
 /**
  * Validates and returns currently authenticated Appwrite user session.
+ * Supports standard cookies as well as OAuth token query params (?userId=...&secret=...).
  */
 export async function getCurrentUser() {
   if (isAppwriteConfigured()) {
     try {
+      // 1. Check for OAuth or token callback in URL params (?userId=...&secret=...)
+      if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        const secret = params.get("secret");
+        const userId = params.get("userId");
+
+        if (userId && secret) {
+          try {
+            await account.createSession(userId, secret);
+            // Clean up secret credentials from URL bar immediately
+            const cleanUrl = window.location.pathname + window.location.hash;
+            window.history.replaceState({}, document.title, cleanUrl);
+          } catch (sessionErr) {
+            console.warn("createSession from URL token notice:", sessionErr?.message || sessionErr);
+          }
+        }
+      }
+
+      // 2. Fetch authenticated account profile from Appwrite
       const sessionUser = await account.get();
       const user = formatAppwriteUser(sessionUser);
       saveUserSession(user);
