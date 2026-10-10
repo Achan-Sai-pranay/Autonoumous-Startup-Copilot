@@ -357,7 +357,7 @@ export default function CoFounderChatDrawer({ blueprint = null, originalIdea = "
     <>
       {/* 1. Floating Launch Trigger Button (Bottom Right) */}
       {!isOpen && (
-        <div className="fixed bottom-6 right-6 z-50 animate-bounce-gentle">
+        <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-50 animate-bounce-gentle">
           <button
             id="open-cofounder-chat-btn"
             onClick={() => setIsOpen(true)}
@@ -388,7 +388,7 @@ export default function CoFounderChatDrawer({ blueprint = null, originalIdea = "
           {/* Drawer Pane */}
           <aside
             className={`relative w-full ${
-              isExpanded ? "max-w-3xl" : "max-w-lg"
+              isExpanded ? "max-w-3xl" : "max-w-full sm:max-w-lg"
             } bg-white h-full shadow-2xl flex flex-col border-l border-orange-200/80 z-10 transition-all duration-300 animate-slide-left`}
           >
             {/* Top Navigation Bar */}

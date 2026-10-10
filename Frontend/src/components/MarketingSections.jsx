@@ -180,7 +180,7 @@ export function HeroSection({
       </div>
 
       {/* Main Headline */}
-      <h1 className="text-4xl xs:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 mb-6 leading-tight animate-slide-up">
+      <h1 className="text-3xl xs:text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 mb-6 leading-tight animate-slide-up">
         Know what the market thinks.
         <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-600 via-amber-600 to-orange-500 mt-1">
           Validate before you build.
@@ -202,7 +202,7 @@ export function HeroSection({
             onChange={(e) => setHeroPrompt(e.target.value)}
             placeholder="Describe your startup concept (e.g. 'An AI-powered B2B platform that audits enterprise vendor contracts and benchmarks pricing...')"
             rows={2}
-            className="w-full text-xs sm:text-sm text-slate-800 placeholder-slate-400 p-3 pr-24 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all resize-none"
+            className="w-full text-xs sm:text-sm text-slate-800 placeholder-slate-400 p-3 rounded-xl border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all resize-none"
           />
 
           <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 pt-2 px-1">
@@ -307,7 +307,7 @@ export function LiveProductSimulator({ onCtaClick }) {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full">
+            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full scrollbar-none touch-scroll">
               {[
                 { id: "debate", label: "3-AI VC War Room", icon: Swords, badge: "New" },
                 { id: "tam", label: "TAM / SAM / SOM", icon: Target },
@@ -628,11 +628,11 @@ export function LiveProductSimulator({ onCtaClick }) {
                   </div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/80 text-xs text-slate-300 flex items-center justify-between">
+                <div className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/80 text-xs text-slate-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <span>
                     <strong>Break-Even Milestone:</strong> Achieved at <strong className="text-white">14 active paying accounts</strong>. Estimated time to break-even: <strong className="text-emerald-400">Month 3</strong>.
                   </span>
-                  <span className="font-mono text-emerald-400 text-xs font-bold">14 / 500 ACCOUNTS</span>
+                  <span className="font-mono text-emerald-400 text-xs font-bold whitespace-nowrap">14 / 500 ACCOUNTS</span>
                 </div>
               </div>
             )}
@@ -757,13 +757,13 @@ export function VcWarRoomSpotlight({ onCtaClick }) {
   const currentTopic = debateTopics[selectedTopic];
 
   return (
-    <section id="vc-debate" className="py-20 bg-slate-900 text-white border-b border-slate-800 reveal-on-scroll">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="text-center max-w-2xl mx-auto mb-12">
+    <section id="vc-debate" className="py-14 sm:py-20 bg-slate-900 text-white border-b border-slate-800 reveal-on-scroll w-full overflow-hidden">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 w-full">
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-12">
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-orange-400 bg-orange-500/10 border border-orange-500/30 px-3 py-1 rounded-full shadow-2xs">
             Proprietary Architecture
           </span>
-          <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-white mt-3">
+          <h2 className="text-2xl xs:text-3xl sm:text-5xl font-black tracking-tight text-white mt-3">
             Why 1 AI is never enough: <span className="text-orange-500">The 3-AI VC War Room</span>
           </h2>
           <p className="text-slate-400 text-xs sm:text-base mt-2">
@@ -1016,13 +1016,13 @@ export function PipelineWorkflowSection() {
 // ---------------------------------------------------------------------------
 export function BentoFeatureGrid() {
   return (
-    <section id="features" className="py-20 bg-white border-b border-slate-200 reveal-on-scroll">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="text-center max-w-2xl mx-auto mb-14">
+    <section id="features" className="py-14 sm:py-20 bg-white border-b border-slate-200 reveal-on-scroll w-full overflow-hidden">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 w-full">
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-orange-600 bg-orange-50 border border-orange-200 px-3 py-1 rounded-full shadow-2xs">
             The Complete Copilot Suite
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-3">
+          <h2 className="text-2xl xs:text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-3">
             Everything you need from raw concept to investor deck
           </h2>
           <p className="text-slate-500 text-xs sm:text-base mt-2">
@@ -1033,7 +1033,7 @@ export function BentoFeatureGrid() {
         {/* Bento Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1 (Large - Spans 2 cols) */}
-          <div className="md:col-span-2 p-7 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl flex flex-col justify-between relative overflow-hidden group">
+          <div className="md:col-span-2 p-5 sm:p-7 rounded-3xl bg-slate-900 text-white border border-slate-800 shadow-xl flex flex-col justify-between relative overflow-hidden group">
             <div className="relative z-10">
               <span className="px-3 py-1 rounded-full text-[10px] font-mono font-bold bg-orange-500/20 text-orange-300 border border-orange-500/30 uppercase">
                 Autonomous Orchestra
@@ -1195,13 +1195,13 @@ export function ComparisonSection({ onCtaClick }) {
   ];
 
   return (
-    <section id="compare" className="py-20 bg-slate-50/60 border-b border-slate-200 reveal-on-scroll">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="text-center max-w-2xl mx-auto mb-14">
+    <section id="compare" className="py-14 sm:py-20 bg-slate-50/60 border-b border-slate-200 reveal-on-scroll w-full overflow-hidden">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 w-full">
+        <div className="text-center max-w-2xl mx-auto mb-10 sm:mb-14">
           <span className="text-xs font-mono font-bold uppercase tracking-wider text-orange-600 bg-orange-50 border border-orange-200 px-3 py-1 rounded-full shadow-2xs">
             Why Ambitious Founders Choose IdeaPulse
           </span>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-3">
+          <h2 className="text-2xl xs:text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight mt-3">
             How IdeaPulse compares to alternative approaches
           </h2>
           <p className="text-slate-500 text-xs sm:text-base mt-2">
@@ -1210,7 +1210,7 @@ export function ComparisonSection({ onCtaClick }) {
         </div>
 
         {/* Comparison Table */}
-        <div className="overflow-x-auto bg-white rounded-3xl border border-slate-200 shadow-sm">
+        <div className="overflow-x-auto bg-white rounded-3xl border border-slate-200 shadow-sm scrollbar-none touch-scroll">
           <table className="w-full text-left border-collapse min-w-[700px]">
             <thead>
               <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-mono font-bold text-slate-600 uppercase">
@@ -1226,9 +1226,11 @@ export function ComparisonSection({ onCtaClick }) {
               {comparisonRows.map((row, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
                   <td className="p-4 sm:p-5 font-bold text-slate-900">{row.feature}</td>
-                  <td className="p-4 sm:p-5 text-slate-500 flex items-center gap-1.5">
-                    <XCircle size={14} className="text-rose-500 shrink-0" />
-                    <span>{row.oldWay}</span>
+                  <td className="p-4 sm:p-5 text-slate-500">
+                    <div className="flex items-center gap-1.5">
+                      <XCircle size={14} className="text-rose-500 shrink-0" />
+                      <span>{row.oldWay}</span>
+                    </div>
                   </td>
                   <td className="p-4 sm:p-5 text-slate-600">
                     <div className="flex items-center gap-1.5">
@@ -1247,6 +1249,9 @@ export function ComparisonSection({ onCtaClick }) {
             </tbody>
           </table>
         </div>
+        <p className="sm:hidden text-center text-[11px] font-mono text-slate-400 mt-2">
+          ← Swipe horizontally to inspect comparison →
+        </p>
 
         <div className="text-center mt-10">
           <button
@@ -1500,7 +1505,7 @@ export function PricingSection({ onSelectPlan }) {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
           {/* Card 1: Free Starter (3 ideas/week) */}
-          <div className="rounded-3xl p-8 bg-white border-2 border-orange-500 shadow-lg shadow-orange-500/10 flex flex-col justify-between relative">
+          <div className="rounded-3xl p-5 sm:p-8 bg-white border-2 border-orange-500 shadow-lg shadow-orange-500/10 flex flex-col justify-between relative">
             <span className="absolute -top-3 left-6 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-600 text-white font-mono shadow-2xs">
               Current Active Plan
             </span>
@@ -1544,7 +1549,7 @@ export function PricingSection({ onSelectPlan }) {
           </div>
 
           {/* Card 2: Pro Founder (10 ideas/week - ₹149/mo) */}
-          <div className="rounded-3xl p-8 bg-slate-900 text-white flex flex-col justify-between relative shadow-xl border border-slate-800">
+          <div className="rounded-3xl p-5 sm:p-8 bg-slate-900 text-white flex flex-col justify-between relative shadow-xl border border-slate-800">
             <span className="absolute -top-3 right-6 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-600 text-white font-mono shadow-2xs">
               Popular with Founders
             </span>

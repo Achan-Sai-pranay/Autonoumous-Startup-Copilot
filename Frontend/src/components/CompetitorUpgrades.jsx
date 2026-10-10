@@ -361,7 +361,7 @@ export const VenturusMarketSizeBubbleChart = memo(function VenturusMarketSizeBub
   return (
     <div
       ref={containerRef}
-      className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between relative overflow-hidden"
+      className="p-4 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-sm flex flex-col justify-between relative overflow-hidden"
     >
       {/* Chart Title */}
       <h3 className="text-base sm:text-lg font-bold text-slate-900 text-center tracking-tight mb-2">
@@ -369,20 +369,20 @@ export const VenturusMarketSizeBubbleChart = memo(function VenturusMarketSizeBub
       </h3>
 
       {/* 3 Overlapping Orange Bubble Circles */}
-      <div className="flex items-end justify-center -space-x-4 sm:-space-x-6 pt-6 pb-2 my-auto">
+      <div className="flex items-end justify-center -space-x-3 xs:-space-x-4 sm:-space-x-6 pt-6 pb-2 my-auto">
         {/* TAM Circle: Largest, Vibrant Brand Orange */}
         <div
           ref={tamBubbleRef}
           onMouseEnter={() => setActiveHover("tam")}
           onMouseLeave={() => setActiveHover(null)}
-          className={`w-36 h-36 sm:w-44 sm:h-44 shrink-0 aspect-square rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white flex flex-col items-center justify-center shadow-lg shadow-orange-500/20 hover:scale-105 transition-all duration-300 z-10 select-none text-center px-2 border-2 border-orange-400/40 cursor-pointer ${
+          className={`w-28 h-28 xs:w-36 xs:h-36 sm:w-44 sm:h-44 shrink-0 aspect-square rounded-full bg-gradient-to-br from-orange-500 to-amber-500 text-white flex flex-col items-center justify-center shadow-lg shadow-orange-500/20 hover:scale-105 transition-all duration-300 z-10 select-none text-center px-1.5 sm:px-2 border-2 border-orange-400/40 cursor-pointer ${
             activeHover === "tam" ? "ring-4 ring-orange-400/50 scale-105" : ""
           }`}
         >
-          <span className="text-2xl sm:text-3xl font-black font-mono tracking-tight leading-none">
+          <span className="text-xl xs:text-2xl sm:text-3xl font-black font-mono tracking-tight leading-none">
             {tam.value}
           </span>
-          <span className="text-xs sm:text-sm font-extrabold tracking-wider mt-1.5 opacity-95">
+          <span className="text-[11px] sm:text-sm font-extrabold tracking-wider mt-1 sm:mt-1.5 opacity-95">
             TAM
           </span>
         </div>
@@ -392,14 +392,14 @@ export const VenturusMarketSizeBubbleChart = memo(function VenturusMarketSizeBub
           ref={samBubbleRef}
           onMouseEnter={() => setActiveHover("sam")}
           onMouseLeave={() => setActiveHover(null)}
-          className={`w-28 h-28 sm:w-36 sm:h-36 shrink-0 aspect-square rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white flex flex-col items-center justify-center shadow-md shadow-orange-500/15 hover:scale-105 transition-all duration-300 z-20 select-none text-center px-2 border-2 border-amber-300/40 cursor-pointer ${
+          className={`w-22 h-22 xs:w-28 xs:h-28 sm:w-36 sm:h-36 shrink-0 aspect-square rounded-full bg-gradient-to-br from-amber-500 to-orange-600 text-white flex flex-col items-center justify-center shadow-md shadow-orange-500/15 hover:scale-105 transition-all duration-300 z-20 select-none text-center px-1 sm:px-2 border-2 border-amber-300/40 cursor-pointer ${
             activeHover === "sam" ? "ring-4 ring-amber-400/50 scale-105" : ""
           }`}
         >
-          <span className="text-xl sm:text-2xl font-black font-mono tracking-tight leading-none">
+          <span className="text-lg xs:text-xl sm:text-2xl font-black font-mono tracking-tight leading-none">
             {sam.value}
           </span>
-          <span className="text-xs sm:text-sm font-extrabold tracking-wider mt-1.5 opacity-95">
+          <span className="text-[10px] sm:text-sm font-extrabold tracking-wider mt-1 sm:mt-1.5 opacity-95">
             SAM
           </span>
         </div>
@@ -409,14 +409,14 @@ export const VenturusMarketSizeBubbleChart = memo(function VenturusMarketSizeBub
           ref={somBubbleRef}
           onMouseEnter={() => setActiveHover("som")}
           onMouseLeave={() => setActiveHover(null)}
-          className={`w-24 h-24 sm:w-28 sm:h-28 shrink-0 aspect-square rounded-full bg-gradient-to-br from-orange-800 to-amber-900 text-white flex flex-col items-center justify-center shadow-sm hover:scale-105 transition-all duration-300 z-30 select-none text-center px-1 border-2 border-orange-700/40 cursor-pointer ${
+          className={`w-18 h-18 xs:w-22 xs:h-22 sm:w-28 sm:h-28 shrink-0 aspect-square rounded-full bg-gradient-to-br from-orange-800 to-amber-900 text-white flex flex-col items-center justify-center shadow-sm hover:scale-105 transition-all duration-300 z-30 select-none text-center px-1 border-2 border-orange-700/40 cursor-pointer ${
             activeHover === "som" ? "ring-4 ring-orange-800/50 scale-105" : ""
           }`}
         >
-          <span className="text-lg sm:text-xl font-black font-mono tracking-tight leading-none">
+          <span className="text-base xs:text-lg sm:text-xl font-black font-mono tracking-tight leading-none">
             {som.value}
           </span>
-          <span className="text-[11px] sm:text-xs font-extrabold tracking-wider mt-1 opacity-95">
+          <span className="text-[10px] sm:text-xs font-extrabold tracking-wider mt-0.5 sm:mt-1 opacity-95">
             SOM
           </span>
         </div>
@@ -2366,6 +2366,24 @@ ${productPlan?.mvpFeatures?.map((f) => `- ${f}`).join("\n") || "Core features"}
 
       {/* Two Column Layout: Sticky Left TOC + Continuous Document */}
       <div className="lg:flex lg:gap-8 lg:items-start">
+        {/* Mobile Quick-Jump Outline Bar */}
+        <div className="lg:hidden flex items-center gap-1.5 overflow-x-auto pb-3 mb-4 scrollbar-none touch-scroll -mx-1 px-1">
+          {TOC.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => scrollToSection(item.id)}
+              className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-mono font-medium border transition-all cursor-pointer whitespace-nowrap ${
+                activeHeading === item.id
+                  ? "bg-orange-500 text-white border-orange-500 shadow-xs font-bold"
+                  : "bg-white text-slate-700 border-slate-200 hover:border-orange-300"
+              }`}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+
         {/* Left Sticky Table of Contents */}
         <aside className="hidden lg:block w-64 shrink-0 sticky top-24 self-start">
           <div className="bg-white border border-slate-200/80 p-4 rounded-2xl shadow-sm space-y-1">

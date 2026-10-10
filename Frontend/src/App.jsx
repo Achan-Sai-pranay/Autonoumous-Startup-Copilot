@@ -54,6 +54,8 @@ import {
   Rocket,
   ShieldCheck,
   AlertCircle,
+  Menu,
+  X,
 } from "lucide-react";
 
 const isLocalhost =
@@ -404,7 +406,7 @@ export default function App() {
 
   // --- VIEW 2: ORIGINAL LAUNCHPILOT HOMEPAGE (/) -----------------------------
   return (
-    <div className="relative min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased">
+    <div className="relative min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased w-full max-w-full overflow-x-hidden">
       <SplineBackground />
 
       {/* 1. Announcement Banner */}
@@ -438,7 +440,7 @@ export default function App() {
       )}
 
       {/* 3. Main Content Container */}
-      <main className="relative z-10 flex-1 flex flex-col items-center w-full">
+      <main className="relative z-10 flex-1 flex flex-col items-center w-full max-w-full overflow-x-hidden">
         {/* Hero Section with Interactive Prompt Station */}
         <HeroSection
           onStartWithIdea={handleStartWithIdea}
@@ -563,6 +565,7 @@ function Navbar({
   onNavigateHome,
 }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -575,24 +578,38 @@ function Navbar({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Close mobile menu on resize to desktop
+  useEffect(() => {
+    function handleResize() {
+      if (window.innerWidth >= 1024) {
+        setMobileMenuOpen(false);
+      }
+    }
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   return (
-    <header className="w-full border-b border-gray-200 bg-white/95 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between sticky top-0 z-40 transition-all">
+    <header className="w-full border-b border-gray-200 bg-white/95 backdrop-blur-md px-3.5 sm:px-8 py-3 flex items-center justify-between sticky top-0 z-40 transition-all">
       {/* Brand Logo */}
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-3 sm:gap-5">
         <button
-          onClick={onNavigateHome}
-          className="flex items-center gap-2.5 group cursor-pointer"
+          onClick={() => {
+            setMobileMenuOpen(false);
+            onNavigateHome();
+          }}
+          className="flex items-center gap-2 sm:gap-2.5 group cursor-pointer"
         >
-          <div className="h-8 w-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-xs shadow-sm group-hover:scale-105 transition-transform animate-idea-pulse">
+          <div className="h-8 w-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-xs shadow-sm group-hover:scale-105 transition-transform animate-idea-pulse shrink-0">
             IP
           </div>
-          <span className="font-extrabold text-lg tracking-tight text-gray-900">
+          <span className="font-extrabold text-base sm:text-lg tracking-tight text-gray-900">
             Idea<span className="text-orange-600">Pulse</span>
           </span>
         </button>
       </div>
 
-      {/* Nav Links */}
+      {/* Nav Links (Desktop) */}
       <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold text-gray-700">
         <a href="#demo" className="hover:text-orange-600 transition-colors">
           Live Demo
@@ -621,28 +638,29 @@ function Navbar({
         </a>
       </nav>
 
-      {/* Right Actions: Launch Studio / Profile */}
-      <div className="flex items-center gap-2.5 sm:gap-3.5">
+      {/* Right Actions: Launch Studio / Profile / Hamburger Toggle */}
+      <div className="flex items-center gap-2 sm:gap-3">
         <button
           onClick={onStartClick}
-          className="hidden xs:inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 shadow-xs transition-all cursor-pointer active:scale-95"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-lg text-xs font-bold text-white bg-orange-600 hover:bg-orange-700 shadow-xs transition-all cursor-pointer active:scale-95"
         >
           <Zap size={13} />
-          <span>Launch Studio</span>
+          <span className="hidden xs:inline">Launch Studio</span>
+          <span className="xs:hidden">Studio</span>
         </button>
 
         {currentUser ? (
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setDropdownOpen((prev) => !prev)}
-              className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:border-orange-300 transition-all cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1.5 rounded-lg border border-gray-200 bg-gray-50 hover:border-orange-300 transition-all cursor-pointer"
             >
               <img
                 src={currentUser.avatarUrl || "/images/avatar1.jpeg"}
                 alt={currentUser.name}
-                className="w-6 h-6 rounded-full border border-orange-200 object-cover"
+                className="w-6 h-6 rounded-full border border-orange-200 object-cover shrink-0"
               />
-              <span className="text-xs font-semibold text-gray-800 max-w-[90px] truncate hidden sm:inline">
+              <span className="text-xs font-semibold text-gray-800 max-w-[80px] sm:max-w-[100px] truncate hidden sm:inline">
                 {currentUser.name}
               </span>
               <ChevronDown size={13} className="text-gray-400" />
@@ -693,22 +711,156 @@ function Navbar({
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2.5">
             <button
               onClick={() => onOpenAuth?.("login")}
-              className="text-xs sm:text-sm font-semibold text-gray-700 hover:text-orange-600 px-2.5 sm:px-3 py-2 rounded-lg transition-colors cursor-pointer"
+              className="text-xs font-semibold text-gray-700 hover:text-orange-600 px-2 sm:px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
             >
               Sign In
             </button>
             <button
               onClick={onStartClick}
-              className="inline-flex items-center justify-center rounded-lg text-xs sm:text-sm font-bold transition-all bg-orange-600 text-white shadow-xs hover:bg-orange-700 h-9 sm:h-10 px-3.5 sm:px-4 py-2 cursor-pointer active:scale-95"
+              className="hidden sm:inline-flex items-center justify-center rounded-lg text-xs font-bold transition-all bg-slate-900 text-white shadow-xs hover:bg-slate-800 px-3 py-1.5 cursor-pointer active:scale-95"
             >
-              <span>Get Started Free</span>
+              <span>Get Started</span>
             </button>
           </div>
         )}
+
+        {/* Mobile Hamburger Toggle Button */}
+        <button
+          type="button"
+          onClick={() => setMobileMenuOpen((prev) => !prev)}
+          className="lg:hidden p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
+        >
+          {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
+
+      {/* Mobile Navigation Dropdown Drawer */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden fixed inset-x-0 top-[55px] bg-white border-b border-gray-200 shadow-2xl px-5 py-4 z-50 animate-toast-in max-h-[calc(100vh-60px)] overflow-y-auto">
+          <nav className="flex flex-col space-y-2 pb-4 border-b border-gray-100 font-semibold text-sm text-gray-800">
+            <a
+              href="#demo"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-2.5 rounded-xl hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center justify-between"
+            >
+              <span>Live Demo</span>
+              <span className="text-gray-400 text-xs">›</span>
+            </a>
+            <a
+              href="#vc-debate"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-2.5 rounded-xl hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center justify-between"
+            >
+              <span className="flex items-center gap-2">
+                <span>VC War Room</span>
+                <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-bold uppercase">New</span>
+              </span>
+              <span className="text-gray-400 text-xs">›</span>
+            </a>
+            <a
+              href="#pipeline"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-2.5 rounded-xl hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center justify-between"
+            >
+              <span>6-Stage Process</span>
+              <span className="text-gray-400 text-xs">›</span>
+            </a>
+            <a
+              href="#features"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-2.5 rounded-xl hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center justify-between"
+            >
+              <span>12 AI Agents</span>
+              <span className="text-gray-400 text-xs">›</span>
+            </a>
+            <a
+              href="#compare"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-2.5 rounded-xl hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center justify-between"
+            >
+              <span>Compare</span>
+              <span className="text-gray-400 text-xs">›</span>
+            </a>
+            <a
+              href="#samples"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-2.5 rounded-xl hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center justify-between"
+            >
+              <span>Sample Blueprints</span>
+              <span className="text-gray-400 text-xs">›</span>
+            </a>
+            <a
+              href="#pricing"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-2.5 rounded-xl hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center justify-between"
+            >
+              <span>Pricing</span>
+              <span className="text-gray-400 text-xs">›</span>
+            </a>
+            <a
+              href="#faq"
+              onClick={() => setMobileMenuOpen(false)}
+              className="py-2 px-2.5 rounded-xl hover:bg-orange-50 hover:text-orange-600 transition-colors flex items-center justify-between"
+            >
+              <span>FAQ</span>
+              <span className="text-gray-400 text-xs">›</span>
+            </a>
+          </nav>
+
+          {/* Mobile Actions Drawer Bottom */}
+          <div className="pt-4 flex flex-col gap-2.5">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onStartClick();
+              }}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold text-sm text-white bg-orange-600 hover:bg-orange-700 shadow-md shadow-orange-500/20 transition-all cursor-pointer"
+            >
+              <Zap size={16} />
+              <span>Launch Studio (Workspace)</span>
+            </button>
+
+            {currentUser ? (
+              <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenHistory();
+                  }}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-gray-700 hover:text-orange-600 py-1.5"
+                >
+                  <History size={14} />
+                  <span>My Blueprints ({historyCount})</span>
+                </button>
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onSignOut();
+                  }}
+                  className="flex items-center gap-1 text-xs font-semibold text-red-600 hover:text-red-700 py-1.5"
+                >
+                  <LogOut size={14} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onOpenAuth?.("login");
+                }}
+                className="w-full py-2.5 px-4 rounded-xl text-center font-semibold text-xs text-gray-700 hover:text-orange-600 border border-gray-200 bg-gray-50 transition-colors"
+              >
+                Sign In to Your Account
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }

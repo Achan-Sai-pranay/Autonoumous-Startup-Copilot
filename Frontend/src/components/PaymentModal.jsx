@@ -134,10 +134,10 @@ export default function PaymentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden text-slate-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
+      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden text-slate-900 max-h-[92vh] flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-slate-100 bg-slate-50/70">
+        <div className="flex items-center justify-between px-5 sm:px-6 pt-5 pb-4 border-b border-slate-100 bg-slate-50/70 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="h-7 w-7 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-xs shadow-xs animate-idea-pulse">
               IP
@@ -201,7 +201,7 @@ export default function PaymentModal({
           </div>
         ) : (
           /* Main Content */
-          <div className="p-6 space-y-5 max-h-[85vh] overflow-y-auto">
+          <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
             {/* Price Box */}
             <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-50 via-amber-50/60 to-white border border-orange-200 flex items-center justify-between">
               <div>

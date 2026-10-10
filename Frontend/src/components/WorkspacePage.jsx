@@ -54,6 +54,7 @@ import {
   HelpCircle,
   Home,
   Crosshair,
+  X,
 } from "lucide-react";
 import ResourcesModal from "./ResourcesModal.jsx";
 
@@ -104,7 +105,16 @@ export default function WorkspacePage({
 }) {
   const inputRef = useRef(null);
   const mainScrollRef = useRef(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () => typeof window !== "undefined" && window.innerWidth >= 768
+  );
+
+  const closeSidebarOnMobile = useCallback(() => {
+    if (typeof window !== "undefined" && window.innerWidth < 768) {
+      setSidebarOpen(false);
+    }
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [exportingId, setExportingId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
@@ -206,6 +216,7 @@ export default function WorkspacePage({
   };
 
   const handleStartNew = () => {
+    closeSidebarOnMobile();
     setBlueprint(null);
     setActiveView("new");
     setActiveSection("overview");
@@ -217,6 +228,7 @@ export default function WorkspacePage({
   };
 
   const handleOpenStartup = (entry) => {
+    closeSidebarOnMobile();
     if (onLoadProject) {
       onLoadProject(entry);
     } else {
@@ -283,15 +295,30 @@ export default function WorkspacePage({
       {/* ------------------------------------------------------------------- */}
       {/* 1. COLLAPSIBLE FROZEN SIDEBAR                                       */}
       {/* ------------------------------------------------------------------- */}
+
+      {/* Mobile Backdrop Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 md:hidden animate-fade-in"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-slate-200 transition-all duration-300 ease-in-out ${
-          sidebarOpen ? "w-64" : "w-16"
-        } md:static md:translate-x-0 h-full shrink-0`}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-slate-200 transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } md:translate-x-0 md:static ${
+          sidebarOpen ? "w-64" : "md:w-16"
+        } h-full shrink-0 shadow-2xl md:shadow-none`}
       >
         {/* Workspace Brand Header */}
         <div className="h-14 border-b border-slate-100 flex items-center justify-between px-3.5">
           <button
-            onClick={onBackToHome}
+            onClick={() => {
+              closeSidebarOnMobile();
+              onBackToHome();
+            }}
             className="flex items-center gap-2.5 overflow-hidden text-left hover:opacity-85 transition-opacity cursor-pointer"
             title="Back to IdeaPulse Home"
           >
@@ -310,13 +337,25 @@ export default function WorkspacePage({
             )}
           </button>
 
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors hidden md:inline-flex"
-            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            {sidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeft size={16} />}
-          </button>
+          <div className="flex items-center gap-1">
+            {/* Desktop panel toggle */}
+            <button
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors hidden md:inline-flex cursor-pointer"
+              title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              {sidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeft size={16} />}
+            </button>
+
+            {/* Mobile close button */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="md:hidden text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              title="Close menu"
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Sidebar Navigation */}
@@ -330,7 +369,10 @@ export default function WorkspacePage({
             )}
             <nav className="space-y-1">
               <button
-                onClick={() => setActiveView("startups")}
+                onClick={() => {
+                  setActiveView("startups");
+                  closeSidebarOnMobile();
+                }}
                 className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                   activeView === "startups"
                     ? "bg-orange-50 text-orange-600 border border-orange-200 shadow-xs"
@@ -383,6 +425,7 @@ export default function WorkspacePage({
                 {/* Dashboard Overview */}
                 <button
                   onClick={() => {
+                    closeSidebarOnMobile();
                     if (!blueprint && history.length > 0) {
                       handleOpenStartup(history[0]);
                     }
@@ -456,6 +499,7 @@ export default function WorkspacePage({
                           <button
                             key={sec.id}
                             onClick={() => {
+                              closeSidebarOnMobile();
                               if (!blueprint && history.length > 0) {
                                 handleOpenStartup(history[0]);
                               }
@@ -503,6 +547,7 @@ export default function WorkspacePage({
                 {/* Ask the AI */}
                 <button
                   onClick={() => {
+                    closeSidebarOnMobile();
                     window.dispatchEvent(new CustomEvent("open-cofounder-chat"));
                   }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-orange-600 hover:bg-orange-50/60 transition-colors cursor-pointer group"
@@ -515,6 +560,7 @@ export default function WorkspacePage({
                 {/* Pitch deck */}
                 <button
                   onClick={() => {
+                    closeSidebarOnMobile();
                     if (!blueprint && history.length > 0) {
                       handleOpenStartup(history[0]);
                     }
@@ -541,7 +587,10 @@ export default function WorkspacePage({
 
                 {/* Resources */}
                 <button
-                  onClick={() => setShowResourcesModal(true)}
+                  onClick={() => {
+                    closeSidebarOnMobile();
+                    setShowResourcesModal(true);
+                  }}
                   className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors cursor-pointer"
                   title="Founder Resources & Knowledge Vault"
                 >
@@ -738,7 +787,7 @@ export default function WorkspacePage({
                 <span className="font-semibold text-slate-900">Analyze New Startup</span>
               )}
               {activeView === "blueprint" && (
-                <span className="font-semibold text-slate-900 truncate max-w-[160px] sm:max-w-xs">
+                <span className="font-semibold text-slate-900 truncate max-w-[110px] xs:max-w-[160px] sm:max-w-xs">
                   {idea ? idea.slice(0, 32) + "…" : "Startup Blueprint"}
                 </span>
               )}
@@ -1303,7 +1352,7 @@ function WorkspaceInput({
         </div>
 
         {/* Bottom Deck Actions */}
-        <div className="flex items-center justify-between px-2 pt-3 border-t border-slate-100">
+        <div className="flex flex-wrap items-center justify-between gap-2.5 px-2 pt-3 border-t border-slate-100">
           <div className="flex items-center gap-2 text-[11px] text-slate-400 font-mono">
             <span>{idea.length} chars</span>
             {idea.length > 0 && (
@@ -1317,21 +1366,21 @@ function WorkspaceInput({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
             {micSupported && (
               <button
                 type="button"
                 onClick={toggleListening}
                 disabled={isLoading}
                 title={isListening ? "Stop recording" : "Dictate your idea (Chrome/Edge)"}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-medium transition-all cursor-pointer ${
                   isListening
                     ? "bg-red-50 text-red-600 border border-red-200 animate-pulse"
                     : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
                 }`}
               >
                 {isListening ? <MicOff size={14} /> : <Mic size={14} />}
-                <span className="hidden sm:inline text-[11px]">
+                <span className="hidden xs:inline text-[11px]">
                   {isListening ? "Listening..." : "Dictate"}
                 </span>
               </button>
@@ -1347,7 +1396,7 @@ function WorkspaceInput({
                     onOpenPayment?.();
                   }
                 }}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-500/20 transition-all cursor-pointer active:scale-95"
+                className="flex items-center justify-center gap-2 px-4 xs:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-500/20 transition-all cursor-pointer active:scale-95"
               >
                 <Zap size={15} />
                 <span>{currentUser ? "Upgrade to Pro" : "Sign Up for 3 Free Ideas"}</span>
@@ -1356,7 +1405,7 @@ function WorkspaceInput({
               <button
                 onClick={onGenerate}
                 disabled={isLoading || !idea.trim()}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-orange-600 hover:bg-orange-700 text-white disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed shadow-md shadow-orange-500/20 transition-all cursor-pointer active:scale-95"
+                className="flex items-center justify-center gap-2 px-4 xs:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-orange-600 hover:bg-orange-700 text-white disabled:bg-slate-200 disabled:text-slate-400 disabled:cursor-not-allowed shadow-md shadow-orange-500/20 transition-all cursor-pointer active:scale-95"
               >
                 <Zap size={15} className={isLoading ? "animate-spin" : ""} />
                 <span>{isLoading ? "Synthesizing…" : "Generate Blueprint"}</span>

@@ -456,7 +456,7 @@ function EditableList({
                   <ItemIcon size={14} className={`${colorStyles.icon} shrink-0 mt-0.5`} />
                   <span className="break-words select-text">{item}</span>
                 </div>
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 shrink-0 ml-1">
+                <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-1 shrink-0 ml-1">
                   <button
                     type="button"
                     onClick={() => handleStartEdit(idx, item)}
@@ -1514,10 +1514,10 @@ function ExportButton({ icon: Icon, label, busy, onClick }) {
     <button
       onClick={onClick}
       disabled={busy}
-      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:text-orange-600 hover:border-orange-300 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 shadow-2xs cursor-pointer"
+      className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:text-orange-600 hover:border-orange-300 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 shadow-2xs cursor-pointer"
     >
       {busy ? <Loader2 size={13} className="animate-spin text-orange-500" /> : <Icon size={13} />}
-      {busy ? "Synthesizing…" : label}
+      <span className="whitespace-nowrap">{busy ? "Synthesizing…" : label}</span>
     </button>
   );
 }
