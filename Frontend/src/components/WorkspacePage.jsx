@@ -446,7 +446,7 @@ export default function WorkspacePage({
 
                   {/* Indented Sub-sections with the SLIGHT ASH VERTICAL LINE */}
                   {sidebarOpen && isBusinessOpen && (
-                    <div className="border-l-2 border-slate-200 ml-4 pl-3.5 space-y-1 my-1.5 animate-fade-in">
+                    <div className="border-l-2 border-slate-200 ml-4 pl-3.5 space-y-1.5 my-1.5 animate-fade-in">
                       {BUSINESS_SECTIONS.map((sec) => {
                         const isActive =
                           activeView === "blueprint" &&
@@ -466,18 +466,29 @@ export default function WorkspacePage({
                                 scrollToSection(`section-${sec.id}`);
                               }, 40);
                             }}
-                            className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between group ${
+                            className={`w-full text-left rounded-xl transition-all cursor-pointer flex items-center justify-between group ${
                               isActive
-                                ? "bg-slate-900 text-white font-semibold shadow-xs"
-                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium"
+                                ? "bg-slate-900 text-white font-bold shadow-xs ring-1 ring-orange-500/50 py-2 px-2.5"
+                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium text-xs py-1.5 px-2.5"
                             }`}
                           >
-                            <span className="truncate">{sec.label}</span>
+                            <div className="flex items-center gap-2 min-w-0">
+                              {isActive && (
+                                <span className="h-2 w-2 rounded-full bg-orange-400 shrink-0 animate-pulse" />
+                              )}
+                              <span
+                                className={`truncate ${
+                                  isActive ? "text-xs font-bold text-white tracking-tight" : "text-xs font-medium text-slate-600"
+                                }`}
+                              >
+                                {sec.label}
+                              </span>
+                            </div>
                             <span
-                              className={`text-[10px] font-mono px-1 rounded ${
+                              className={`font-mono transition-all ${
                                 isActive
-                                  ? "text-orange-400 font-bold"
-                                  : "text-slate-400 group-hover:text-slate-600"
+                                  ? "text-xs font-black px-2 py-0.5 rounded-md bg-orange-500 text-white shadow-2xs"
+                                  : "text-[10px] text-slate-400 group-hover:text-slate-600 px-1 rounded"
                               }`}
                             >
                               {sec.numeral}

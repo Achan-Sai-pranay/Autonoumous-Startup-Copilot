@@ -534,33 +534,77 @@ function EditableList({
 // Section Gateway Header for Continuous Story Flow & AI Agent Telemetry
 // Elevated card layout with signature orange gradient top bar matching Section 1.
 // ---------------------------------------------------------------------------
-function SectionGatewayHeader({ numeral, title, subtitle, badge, agent, onJumpTop }) {
+function SectionGatewayHeader({ numeral, title, subtitle, badge, agent, onJumpTop, isActive = false }) {
   return (
-    <div className="rounded-3xl bg-white border border-slate-200/90 p-6 sm:p-7 mb-7 shadow-xs relative overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600" />
+    <div
+      className={`rounded-3xl bg-white border p-6 sm:p-7 mb-7 shadow-xs relative overflow-hidden transition-all duration-300 ${
+        isActive
+          ? "border-orange-300 ring-2 ring-orange-500/20 shadow-md bg-gradient-to-b from-orange-50/20 via-white to-white"
+          : "border-slate-200/90 shadow-2xs hover:border-slate-300"
+      }`}
+    >
+      {/* Top Accent Line: Signature warm orange gradient */}
+      <div
+        className={`absolute top-0 left-0 right-0 transition-all duration-300 ${
+          isActive
+            ? "h-1.5 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 shadow-sm shadow-orange-500/30"
+            : "h-1 bg-gradient-to-r from-orange-400/80 via-amber-400/80 to-orange-500/80"
+        }`}
+      />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative z-10">
-        <div className="space-y-2.5 max-w-3xl">
+        <div className="space-y-3 max-w-3xl">
+          {/* Top metadata pills */}
           <div className="flex flex-wrap items-center gap-2">
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200 uppercase tracking-wider">
-              Stage {numeral} • {badge || title}
+            {/* Stage Numeral Badge - Prominent, larger, and highlighted when Active */}
+            <span
+              className={`inline-flex items-center gap-2 rounded-full font-mono transition-all duration-200 uppercase tracking-wider ${
+                isActive
+                  ? "px-3.5 py-1.5 text-xs sm:text-sm font-black bg-orange-100 text-orange-900 border-2 border-orange-400 shadow-xs"
+                  : "px-2.5 py-1 text-[10px] sm:text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200"
+              }`}
+            >
+              {isActive && (
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
+                </span>
+              )}
+              <span>Stage {numeral} • {badge || title}</span>
             </span>
+
             {agent && (
               <>
                 <span className="text-slate-300 text-xs font-mono">•</span>
-                <span className="inline-flex items-center gap-1.5 text-xs font-mono text-slate-500">
-                  <Bot size={13} className="text-orange-500" />
-                  Specialist: <strong className="text-slate-800">{agent}</strong>
+                <span
+                  className={`inline-flex items-center gap-1.5 text-xs font-mono transition-colors rounded-lg px-2 py-0.5 ${
+                    isActive
+                      ? "text-orange-950 font-semibold bg-orange-50/80 border border-orange-200"
+                      : "text-slate-500"
+                  }`}
+                >
+                  <Bot size={13} className={isActive ? "text-orange-600 animate-pulse" : "text-orange-500"} />
+                  Specialist: <strong className={isActive ? "text-slate-950 font-bold" : "text-slate-800"}>{agent}</strong>
                 </span>
               </>
             )}
           </div>
 
-          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
+          {/* Heading - Bigger and Highlighted when Active */}
+          <h2
+            className={`font-black tracking-tight transition-all duration-200 ${
+              isActive
+                ? "text-2xl sm:text-3xl lg:text-[32px] text-slate-950"
+                : "text-xl sm:text-2xl text-slate-800"
+            }`}
+          >
             <span>{title}</span>
           </h2>
 
           {subtitle && (
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
+            <p className={`text-xs sm:text-sm leading-relaxed font-sans transition-colors ${
+              isActive ? "text-slate-700 font-medium" : "text-slate-600"
+            }`}>
               {subtitle}
             </p>
           )}
@@ -765,49 +809,96 @@ export default function BlueprintDashboard({
     }
   }, [blueprint, displayMode, scrollContainerRef]); // Removed activeSection dependency
 
-  // Intersection Observer for continuous scrolling spy rail sync
+  // Real-time focal reading-line scroll synchronization across 7 blueprint stages
   useEffect(() => {
     if (displayMode !== "continuous" || typeof window === "undefined") return;
 
     const container = scrollContainerRef?.current || null;
-    let observer;
+    let rafId = null;
 
-    const setupObserver = () => {
-      // Strictly target blueprint sections (never sticky buttons or rail elements)
-      const sectionElements = document.querySelectorAll("section.blueprint-section[data-section-id]");
+    const checkActiveSection = () => {
+      // Guard: don't update activeSection during programmatic scrolls
+      if (isProgrammaticScrollRef.current) return;
+
+      const sectionElements = Array.from(
+        document.querySelectorAll("section.blueprint-section[data-section-id]")
+      );
       if (sectionElements.length === 0) return;
 
-      observer = new IntersectionObserver(
-        (entries) => {
-          // Guard: don't update activeSection during programmatic scrolls
-          if (isProgrammaticScrollRef.current) return;
+      const containerEl = scrollContainerRef?.current;
+      const containerRect = containerEl
+        ? containerEl.getBoundingClientRect()
+        : { top: 0, height: window.innerHeight };
 
-          const visible = entries.filter((e) => e.isIntersecting);
-          if (visible.length > 0) {
-            // Pick section nearest to reading line
-            visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
-            const topSec = visible[0].target.getAttribute("data-section-id");
-            if (topSec && topSec !== activeSectionRef.current) {
-              activeSectionRef.current = topSec;
-              setActiveSection(topSec);
-            }
-          }
-        },
-        {
-          root: container,
-          rootMargin: "-20px 0px -60% 0px",
-          threshold: [0, 0.1, 0.25],
+      // Check if user is scrolled near the bottom of container (activate last stage)
+      if (
+        containerEl &&
+        containerEl.scrollHeight - containerEl.scrollTop - containerEl.clientHeight < 80
+      ) {
+        const lastSec = sectionElements[sectionElements.length - 1]?.getAttribute("data-section-id");
+        if (lastSec && lastSec !== activeSectionRef.current) {
+          activeSectionRef.current = lastSec;
+          setActiveSection(lastSec);
         }
-      );
+        return;
+      }
 
-      sectionElements.forEach((el) => observer.observe(el));
+      // Reading focal line: 120px below top of container viewport
+      const readingLine = containerRect.top + 120;
+
+      let foundSec = null;
+      for (const el of sectionElements) {
+        const rect = el.getBoundingClientRect();
+        if (rect.top <= readingLine && rect.bottom > readingLine) {
+          foundSec = el.getAttribute("data-section-id");
+          break;
+        }
+      }
+
+      // If above first section or at top
+      if (!foundSec && sectionElements[0]) {
+        const firstRect = sectionElements[0].getBoundingClientRect();
+        if (firstRect.top > readingLine) {
+          foundSec = sectionElements[0].getAttribute("data-section-id");
+        }
+      }
+
+      // Fallback: pick section closest to reading line
+      if (!foundSec && sectionElements.length > 0) {
+        let closestSec = null;
+        let minDistance = Infinity;
+        sectionElements.forEach((el) => {
+          const rect = el.getBoundingClientRect();
+          const dist = Math.abs(rect.top - readingLine);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestSec = el.getAttribute("data-section-id");
+          }
+        });
+        foundSec = closestSec;
+      }
+
+      if (foundSec && foundSec !== activeSectionRef.current) {
+        activeSectionRef.current = foundSec;
+        setActiveSection(foundSec);
+      }
     };
 
-    const timer = setTimeout(setupObserver, 100);
+    const handleScroll = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(checkActiveSection);
+    };
+
+    const target = container || window;
+    target.addEventListener("scroll", handleScroll, { passive: true });
+
+    // Initial check after elements render
+    const timer = setTimeout(checkActiveSection, 100);
 
     return () => {
+      target.removeEventListener("scroll", handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
       clearTimeout(timer);
-      if (observer) observer.disconnect();
     };
   }, [displayMode, scrollContainerRef, setActiveSection]);
 
@@ -1089,6 +1180,7 @@ export default function BlueprintDashboard({
                       isFounderMode={isFounderMode}
                       aiDebate={aiDebate}
                       onNavigate={handleSmoothScrollToSection}
+                      isActive={activeSection === "overview" || activeSection === "dashboard"}
                     />
                   </SectionErrorBoundary>
                 </section>
@@ -1106,6 +1198,7 @@ export default function BlueprintDashboard({
                     badge="VC War Room"
                     agent="Groq Llama, DeepSeek & Gemini"
                     onJumpTop={handleScrollToTop}
+                    isActive={activeSection === "vc-debate"}
                   />
                   <SectionErrorBoundary key="vc-debate">
                     <AiDebateWarRoomSection
@@ -1132,6 +1225,7 @@ export default function BlueprintDashboard({
                     badge="ICP & Personas"
                     agent="Customer Discovery Agent"
                     onJumpTop={handleScrollToTop}
+                    isActive={activeSection === "customer-discovery"}
                   />
                   <SectionErrorBoundary key="customer-discovery">
                     <CustomerDiscoverySection
@@ -1158,6 +1252,7 @@ export default function BlueprintDashboard({
                     badge="Market Intelligence"
                     agent="Competitive Intelligence Agent"
                     onJumpTop={handleScrollToTop}
+                    isActive={activeSection === "market-competitors"}
                   />
                   <SectionErrorBoundary key="market-competitors">
                     <MarketCompetitorsSection
@@ -1184,6 +1279,7 @@ export default function BlueprintDashboard({
                     badge="Architecture & MVP"
                     agent="Product & Tech Architect"
                     onJumpTop={handleScrollToTop}
+                    isActive={activeSection === "product-mvp"}
                   />
                   <SectionErrorBoundary key="product-mvp">
                     <ProductMvpSection
@@ -1209,6 +1305,7 @@ export default function BlueprintDashboard({
                     badge="Financial Modeler"
                     agent="Financial Modeler Agent"
                     onJumpTop={handleScrollToTop}
+                    isActive={activeSection === "finances"}
                   />
                   <SectionErrorBoundary key="finances">
                     <FinancesSection
@@ -1236,6 +1333,7 @@ export default function BlueprintDashboard({
                     badge="Launch Playbook"
                     agent="Growth & GTM Strategist"
                     onJumpTop={handleScrollToTop}
+                    isActive={activeSection === "gtm"}
                   />
                   <SectionErrorBoundary key="gtm">
                     <GoToMarketSection
@@ -1515,6 +1613,7 @@ function OverviewSection({
   isFounderMode = true,
   aiDebate = {},
   onNavigate = () => {},
+  isActive = false,
 }) {
   const parseNum = (val, fallback) => {
     if (typeof val === "number" && !isNaN(val)) return val;
@@ -1613,21 +1712,62 @@ function OverviewSection({
   return (
     <div className="space-y-7 animate-fade-in text-slate-900">
       {/* 1. Executive Viability Spotlight Header */}
-      <div className="rounded-3xl bg-white border border-slate-200/90 p-6 sm:p-7 shadow-xs relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600" />
+      <div
+        className={`rounded-3xl bg-white border p-6 sm:p-7 shadow-xs relative overflow-hidden transition-all duration-300 ${
+          isActive
+            ? "border-orange-300 ring-2 ring-orange-500/20 shadow-md bg-gradient-to-b from-orange-50/20 via-white to-white"
+            : "border-slate-200/90 shadow-2xs hover:border-slate-300"
+        }`}
+      >
+        {/* Top Accent Line: Signature warm orange gradient */}
+        <div
+          className={`absolute top-0 left-0 right-0 transition-all duration-300 ${
+            isActive
+              ? "h-1.5 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 shadow-sm shadow-orange-500/30"
+              : "h-1 bg-gradient-to-r from-orange-400/80 via-amber-400/80 to-orange-500/80"
+          }`}
+        />
+
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           <div className="space-y-3 max-w-3xl">
+            {/* Top metadata pills */}
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200 uppercase tracking-wider">
-                Stage 01 • Executive Overview & Viability
+              {/* Stage Numeral Badge - Prominent, larger, and highlighted when Active */}
+              <span
+                className={`inline-flex items-center gap-2 rounded-full font-mono transition-all duration-200 uppercase tracking-wider ${
+                  isActive
+                    ? "px-3.5 py-1.5 text-xs sm:text-sm font-black bg-orange-100 text-orange-900 border-2 border-orange-400 shadow-xs"
+                    : "px-2.5 py-1 text-[10px] sm:text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200"
+                }`}
+              >
+                {isActive && (
+                  <span className="relative flex h-2 w-2">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
+                  </span>
+                )}
+                <span>Stage 01 • Executive Overview & Viability</span>
               </span>
               <span className="text-slate-300 text-xs font-mono">•</span>
-              <span className="text-xs font-mono text-slate-500">
-                Industry: <strong className="text-slate-800">{toSafeString(ideaAnalysis?.domain, "Digital Venture")}</strong>
+              <span
+                className={`text-xs font-mono transition-colors rounded-lg px-2 py-0.5 ${
+                  isActive
+                    ? "text-orange-950 font-semibold bg-orange-50/80 border border-orange-200"
+                    : "text-slate-500"
+                }`}
+              >
+                Industry: <strong className={isActive ? "text-slate-950 font-bold" : "text-slate-800"}>{toSafeString(ideaAnalysis?.domain, "Digital Venture")}</strong>
               </span>
             </div>
 
-            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
+            {/* Heading - Bigger and Highlighted when Active */}
+            <h2
+              className={`font-black tracking-tight transition-all duration-200 ${
+                isActive
+                  ? "text-2xl sm:text-3xl lg:text-[32px] text-slate-950"
+                  : "text-xl sm:text-2xl text-slate-800"
+              }`}
+            >
               <span>{toSafeString(ventureTitle, "Startup Blueprint")}</span>
             </h2>
 
@@ -1637,7 +1777,13 @@ function OverviewSection({
           </div>
 
           {/* Viability Score Badge */}
-          <div className="flex flex-col items-center justify-center bg-slate-50 border border-slate-200/80 p-5 rounded-2xl text-center shrink-0 min-w-[170px] shadow-2xs">
+          <div
+            className={`flex flex-col items-center justify-center border p-5 rounded-2xl text-center shrink-0 min-w-[170px] shadow-2xs transition-all ${
+              isActive
+                ? "bg-orange-50/40 border-orange-200 ring-1 ring-orange-500/20"
+                : "bg-slate-50 border border-slate-200/80"
+            }`}
+          >
             <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
               Viability Score
             </span>
