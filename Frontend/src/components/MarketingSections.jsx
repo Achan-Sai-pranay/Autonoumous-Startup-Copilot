@@ -26,6 +26,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState, useRef } from "react";
+import MarketTopology3D from "./MarketTopology3D";
 import {
   FileText,
   Users,
@@ -73,6 +74,7 @@ import {
   BrainCircuit,
   Maximize2,
   Minimize2,
+  Compass,
   Briefcase,
   GraduationCap,
   Bot,
@@ -284,10 +286,9 @@ export function HeroSection({
 // 4. Live Product Simulator (Studio macOS Pro Display Mockup)
 // ---------------------------------------------------------------------------
 export function LiveProductSimulator({ onCtaClick }) {
-  const [activeTab, setActiveTab] = useState("debate");
+  const [activeTab, setActiveTab] = useState("topology");
   const [defenseIndex, setDefenseIndex] = useState(0);
   const [macTilt, setMacTilt] = useState({ x: 0, y: 0 });
-  const [audioSimPlaying, setAudioSimPlaying] = useState(false);
 
   // Financial calculations
   const [customerCount, setCustomerCount] = useState(500);
@@ -356,8 +357,8 @@ export function LiveProductSimulator({ onCtaClick }) {
             Inspect the institutional blueprint output
           </h2>
           <p className="text-slate-500 text-xs sm:text-base mt-2">
-            Click through the interactive studio below to experience how LaunchPilot transforms a raw concept into
-            an adversarial venture thesis with opposing VC arguments, financial simulations, and Mom Test discovery.
+            Experience how LaunchPilot synthesizes 3D risk topologies, bottom-up market capture arithmetic,
+            and adversarial multi-agent debate into an institutional execution memo.
           </p>
         </div>
 
@@ -400,27 +401,16 @@ export function LiveProductSimulator({ onCtaClick }) {
               </span>
             </div>
 
-            {/* Live Inference & Audio Equalizer Indicator */}
+            {/* Clean Production Status Bar */}
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[10px] font-mono text-emerald-400">
-                <div className="flex items-end gap-0.5 h-3">
-                  <span className="w-0.5 bg-emerald-400 rounded-full eq-bar-1" />
-                  <span className="w-0.5 bg-emerald-400 rounded-full eq-bar-2" />
-                  <span className="w-0.5 bg-emerald-400 rounded-full eq-bar-3" />
-                  <span className="w-0.5 bg-emerald-400 rounded-full eq-bar-4" />
-                  <span className="w-0.5 bg-emerald-400 rounded-full eq-bar-5" />
-                </div>
-                <span className="font-semibold uppercase tracking-wider">3-AI Stream Active</span>
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[10px] font-mono text-slate-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="text-slate-400">Environment:</span>
+                <span className="text-slate-200 font-semibold">Production</span>
+                <span className="text-slate-600 hidden sm:inline">|</span>
+                <span className="text-slate-400 hidden sm:inline">Latency:</span>
+                <span className="text-emerald-400 font-bold hidden sm:inline">140ms</span>
               </div>
-
-              <button
-                type="button"
-                onClick={() => setAudioSimPlaying(!audioSimPlaying)}
-                title="Toggle simulated debate telemetry audio"
-                className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-800 text-xs transition-colors cursor-pointer"
-              >
-                {audioSimPlaying ? <Volume2 size={13} className="text-orange-400" /> : <VolumeX size={13} className="text-slate-500" />}
-              </button>
             </div>
           </div>
 
@@ -428,11 +418,12 @@ export function LiveProductSimulator({ onCtaClick }) {
           <div className="bg-slate-900/90 px-4 sm:px-6 py-2.5 border-b border-slate-800/80 flex items-center justify-between overflow-x-auto scrollbar-none touch-scroll gap-2 relative z-30">
             <div className="flex items-center gap-1.5">
               {[
-                { id: "debate", label: "3-AI VC War Room", icon: Swords, badge: "Live" },
+                { id: "topology", label: "3D Risk Topology", icon: Compass, badge: "3D WebGL" },
+                { id: "debate", label: "3-AI VC Committee", icon: Swords, badge: "Adversarial" },
                 { id: "tam", label: "TAM / SAM / SOM", icon: Target },
                 { id: "momtest", label: "The Mom Test", icon: Users },
                 { id: "financials", label: "Unit Economics", icon: DollarSign },
-                { id: "export", label: "PRD & PDF Dossier", icon: FileText },
+                { id: "export", label: "PRD Dossier", icon: FileText },
               ].map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -461,6 +452,9 @@ export function LiveProductSimulator({ onCtaClick }) {
 
           {/* Mac Display Canvas Area */}
           <div className="p-5 sm:p-8 min-h-[460px] flex flex-col justify-between relative z-20 bg-slate-950/60">
+            {/* --- TAB 0: 3D RISK TOPOLOGY (Three.js WebGL) --- */}
+            {activeTab === "topology" && <MarketTopology3D />}
+
             {/* --- TAB 1: 3-AI VC WAR ROOM --- */}
             {activeTab === "debate" && (
               <div className="space-y-6 animate-fade-in">
@@ -942,7 +936,6 @@ export function LiveProductSimulator({ onCtaClick }) {
 export function VcWarRoomSpotlight({ onCtaClick }) {
   const [selectedTopic, setSelectedTopic] = useState("saas");
   const [activeRound, setActiveRound] = useState(1);
-  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [founderChallengeOpen, setFounderChallengeOpen] = useState(false);
 
   const debateTopics = {
@@ -1258,26 +1251,11 @@ export function VcWarRoomSpotlight({ onCtaClick }) {
                 ))}
               </div>
 
-              {/* Audio Stream Simulation Toggle */}
-              <button
-                type="button"
-                onClick={() => setIsPlayingAudio(!isPlayingAudio)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono transition-all cursor-pointer ${
-                  isPlayingAudio
-                    ? "bg-emerald-950/80 border-emerald-500 text-emerald-300"
-                    : "bg-slate-900 border-slate-800 text-slate-300 hover:text-white"
-                }`}
-              >
-                {isPlayingAudio ? <Pause size={13} className="text-emerald-400" /> : <Play size={13} className="text-orange-400" />}
-                <span>{isPlayingAudio ? "Streaming Audio..." : "Simulate Audio"}</span>
-                {isPlayingAudio && (
-                  <div className="flex items-end gap-0.5 h-3 ml-1">
-                    <span className="w-0.5 bg-emerald-400 rounded-full eq-bar-1" />
-                    <span className="w-0.5 bg-emerald-400 rounded-full eq-bar-3" />
-                    <span className="w-0.5 bg-emerald-400 rounded-full eq-bar-5" />
-                  </div>
-                )}
-              </button>
+              {/* Institutional Audit Pipeline Pill */}
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-slate-300">
+                <ShieldCheck size={13} className="text-emerald-400" />
+                <span>Deterministic Arbitration</span>
+              </div>
             </div>
           </div>
 
@@ -1974,10 +1952,12 @@ export function TestimonialsSection() {
 // 11. Transparent Pricing Section
 // ---------------------------------------------------------------------------
 export function PricingSection({ onSelectPlan }) {
+  const [billingCycle, setBillingCycle] = useState("annual");
+
   return (
     <section id="pricing" className="py-20 sm:py-24 bg-white border-b border-slate-200 reveal-on-scroll w-full overflow-hidden">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
-        <div className="text-center max-w-2xl mx-auto mb-14">
+        <div className="text-center max-w-2xl mx-auto mb-10">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-mono font-bold mb-3 shadow-2xs">
             <DollarSign size={12} className="text-orange-600" />
             <span>TRANSPARENT PRICING</span>
@@ -1990,14 +1970,49 @@ export function PricingSection({ onSelectPlan }) {
           </p>
         </div>
 
+        {/* Billing Interval Switcher */}
+        <div className="flex items-center justify-center gap-3 mb-10">
+          <div className="p-1 rounded-2xl bg-slate-100 border border-slate-200/80 inline-flex items-center gap-1 shadow-2xs">
+            <button
+              type="button"
+              onClick={() => setBillingCycle("monthly")}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                billingCycle === "monthly"
+                  ? "bg-white text-slate-900 shadow-xs font-bold"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              Monthly Billing
+            </button>
+            <button
+              type="button"
+              onClick={() => setBillingCycle("annual")}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-2 ${
+                billingCycle === "annual"
+                  ? "bg-white text-slate-900 shadow-xs font-bold"
+                  : "text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              <span>Annual Billing</span>
+              <span className="px-1.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-emerald-100 text-emerald-700">
+                Save 20%
+              </span>
+            </button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
           {/* Card 1: Free Starter (3 ideas/week) */}
-          <div className="rounded-3xl p-6 sm:p-8 bg-white border-2 border-orange-500 shadow-lg shadow-orange-500/10 flex flex-col justify-between relative spotlight-card">
-            <span className="absolute -top-3 left-6 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-600 text-white font-mono shadow-2xs">
-              Current Active Plan
-            </span>
-
+          <div className="rounded-3xl p-6 sm:p-8 bg-white border-2 border-orange-500/80 shadow-lg shadow-orange-500/10 flex flex-col justify-between relative transition-all">
             <div>
+              {/* Card Header Badge */}
+              <div className="flex items-center justify-between gap-2 mb-4">
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-50 text-orange-700 border border-orange-200 font-mono">
+                  Current Active Plan
+                </span>
+                <span className="text-[11px] font-mono text-slate-400">Zero Credit Card</span>
+              </div>
+
               <div className="flex items-baseline justify-between mb-2">
                 <h3 className="text-xl font-bold text-slate-900 font-display">Free Starter</h3>
                 <div className="flex items-baseline gap-1">
@@ -2014,6 +2029,7 @@ export function PricingSection({ onSelectPlan }) {
                   "3 Startup Blueprints per week (Free)",
                   "All 12 Specialist AI Co-Founders",
                   "3-AI VC War Room Debate (Llama + DeepSeek + Gemini)",
+                  "Interactive 3D Risk Topology Visualizer",
                   "Bottom-Up TAM / SAM / SOM Market Sizing",
                   "Full SWOT & Competitor Vulnerability matrix",
                   "Financial Unit Economics & Cost Simulator",
@@ -2035,17 +2051,26 @@ export function PricingSection({ onSelectPlan }) {
             </button>
           </div>
 
-          {/* Card 2: Pro Founder (10 ideas/week - ₹149/mo) */}
-          <div className="rounded-3xl p-6 sm:p-8 bg-slate-950 text-white flex flex-col justify-between relative shadow-xl border border-slate-800 spotlight-card">
-            <span className="absolute -top-3 right-6 px-3 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-600 text-white font-mono shadow-2xs">
-              Popular with Founders
-            </span>
-
+          {/* Card 2: Pro Founder */}
+          <div className="rounded-3xl p-6 sm:p-8 bg-slate-950 text-white flex flex-col justify-between relative shadow-2xl border border-slate-800 transition-all">
             <div>
+              {/* Card Header Badge */}
+              <div className="flex items-center justify-between gap-2 mb-4">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-orange-600 text-white font-mono shadow-sm">
+                  <Sparkles size={11} />
+                  Popular with Founders
+                </span>
+                <span className="text-[11px] font-mono text-emerald-400 font-semibold">
+                  {billingCycle === "annual" ? "Save ₹360 / Year" : "Flexible Month-to-Month"}
+                </span>
+              </div>
+
               <div className="flex items-baseline justify-between mb-2">
                 <h3 className="text-xl font-bold text-white font-display">Pro Founder</h3>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-white font-mono">₹149</span>
+                  <span className="text-3xl font-black text-white font-mono">
+                    {billingCycle === "annual" ? "₹119" : "₹149"}
+                  </span>
                   <span className="text-xs text-slate-400 font-mono">/ month</span>
                 </div>
               </div>
@@ -2077,7 +2102,11 @@ export function PricingSection({ onSelectPlan }) {
               className="w-full py-3.5 px-6 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 magnetic-btn"
             >
               <Zap size={16} />
-              <span>Upgrade to Pro (₹149 / mo)</span>
+              <span>
+                {billingCycle === "annual"
+                  ? "Upgrade to Pro (₹119 / mo • Billed Annually)"
+                  : "Upgrade to Pro (₹149 / mo)"}
+              </span>
             </button>
           </div>
         </div>
