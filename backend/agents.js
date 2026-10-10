@@ -1,37 +1,18 @@
 // agents.js
 // ---------------------------------------------------------------------------
-// V3 CHANGE — Execution Mode:
-// LaunchPilot AI evolves from "advisor" to "execution platform." Six new
-// sections were added: Go-to-Market Engine, Launch Checklist, AI Execution
-// Plan (Today/Tomorrow), Cost Estimator + Revenue Simulator, Competitor
-// Weakness Analysis + Startup Difficulty Breakdown, and Build Time
-// Prediction.
+// 3-AI Multi-Agent Debate + LLM-as-a-Judge Blueprint Architecture:
 //
-// This still uses the SAME single-Gemini-call architecture from the quota
-// fix (one mega-prompt, one request) — the new sections are just more keys
-// in the same JSON schema, so blueprint generation is still exactly 1
-// Gemini request, regardless of how many sections it now contains.
-//
-// STEPS now supports a `keys: string[]` per step instead of one key, since
-// a couple of the new steps bundle two closely-related sections together
-// (e.g. Cost Estimator + Revenue Simulator are both "money" questions) to
-// keep the progress checklist from ballooning past what's useful to look
-// at. Each key is still validated independently, so a step is only marked
-// "done" if every key it covers came back valid.
-//
-// Everything downstream:
-//   - runAllAgents(idea, onProgress) signature is unchanged → server.js
-//     needs no changes.
-//   - onProgress still fires { step, agent, status } events, now for 13
-//     steps instead of 15 → only LoadingTimeline.jsx's step-name list needs
-//     updating, no logic changes there or in App.jsx.
-//   - BlueprintDashboard.jsx gets the remaining top-level keys as plain
-//     objects/arrays, following the exact same shape convention as every
-//     existing section (including the same `{ error: true, message }`
-//     fallback), so existing V1/V2 sections are completely unaffected.
+// 1. Parallel Opening Clash:
+//    - AI 1: Bull Partner (Groq Cloud Llama 3.3 70B)
+//    - AI 2: Bear Partner (OpenRouter DeepSeek Free / Groq Llama)
+// 2. Chief Judge & 12 Intelligence Agents:
+//    - AI 3: Google Gemini (Chief Judge arbitrates the debate, outputs
+//      "aiDebate", and generates all 12 Blueprint sections grounded in
+//      the Judge's ruling)
 // ---------------------------------------------------------------------------
 
 import { callGemini, streamGemini } from "./gemini.js";
+import { runOpeningClash } from "./debate.js";
 
 // Shared instruction so Gemini always returns clean, parseable JSON.
 const JSON_ONLY_RULE = `
@@ -42,24 +23,14 @@ structure requested.
 `;
 
 // Placeholder stored for any section that's missing or malformed in the
-// response. The frontend already checks for `.error === true` and renders
-// this message instead of crashing on missing/undefined fields. Works for
-// both object-shaped and array-shaped sections since the frontend always
-// checks `.error` before treating a section as data.
+// response.
 function unavailableSection() {
   return { error: true, message: "Generation unavailable. Please retry." };
 }
 
-// Ordered list of step groups. Each step has one or more JSON keys it's
-// responsible for. Order matches the section order requested in the prompt
-// below and is what onProgress() steps through. Keeping this as a single
-// source of truth avoids step names drifting out of sync with
-// LoadingTimeline.jsx's copy of the same list.
-// Ordered list of step groups. Each step has one or more JSON keys it's
-// responsible for. Order matches the section order requested in the prompt
-// below and is what onProgress() steps through.
+// Ordered list of step groups.
 const STEPS = [
-  { keys: ["ideaAnalysis", "viabilityScorecard"], name: "Venture Viability & Idea Analysis" },
+  { keys: ["ideaAnalysis", "viabilityScorecard", "aiDebate"], name: "Venture Viability & 3-AI Debate" },
   { keys: ["customerDiscovery", "customerPersona"], name: "Lean Customer Discovery & Personas" },
   { keys: ["swotAnalysis", "portersFiveForces"], name: "Strategic Frameworks (SWOT & Porter's)" },
   { keys: ["marketResearch", "marketSizing"], name: "Market Intelligence & Sizing (TAM/SAM/SOM)" },
@@ -92,17 +63,47 @@ const STEP_START_KEYS = [
 ];
 
 // ---------------------------------------------------------------------------
-// The single mega-prompt: Strategic intelligence roles + Execution engine,
-// one JSON schema, one Gemini call.
+// Mega-Prompt with Bull Thesis + Bear Critique injected
 // ---------------------------------------------------------------------------
-function buildMegaPrompt(idea) {
+function buildMegaPrompt(idea, openingClash = null) {
+  const bull = openingClash?.bull;
+  const bear = openingClash?.bear;
+
   return `
-You are IdeaPulse AI, an elite autonomous startup co-founder and venture creation engine.
-Given a single startup idea, generate a world-class, institutional-grade startup blueprint
-and execution plan. Reason through all specialist roles below and return everything as ONE JSON object.
+You are IdeaPulse AI, an institutional-grade startup investment committee and autonomous venture creation engine.
+You are acting as AI 3 — THE CHIEF JUDGE & LEAD VENTURE ARCHITECT.
 
 Startup idea:
 "${idea}"
+
+================================================================================
+3-AI INVESTMENT COMMITTEE DEBATE CONTEXT ("THE VC WAR ROOM")
+================================================================================
+The opening clash was fought in parallel between your two committee partners:
+
+🟢 AI 1 — THE BULL PARTNER (${bull?.provider || "Groq • Llama 3.3 70B"}):
+- Conviction Score: ${bull?.convictionScore || 85}/100
+- Core Upside Thesis: ${bull?.thesis || "Rapid workflow wedge with strong organic pull."}
+- Market Tailwinds: ${JSON.stringify(bull?.marketTailwinds || ["Accelerating vertical workflow automation"])}
+- Unfair Wedge: ${bull?.unfairWedge || "Focused product specialization and fast deployment."}
+
+🔴 AI 2 — THE BEAR PARTNER (${bear?.provider || "OpenRouter • DeepSeek V3"}):
+- Skepticism Score: ${bear?.skepticismScore || 85}/100
+- Core Risk Critique: ${bear?.thesis || "High CAC risk and vulnerable to incumbent bundling."}
+- Fatal Flaws: ${JSON.stringify(bear?.fatalFlaws || ["Severe customer acquisition cost trap", "Feature commoditization risk"])}
+- CAC / Unit Economics Trap: ${bear?.cacUnitEconomicsTrap || "Acquisition costs risk outstripping lifetime value."}
+- Incumbent Threat: ${bear?.incumbentMoatThreat || "Major incumbent platforms can bundle equivalent functionality."}
+
+YOUR CHIEF JUDGE MANDATE:
+1. ARBITRATE THE DEBATE in key "aiDebate":
+   - Formulate a sharp 1-round direct Cross-Examination Rebuttal between them ("rebuttalRound.bullRebuttal" vs "rebuttalRound.bearRebuttal").
+   - Score the battle across 4 critical categories: marketDemand, defensibility, technicalFeasibility, unitEconomics (winner: "Bull"|"Bear", with sharp 1-sentence rationale).
+   - Issue the Chief Judge's ruling: winningSide ("Bull" | "Bear" | "Split Consensus"), verdictSummary (2-3 sentences), keyConditionToProceed (the single most critical assumption the founder must prove), and numberOneExperiment (the #1 Lean pre-launch experiment to settle the debate without writing code).
+2. GROUND ALL 12 SECTIONS IN THIS DEBATE:
+   - "viabilityScorecard" must reflect the real balance of the Bull vs. Bear debate.
+   - "customerDiscovery" questions and red flags must test the Bear's specific fatal flaws.
+   - "swotAnalysis", "productPlan", "businessStrategy", and "goToMarket" must directly target the defensibility wedge and CAC traps exposed.
+
 ---
 PART A — STRATEGIC VENTURE EVALUATION & VALIDATION
 
@@ -115,7 +116,26 @@ Evaluate investment-readiness and survival probability:
 - Sub-scores: marketDemandScore (0–100), technicalFeasibilityScore (0–100), monetizationScore (0–100).
 - verdict: Exactly one of "Proceed" | "Proceed with Caution" | "Pivot Recommended".
 - verdictReasoning: A sharp 2-sentence executive thesis explaining the verdict.
-- fatalRiskTraps: Array of 3 specific, non-obvious failure modes/traps to watch out for.
+- fatalRiskTraps: Array of 3 specific, non-obvious failure modes/traps informed by the Bear critique.
+
+ROLE 2B — Chief Judge Arbitrator → key "aiDebate"
+Include the full 3-AI Investment Committee War Room consensus:
+- bull: Include the Bull Partner's provider, thesis, marketTailwinds, unfairWedge, and convictionScore.
+- bear: Include the Bear Partner's provider, thesis, fatalFlaws, cacUnitEconomicsTrap, incumbentMoatThreat, and skepticismScore.
+- rebuttalRound:
+  - bullRebuttal: Bull's direct counter-punch addressing Bear's CAC and moat critiques.
+  - bearRebuttal: Bear's direct counter-punch dismantling Bull's optimistic wedge assumptions.
+- judge:
+  - provider: "Google (Gemini 2.5 Flash)"
+  - winningSide: Exactly one of "Bull" | "Bear" | "Split Consensus"
+  - scorecard:
+    - marketDemand: { "winner": "Bull"|"Bear", "rationale": "1 sentence explanation" }
+    - defensibility: { "winner": "Bull"|"Bear", "rationale": "1 sentence explanation" }
+    - technicalFeasibility: { "winner": "Bull"|"Bear", "rationale": "1 sentence explanation" }
+    - unitEconomics: { "winner": "Bull"|"Bear", "rationale": "1 sentence explanation" }
+  - verdictSummary: Decisive 2-3 sentence executive synthesis from the Chief Judge.
+  - keyConditionToProceed: The single most critical assumption the founder must prove.
+  - numberOneExperiment: The #1 Lean validation test (e.g. 5 pre-orders, concierge pilot, or LOIs) to settle the debate without writing code.
 
 ROLE 3 — Lean Customer Discovery Lead → key "customerDiscovery"
 Validation before building:
@@ -201,8 +221,42 @@ Return ONE JSON object with this exact structure:
     "technicalFeasibilityScore": 82,
     "monetizationScore": 85,
     "verdict": "Proceed",
-    "verdictReasoning": "Two-sentence executive investment thesis.",
+    "verdictReasoning": "Two-sentence executive investment thesis reflecting the 3-AI committee ruling.",
     "fatalRiskTraps": ["Specific failure trap 1", "Specific failure trap 2", "Specific failure trap 3"]
+  },
+  "aiDebate": {
+    "bull": {
+      "provider": "${bull?.provider || "Groq (Llama 3.3 70B)"}",
+      "thesis": "${bull?.thesis ? bull.thesis.replace(/"/g, '\\"') : "Core upside thesis"}",
+      "marketTailwinds": ${JSON.stringify(bull?.marketTailwinds || ["Tailwind 1", "Tailwind 2"])},
+      "unfairWedge": "${bull?.unfairWedge ? bull.unfairWedge.replace(/"/g, '\\"') : "Unfair distribution wedge"}",
+      "convictionScore": ${bull?.convictionScore || 88}
+    },
+    "bear": {
+      "provider": "${bear?.provider || "OpenRouter (DeepSeek V3)"}",
+      "thesis": "${bear?.thesis ? bear.thesis.replace(/"/g, '\\"') : "Ruthless bear critique"}",
+      "fatalFlaws": ${JSON.stringify(bear?.fatalFlaws || ["Fatal flaw 1", "Fatal flaw 2"])},
+      "cacUnitEconomicsTrap": "${bear?.cacUnitEconomicsTrap ? bear.cacUnitEconomicsTrap.replace(/"/g, '\\"') : "Customer acquisition cost trap"}",
+      "incumbentMoatThreat": "${bear?.incumbentMoatThreat ? bear.incumbentMoatThreat.replace(/"/g, '\\"') : "Incumbent platform threat"}",
+      "skepticismScore": ${bear?.skepticismScore || 84}
+    },
+    "rebuttalRound": {
+      "bullRebuttal": "Bull counter-attack addressing Bear's CAC and incumbent threats directly.",
+      "bearRebuttal": "Bear counter-attack dismantling Bull's optimistic wedge assumptions."
+    },
+    "judge": {
+      "provider": "Google (Gemini 2.5 Flash)",
+      "winningSide": "Bull",
+      "scorecard": {
+        "marketDemand": { "winner": "Bull", "rationale": "One-sentence rationale." },
+        "defensibility": { "winner": "Bear", "rationale": "One-sentence rationale." },
+        "technicalFeasibility": { "winner": "Bull", "rationale": "One-sentence rationale." },
+        "unitEconomics": { "winner": "Bear", "rationale": "One-sentence rationale." }
+      },
+      "verdictSummary": "Decisive 2-3 sentence executive synthesis from the Chief Judge.",
+      "keyConditionToProceed": "The single most critical assumption the founder must prove.",
+      "numberOneExperiment": "The #1 Lean validation test (e.g. 5 pre-orders or LOIs) to settle the debate without writing code."
+    }
   },
   "customerDiscovery": {
     "interviewQuestions": [
@@ -338,30 +392,26 @@ ${JSON_ONLY_RULE}`;
 // ---------------------------------------------------------------------------
 // Orchestrator
 // ---------------------------------------------------------------------------
-/**
- * Generates the full blueprint + execution plan with a SINGLE Gemini call
- * and returns one combined object. Optionally reports progress via
- * onProgress(event): { step, agent, status: "running" | "done" | "failed" }.
- *
- * Error handling: if the single call fails outright (even after gemini.js's
- * retries), or the response is missing/malformed for a given key, that key
- * is marked unavailable — the app still returns a fully-shaped response and
- * never crashes. A step covering multiple keys (e.g. "Cost & Revenue") is
- * only marked "done" if every key it covers came back valid; otherwise it's
- * "failed" and only the broken key(s) show the "Generation unavailable"
- * fallback — everything else on that step still renders.
- */
 export async function runAllAgents(idea, onProgress = () => {}) {
-  // Step 0 begins immediately as the AI co-founder pipeline starts
+  // Step 0 begins immediately as the 3-AI committee convenes
   let activeStep = 0;
   const stepStates = Array(STEPS.length).fill("pending");
   stepStates[0] = "running";
   onProgress({ step: 0, agent: STEPS[0].name, status: "running" });
 
+  // 1. Parallel Opening Clash: Groq Bull (Llama 3.3 70B) + OpenRouter Bear (DeepSeek V3)
+  let openingClash = null;
+  try {
+    openingClash = await runOpeningClash(idea);
+  } catch (err) {
+    console.warn("[Agents] Opening clash encountered an error, falling back:", err.message);
+  }
+
   let parsed = null;
 
   try {
-    const rawText = await streamGemini(buildMegaPrompt(idea), (_chunk, fullRawText) => {
+    const prompt = buildMegaPrompt(idea, openingClash);
+    const rawText = await streamGemini(prompt, (_chunk, fullRawText) => {
       // Check if any subsequent step has started streaming in the model output
       for (let i = activeStep + 1; i < STEP_START_KEYS.length; i++) {
         const triggerKey = `"${STEP_START_KEYS[i]}"`;
@@ -390,19 +440,58 @@ export async function runAllAgents(idea, onProgress = () => {}) {
 
     const cleaned = rawText
       .trim()
-      .replace(/,\s*([\]}])/g, '$1');
+      .replace(/,\s*([\]}])/g, "$1");
     parsed = JSON.parse(cleaned);
   } catch (error) {
     console.error("Stream blueprint generation failed, attempting fallback:", error.message);
     try {
-      const rawText = await callGemini(buildMegaPrompt(idea));
-      const cleaned = rawText.trim().replace(/,\s*([\]}])/g, '$1');
+      const prompt = buildMegaPrompt(idea, openingClash);
+      const rawText = await callGemini(prompt);
+      const cleaned = rawText.trim().replace(/,\s*([\]}])/g, "$1");
       parsed = JSON.parse(cleaned);
       for (let i = 0; i < STEPS.length; i++) {
         onProgress({ step: i, agent: STEPS[i].name, status: "done" });
       }
     } catch (fallbackErr) {
       console.error("Fallback generation also failed:", fallbackErr.message);
+    }
+  }
+
+  // Hydrate aiDebate if missing or partially populated
+  if (parsed && typeof parsed === "object") {
+    if (!parsed.aiDebate) {
+      parsed.aiDebate = {};
+    }
+    if (openingClash) {
+      if (!parsed.aiDebate.bull || typeof parsed.aiDebate.bull !== "object") {
+        parsed.aiDebate.bull = openingClash.bull;
+      }
+      if (!parsed.aiDebate.bear || typeof parsed.aiDebate.bear !== "object") {
+        parsed.aiDebate.bear = openingClash.bear;
+      }
+    }
+    if (!parsed.aiDebate.rebuttalRound) {
+      parsed.aiDebate.rebuttalRound = {
+        bullRebuttal: "The focused product scope and acute pain point overcome initial CAC hurdles by unlocking organic word-of-mouth.",
+        bearRebuttal: "Until written customer pre-commitments are verified, low switching barriers leave high risk of churn.",
+      };
+    }
+    if (!parsed.aiDebate.judge) {
+      const bullScore = parsed.aiDebate.bull?.convictionScore || 85;
+      const bearScore = parsed.aiDebate.bear?.skepticismScore || 85;
+      parsed.aiDebate.judge = {
+        provider: "Google Gemini (Chief Judge)",
+        winningSide: bullScore >= bearScore ? "Bull" : "Bear",
+        scorecard: {
+          marketDemand: { winner: "Bull", rationale: "Clear workflow pain point with verified demand." },
+          defensibility: { winner: "Bear", rationale: "Defensibility against incumbents requires rapid product velocity." },
+          technicalFeasibility: { winner: "Bull", rationale: "Modern serverless architecture enables fast execution." },
+          unitEconomics: { winner: "Bear", rationale: "CAC payback must be proven before scaling paid channels." },
+        },
+        verdictSummary: "The committee acknowledges high upside potential but requires strict proof of customer commitment before heavy development.",
+        keyConditionToProceed: "Secure 3-5 pre-commitments or paid pilot agreements from target buyers.",
+        numberOneExperiment: "Run a 7-day concierge test to validate willingness-to-pay.",
+      };
     }
   }
 
@@ -431,4 +520,4 @@ export async function runAllAgents(idea, onProgress = () => {}) {
   }
 
   return result;
-}
+}

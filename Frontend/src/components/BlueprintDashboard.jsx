@@ -67,12 +67,16 @@ import {
   UpmetricsFinancialSimulator,
   ChatPrdDossierView,
 } from "./CompetitorUpgrades.jsx";
+import AiDebateWarRoomSection, {
+  AiDebateSummaryCard,
+} from "./AiDebateWarRoom.jsx";
 
 // ---------------------------------------------------------------------------
-// Business Analysis Sub-Sections — 6-stage Lean Startup Flow
+// Business Analysis Sub-Sections — 7-stage Institutional Startup Flow
 // ---------------------------------------------------------------------------
 export const BUSINESS_SECTIONS = [
   { id: "overview", label: "Executive Overview", title: "Executive Overview & Viability" },
+  { id: "vc-debate", label: "AI Debate (War Room)", title: "3-AI Investment Committee Debate" },
   { id: "customer-discovery", label: "Customer & Discovery", title: "Customer Persona & Discovery" },
   { id: "market-competitors", label: "Market & Competitors", title: "Market & Competitive Intelligence" },
   { id: "product-mvp", label: "Product & MVP", title: "Product Architecture & MVP Scope" },
@@ -579,6 +583,7 @@ export default function BlueprintDashboard({
   const {
     ideaAnalysis,
     viabilityScorecard,
+    aiDebate,
     customerDiscovery,
     swotAnalysis,
     portersFiveForces,
@@ -844,6 +849,20 @@ export default function BlueprintDashboard({
                     roadmap={roadmap}
                     launchChecklist={launchChecklist}
                     isFounderMode={isFounderMode}
+                    aiDebate={aiDebate}
+                    onNavigate={setActiveSection}
+                  />
+                )}
+
+                {/* 1B. 3-AI MULTI-AGENT VC WAR ROOM DEBATE */}
+                {activeSection === "vc-debate" && (
+                  <AiDebateWarRoomSection
+                    aiDebate={aiDebate}
+                    blueprint={blueprint}
+                    originalIdea={originalIdea}
+                    onUpdateAiDebate={(val) => updateRootField("aiDebate", val)}
+                    onUpdateViabilityScorecard={(val) => updateRootField("viabilityScorecard", val)}
+                    onToast={showToast}
                   />
                 )}
 
@@ -1039,6 +1058,8 @@ function OverviewSection({
   roadmap,
   launchChecklist,
   isFounderMode = true,
+  aiDebate = {},
+  onNavigate = () => {},
 }) {
   const parseNum = (val, fallback) => {
     if (typeof val === "number" && !isNaN(val)) return val;
@@ -1143,6 +1164,13 @@ function OverviewSection({
           </div>
         </div>
       </div>
+
+      {/* ⚔️ 3-AI Multi-Agent Investment Committee Consensus ("VC War Room") */}
+      <AiDebateSummaryCard
+        aiDebate={aiDebate}
+        viabilityScorecard={viabilityScorecard}
+        onEnterWarRoom={() => onNavigate("vc-debate")}
+      />
 
       {/* Hero Charts: Viability Gauge + TAM/SAM/SOM Bubbles — Side by Side on Large Screens */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

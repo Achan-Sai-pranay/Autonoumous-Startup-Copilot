@@ -20,6 +20,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { runAllAgents } from "./agents.js";
 import { chatGemini, streamChatGemini } from "./gemini.js";
+import { runInteractiveWarRoomDebate } from "./debate.js";
 
 dotenv.config();
 
@@ -158,6 +159,56 @@ app.post("/api/generate-blueprint", blueprintLimiter, async (req, res) => {
     writeEvent({
       type: "error",
       message: "Failed to generate blueprint. Please try again with a revised description.",
+    });
+  } finally {
+    res.end();
+  }
+});
+
+// --- 5B. Interactive VC War Room Debate (Streaming NDJSON) ------------------
+app.post("/api/ai-debate", chatLimiter, async (req, res) => {
+  const { idea, blueprintContext, founderTestimony = "" } = req.body;
+
+  if (!idea || typeof idea !== "string") {
+    return res.status(400).json({ error: "Startup idea context is required." });
+  }
+
+  if (!founderTestimony || typeof founderTestimony !== "string" || !founderTestimony.trim()) {
+    return res.status(400).json({
+      error: "Please provide founder defense testimony or evidence to debate.",
+    });
+  }
+
+  res.writeHead(200, {
+    "Content-Type": "application/x-ndjson",
+    "Cache-Control": "no-cache",
+    Connection: "keep-alive",
+  });
+
+  const writeEvent = (event) => {
+    try {
+      res.write(JSON.stringify(event) + "\n");
+    } catch {
+      // client disconnected
+    }
+  };
+
+  try {
+    const updatedWarRoom = await runInteractiveWarRoomDebate(
+      idea.trim(),
+      blueprintContext,
+      founderTestimony.trim(),
+      (stageUpdate) => {
+        writeEvent({ type: "stage", ...stageUpdate });
+      }
+    );
+
+    writeEvent({ type: "result", data: updatedWarRoom });
+  } catch (error) {
+    console.error("Interactive war room debate failed:", error.message);
+    writeEvent({
+      type: "error",
+      message: "Debate round failed to conclude. Please try again with your defense statement.",
     });
   } finally {
     res.end();

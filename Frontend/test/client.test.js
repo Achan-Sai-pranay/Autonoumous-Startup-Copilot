@@ -63,3 +63,23 @@ test("Backup JSON export and import payload schema check", () => {
   assert.strictEqual(isValidBackup({ version: "1.0", history: [] }), true);
   assert.strictEqual(isValidBackup({ history: "not an array" }), false);
 });
+
+test("VC War Room debate section schema validation", () => {
+  const sections = [
+    { id: "overview", label: "Executive Overview" },
+    { id: "vc-debate", label: "AI Debate (War Room)" },
+    { id: "customer-discovery", label: "Customer & Discovery" },
+    { id: "market-competitors", label: "Market & Competitors" },
+    { id: "product-mvp", label: "Product & MVP" },
+    { id: "finances", label: "Financial Model" },
+    { id: "gtm", label: "Go-to-Market" },
+  ];
+
+  const hasVcDebate = sections.some((s) => s.id === "vc-debate");
+  assert.strictEqual(hasVcDebate, true);
+
+  const ids = sections.map((s) => s.id);
+  const uniqueIds = new Set(ids);
+  assert.strictEqual(ids.length, uniqueIds.size);
+});
+

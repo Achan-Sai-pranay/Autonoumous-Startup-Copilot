@@ -37,6 +37,26 @@ const MAX_RETRIES = 3; // retries AFTER the first attempt (4 attempts total)
 const BASE_DELAY_MS = 1000; // 1s, then 2s, then 4s
 const MAX_OUTPUT_TOKENS = 32768; // increased to be extra safe for the large V3 prompt
 
+let geminiKeyIndex = 0;
+
+export function getGeminiApiKey() {
+  const raw = process.env.GEMINI_API_KEY || "";
+  const keys = raw
+    .split(",")
+    .map((k) => k.trim())
+    .filter(Boolean);
+
+  if (keys.length === 0) {
+    throw new Error(
+      "Missing GEMINI_API_KEY. Add it to backend/.env (see .env.example)."
+    );
+  }
+
+  const key = keys[geminiKeyIndex % keys.length];
+  geminiKeyIndex = (geminiKeyIndex + 1) % keys.length;
+  return key;
+}
+
 /**
  * Streams a prompt to Gemini via Server-Sent Events (SSE), invoking onChunk
  * as new partial text arrives, and returns the final extracted JSON.
@@ -46,18 +66,11 @@ const MAX_OUTPUT_TOKENS = 32768; // increased to be extra safe for the large V3 
  * @returns {Promise<string>} raw text (expected to be a JSON string)
  */
 export async function streamGemini(prompt, onChunk = () => {}) {
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error(
-      "Missing GEMINI_API_KEY. Add it to backend/.env (see .env.example)."
-    );
-  }
-
   let lastError;
   let currentModel = PRIMARY_MODEL;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const apiKey = getGeminiApiKey();
     try {
       return await streamRequestOnce(prompt, apiKey, onChunk, currentModel);
     } catch (error) {
@@ -161,17 +174,10 @@ async function streamRequestOnce(prompt, apiKey, onChunk, model = PRIMARY_MODEL)
  * @returns {Promise<string>} raw text (expected to be a JSON string)
  */
 export async function callGemini(prompt) {
-  const apiKey = process.env.GEMINI_API_KEY;
-
-  if (!apiKey) {
-    throw new Error(
-      "Missing GEMINI_API_KEY. Add it to backend/.env (see .env.example)."
-    );
-  }
-
   let lastError;
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    const apiKey = getGeminiApiKey();
     try {
       return await requestOnce(prompt, apiKey);
     } catch (error) {
@@ -338,10 +344,7 @@ function sleep(ms) {
  * @returns {Promise<string>}
  */
 export async function chatGemini(messages = [], systemPrompt = "") {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing GEMINI_API_KEY in environment");
-  }
+  const apiKey = getGeminiApiKey();
 
   const contents = [];
   if (systemPrompt) {
@@ -405,10 +408,7 @@ export async function chatGemini(messages = [], systemPrompt = "") {
  * @returns {Promise<string>} full response text
  */
 export async function streamChatGemini(messages = [], systemPrompt = "", onChunk = () => {}) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing GEMINI_API_KEY in environment");
-  }
+  const apiKey = getGeminiApiKey();
 
   const contents = [];
   if (systemPrompt) {

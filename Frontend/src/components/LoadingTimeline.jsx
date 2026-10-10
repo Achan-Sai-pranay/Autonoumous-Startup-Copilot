@@ -11,7 +11,7 @@ import { CheckCircle2, Loader2, XCircle, Circle, Cpu, Sparkles } from "lucide-re
 // duplicating the agent names in two places. Order MUST match the STEPS
 // array in backend/agents.js.
 export const AGENT_STEP_NAMES = [
-  "Venture Viability & Idea Analysis",
+  "Venture Viability & 3-AI Debate",
   "Lean Customer Discovery & Personas",
   "Strategic Frameworks (SWOT & Porter's)",
   "Market Intelligence & Sizing (TAM/SAM/SOM)",

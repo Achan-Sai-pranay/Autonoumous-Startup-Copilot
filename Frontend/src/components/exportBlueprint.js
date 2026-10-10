@@ -60,7 +60,7 @@ export function safeTemplateStr(val) {
 // ---------------------------------------------------------------------------
 export function buildMarkdown(blueprint, idea) {
   const {
-    ideaAnalysis, viabilityScorecard, customerDiscovery, swotAnalysis,
+    ideaAnalysis, viabilityScorecard, aiDebate, customerDiscovery, swotAnalysis,
     portersFiveForces, marketSizing, marketResearch, customerPersona, productPlan,
     technicalArchitecture, businessStrategy, pitch, roadmap,
     goToMarket, launchChecklist, costEstimator, revenueSimulator,
@@ -78,6 +78,34 @@ export function buildMarkdown(blueprint, idea) {
   push(`## Startup Idea`);
   push();
   push(idea || "_Not provided._");
+  push();
+
+  push(`## 3-AI Multi-Agent Debate ("The VC War Room")`);
+  if (ok(aiDebate)) {
+    if (aiDebate.bull) {
+      push(`### 🟢 AI 1: The Bull Partner (${aiDebate.bull.provider || "Groq Llama 3.3 70B"})`);
+      push(`**Conviction:** ${aiDebate.bull.convictionScore || 85}/100`);
+      push(`**Thesis:** ${aiDebate.bull.thesis}`);
+      push(`**Unfair Wedge:** ${aiDebate.bull.unfairWedge}`);
+      push();
+    }
+    if (aiDebate.bear) {
+      push(`### 🔴 AI 2: The Bear Partner (${aiDebate.bear.provider || "OpenRouter DeepSeek V3"})`);
+      push(`**Skepticism:** ${aiDebate.bear.skepticismScore || 85}/100`);
+      push(`**Critique:** ${aiDebate.bear.thesis}`);
+      push(`**CAC Trap:** ${aiDebate.bear.cacUnitEconomicsTrap}`);
+      push();
+    }
+    if (aiDebate.judge) {
+      push(`### ⚖️ AI 3: Chief Judge Ruling (${aiDebate.judge.provider || "Google Gemini"})`);
+      push(`**Ruling:** ${aiDebate.judge.winningSide || "Consensus"} Advantage`);
+      push(`**Verdict Synthesis:** ${aiDebate.judge.verdictSummary}`);
+      push(`**#1 Lean Experiment:** ${aiDebate.judge.numberOneExperiment}`);
+      push();
+    }
+  } else {
+    push(`_Unavailable._`);
+  }
   push();
 
   push(`## Venture Viability Scorecard`);
@@ -362,7 +390,7 @@ export async function downloadPdf(blueprint, idea) {
   const { jsPDF } = await import("jspdf");
 
   const {
-    ideaAnalysis, viabilityScorecard, customerDiscovery, swotAnalysis,
+    ideaAnalysis, viabilityScorecard, aiDebate, customerDiscovery, swotAnalysis,
     portersFiveForces, marketSizing, marketResearch, customerPersona, productPlan,
     technicalArchitecture, businessStrategy, pitch, roadmap,
     goToMarket, launchChecklist, costEstimator, revenueSimulator,
@@ -480,6 +508,21 @@ export async function downloadPdf(blueprint, idea) {
   heading("Startup Concept & Objective");
   paragraph(idea || "Not provided.");
   divider();
+
+  if (ok(aiDebate)) {
+    heading("3-AI Multi-Agent Debate (VC War Room)");
+    subheading("Parallel Committee: Groq Llama 3.3 70B | OpenRouter DeepSeek V3 | Google Gemini");
+    if (aiDebate.bull?.thesis) {
+      paragraph(`[BULL PARTNER - ${aiDebate.bull.provider || "Groq"} | Conviction: ${aiDebate.bull.convictionScore || 85}%]: ${aiDebate.bull.thesis}`);
+    }
+    if (aiDebate.bear?.thesis) {
+      paragraph(`[BEAR PARTNER - ${aiDebate.bear.provider || "OpenRouter"} | Skepticism: ${aiDebate.bear.skepticismScore || 85}%]: ${aiDebate.bear.thesis}`);
+    }
+    if (aiDebate.judge?.verdictSummary) {
+      paragraph(`[CHIEF JUDGE RULING - ${aiDebate.judge.winningSide || "Consensus"} Advantage]: ${aiDebate.judge.verdictSummary}`);
+    }
+    divider();
+  }
 
   // -------------------------------------------------------------------------
   // Visual Chart 1: Viability Speedometer Gauge & Sub-Scores
