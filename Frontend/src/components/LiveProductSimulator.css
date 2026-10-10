@@ -995,28 +995,35 @@ button.lps-cta,
   align-items: center;
   gap: 8px;
   height: 44px;
-  padding: 0 22px;
+  padding: 0 24px;
   border-radius: 999px;
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.012em;
-  color: #fff !important;
+  font-size: 14.5px;
+  font-weight: 550;
+  letter-spacing: -0.015em;
+  color: #ffffff !important;
   white-space: nowrap;
-  background: linear-gradient(180deg, #fb8a3c 0%, #f97316 55%, #ea6a0a 100%) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 24px rgba(249, 115, 22, 0.4);
-  border: 0 !important;
+  background: linear-gradient(180deg, #ea6332 0%, #db5020 50%, #cb4113 100%) !important;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 1px 2px rgba(0, 0, 0, 0.1),
+    0 8px 24px -3px rgba(224, 86, 38, 0.42) !important;
+  border: 1px solid rgba(203, 65, 19, 0.6) !important;
   cursor: pointer;
-  transition: transform 0.35s var(--lps-ease), box-shadow 0.35s;
+  user-select: none;
+  transition: transform 0.25s var(--lps-ease), box-shadow 0.25s, background 0.2s;
 }
 .lps-cta svg {
-  transition: transform 0.35s var(--lps-ease);
+  transition: transform 0.25s var(--lps-ease);
 }
 .lps .lps-cta:hover,
 button.lps-cta:hover,
 .lps-cta:hover {
-  transform: translateY(-1px) scale(1.03);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 12px 32px rgba(249, 115, 22, 0.55);
-  background: linear-gradient(180deg, #fc944d 0%, #fa7b22 55%, #ee7314 100%) !important;
+  transform: translateY(-1px) scale(1.015);
+  background: linear-gradient(180deg, #ee7040 0%, #e05626 50%, #d14618 100%) !important;
+  box-shadow: 
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 12px 30px -4px rgba(224, 86, 38, 0.55) !important;
 }
 .lps .lps-cta:hover svg,
 button.lps-cta:hover svg,
@@ -1026,7 +1033,7 @@ button.lps-cta:hover svg,
 .lps .lps-cta:active,
 button.lps-cta:active,
 .lps-cta:active {
-  transform: scale(0.97);
+  transform: scale(0.975);
 }
 
 /* ------------------------------------------------------------------ */
