@@ -93,7 +93,7 @@ export const BUSINESS_SECTIONS = [
   {
     id: "vc-debate",
     label: "AI Debate (War Room)",
-    title: "3-AI Investment Committee Debate",
+    title: "Multi-Agent VC Investment Committee Debate",
     agent: "Groq Llama 3.3, DeepSeek V3 & Gemini",
     agentShort: "Groq & DeepSeek VCs",
     agentRole: "VC War Room",
@@ -1101,7 +1101,7 @@ export default function BlueprintDashboard({
                 >
                   <SectionGatewayHeader
                     numeral="02"
-                    title="3-AI Investment Committee Debate"
+                    title="Multi-Agent VC Investment Committee Debate"
                     subtitle="Autonomous VC War Room clashing Bull, Bear, and Judge models."
                     badge="VC War Room"
                     agent="Groq Llama, DeepSeek & Gemini"

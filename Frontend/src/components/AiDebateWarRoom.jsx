@@ -94,7 +94,7 @@ export function AiDebateSummaryCard({
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-base font-bold text-white tracking-tight">
-                3-AI Investment Committee Consensus
+                Multi-Agent Investment Committee Consensus
               </h3>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-orange-500/20 text-orange-300 border border-orange-500/30 uppercase">
                 VC War Room
@@ -318,7 +318,7 @@ export default function AiDebateWarRoomSection({
     setIsDebating(true);
     setStreamStage({
       stage: "init",
-      message: "Convening 3-AI Investment Committee for Founder Cross-Examination...",
+      message: "Convening Multi-Agent Investment Committee for Founder Cross-Examination...",
     });
 
     try {
@@ -373,7 +373,7 @@ export default function AiDebateWarRoomSection({
         if (finalResult.viabilityScorecard) {
           onUpdateViabilityScorecard(finalResult.viabilityScorecard);
         }
-        onToast("3-AI Committee delivered verdict! Viability Scorecard recalibrated.");
+        onToast("Multi-Agent Committee delivered verdict! Viability Scorecard recalibrated.");
       } else {
         throw new Error("No debate result received");
       }
@@ -433,7 +433,7 @@ export default function AiDebateWarRoomSection({
             <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
               <span>The VC War Room</span>
               <span className="text-sm font-bold font-mono px-3 py-1 rounded-xl bg-white/10 text-slate-200 border border-white/10">
-                3-AI Debate Arena
+                Multi-Agent Debate Arena
               </span>
             </h2>
             <p className="text-sm text-slate-300 mt-2 max-w-2xl leading-relaxed">

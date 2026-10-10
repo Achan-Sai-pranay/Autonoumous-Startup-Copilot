@@ -80,7 +80,7 @@ export function buildMarkdown(blueprint, idea) {
   push(idea || "_Not provided._");
   push();
 
-  push(`## 3-AI Multi-Agent Debate ("The VC War Room")`);
+  push(`## Multi-Agent VC Debate ("The VC War Room")`);
   if (ok(aiDebate)) {
     if (aiDebate.bull) {
       push(`### 🟢 AI 1: The Bull Partner (${aiDebate.bull.provider || "Groq Llama 3.3 70B"})`);
@@ -510,7 +510,7 @@ export async function downloadPdf(blueprint, idea) {
   divider();
 
   if (ok(aiDebate)) {
-    heading("3-AI Multi-Agent Debate (VC War Room)");
+    heading("Multi-Agent VC Debate (VC War Room)");
     subheading("Parallel Committee: Groq Llama 3.3 70B | OpenRouter DeepSeek V3 | Google Gemini");
     if (aiDebate.bull?.thesis) {
       paragraph(`[BULL PARTNER - ${aiDebate.bull.provider || "Groq"} | Conviction: ${aiDebate.bull.convictionScore || 85}%]: ${aiDebate.bull.thesis}`);
