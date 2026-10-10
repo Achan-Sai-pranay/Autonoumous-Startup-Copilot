@@ -506,14 +506,14 @@ export default function WorkspacePage({
                   )}
                 </span>
                 <span className="text-[10px] font-mono text-orange-700 bg-orange-50 border border-orange-200 px-1.5 py-0.5 rounded font-bold">
-                  {quota?.remaining ?? (quota?.isPro ? 10 : 3)}/{quota?.total ?? (quota?.isPro ? 10 : 3)} Left
+                  {quota?.isUnlimited ? "Unlimited" : `${quota?.remaining ?? (quota?.isPro ? 100 : 3)}/${quota?.total ?? (quota?.isPro ? 100 : 3)} Left`}
                 </span>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-[11px] text-slate-500 space-y-1.5">
                 <div className="flex justify-between text-[10px]">
                   <span>Weekly Limit:</span>
                   <span className="font-bold text-slate-700 font-mono">
-                    {quota?.remaining ?? 3} of {quota?.total ?? 3}
+                    {quota?.isUnlimited ? "Unlimited (Founder Pass)" : `${quota?.remaining ?? 3} of ${quota?.total ?? 3}`}
                   </span>
                 </div>
                 <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
@@ -1273,7 +1273,7 @@ function WorkspaceInput({
               </button>
             )}
 
-            {(quota?.remaining ?? 3) <= 0 ? (
+            {(!quota?.isPro && (quota?.remaining ?? 3) <= 0) ? (
               <button
                 type="button"
                 onClick={() => {
@@ -1286,7 +1286,7 @@ function WorkspaceInput({
                 className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-orange-600 hover:bg-orange-700 text-white shadow-md shadow-orange-500/20 transition-all cursor-pointer active:scale-95"
               >
                 <Zap size={15} />
-                <span>{currentUser ? "Upgrade to Pro (10 Ideas)" : "Sign Up for 3 Free Ideas"}</span>
+                <span>{currentUser ? "Upgrade to Pro" : "Sign Up for 3 Free Ideas"}</span>
               </button>
             ) : (
               <button

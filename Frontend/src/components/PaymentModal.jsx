@@ -44,7 +44,8 @@ export default function PaymentModal({
     e?.preventDefault();
     setError("");
 
-    const code = voucherCode.trim().toUpperCase();
+    const rawCode = (voucherCode || "").trim().toUpperCase();
+    const code = rawCode.replace(/[\s\-_]+/g, "_");
     if (!code) {
       setError("Please enter an early access voucher or invitation code.");
       return;
@@ -53,7 +54,7 @@ export default function PaymentModal({
     // Supported early founder vouchers
     const validCodes = ["FOUNDER_PASS", "IDEAPULSE2026", "BETA_PRO", "VIP_FOUNDER"];
     if (!validCodes.includes(code)) {
-      setError("Invalid voucher code. Request an invitation below if you do not have one.");
+      setError("Invalid voucher code. Enter FOUNDER_PASS for instant testing access.");
       return;
     }
 
@@ -63,10 +64,14 @@ export default function PaymentModal({
         paymentMethod: "VOUCHER",
         paymentId: `VOUCHER-${code}`,
         voucherCode: code,
+        isUnlimited: true,
       });
       setIsSubmitting(false);
       setUnlockedSuccess(true);
-      onPaymentSuccess(sub);
+      if (typeof onPaymentSuccess === "function") {
+        onPaymentSuccess(sub);
+      }
+      window.dispatchEvent(new CustomEvent("quota-updated", { detail: sub }));
     } catch (err) {
       setIsSubmitting(false);
       setError("Activation failed. Please retry.");

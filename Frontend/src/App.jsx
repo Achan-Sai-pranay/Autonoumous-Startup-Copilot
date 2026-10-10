@@ -97,10 +97,13 @@ export default function App() {
   }
 
   function handlePaymentSuccess(subscription) {
-    setQuota(getWeeklyUsage(currentUser?.id));
+    const currentHist = history.length > 0 ? history : getHistory(currentUser?.id);
+    const updated = getWeeklyUsage(currentUser?.id, currentHist);
+    setQuota(updated);
     if (currentUser) {
-      setCurrentUser((prev) => (prev ? { ...prev, plan: "Pro Founder", isPro: true } : prev));
+      setCurrentUser((prev) => (prev ? { ...prev, plan: subscription?.planName || "Pro Founder", isPro: true } : prev));
     }
+    setShowPaymentModal(false);
   }
 
   function handleOpenAuth(mode = "signup") {
@@ -156,6 +159,16 @@ export default function App() {
   useEffect(() => {
     const currentHist = history.length > 0 ? history : getHistory(currentUser?.id);
     setQuota(getWeeklyUsage(currentUser?.id, currentHist));
+
+    function onQuotaUpdated(e) {
+      const activeHist = history.length > 0 ? history : getHistory(currentUser?.id);
+      setQuota(getWeeklyUsage(currentUser?.id, activeHist));
+      if (currentUser) {
+        setCurrentUser((prev) => (prev ? { ...prev, plan: e?.detail?.planName || "Pro Founder", isPro: true } : prev));
+      }
+    }
+    window.addEventListener("quota-updated", onQuotaUpdated);
+    return () => window.removeEventListener("quota-updated", onQuotaUpdated);
   }, [currentUser, history.length]);
 
   function handleProtectedStart() {
@@ -252,12 +265,12 @@ export default function App() {
     }
 
     const currentQuota = getWeeklyUsage(currentUser?.id, history);
-    if (currentQuota.remaining <= 0) {
+    if (!currentQuota.isPro && currentQuota.remaining <= 0) {
       if (!currentUser) {
-        setError("You've tested your free guest idea! Create a free account to unlock 3 blueprints per week, or upgrade to Pro for 10 ideas.");
+        setError("You've tested your free guest idea! Create a free account to unlock 3 blueprints per week, or enter FOUNDER_PASS for unlimited access.");
         handleOpenAuth("signup");
       } else {
-        setError(`You have used all ${currentQuota.total} blueprints for this week. Upgrade to Pro for 10 blueprints and priority AI inference.`);
+        setError("You have reached your free weekly limit. Enter voucher FOUNDER_PASS in Pro upgrade for unlimited testing.");
         setShowPaymentModal(true);
       }
       return;
