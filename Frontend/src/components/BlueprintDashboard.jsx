@@ -74,7 +74,6 @@ import {
 import AiDebateWarRoomSection, {
   AiDebateSummaryCard,
 } from "./AiDebateWarRoom.jsx";
-import StickySectionSpyRail from "./StickySectionSpyRail.jsx";
 
 
 // ---------------------------------------------------------------------------
@@ -713,8 +712,8 @@ export default function BlueprintDashboard({
     if (scrollTarget && targetEl) {
       const containerRect = scrollTarget.getBoundingClientRect();
       const targetRect = targetEl.getBoundingClientRect();
-      // Apply -56px offset so section heading lands cleanly below the sticky spy rail
-      const targetTop = scrollTarget.scrollTop + (targetRect.top - containerRect.top) - 56;
+      // Apply clean 20px padding offset from the viewport top
+      const targetTop = scrollTarget.scrollTop + (targetRect.top - containerRect.top) - 20;
       scrollTarget.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
     } else if (targetEl) {
       targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -785,7 +784,7 @@ export default function BlueprintDashboard({
 
           const visible = entries.filter((e) => e.isIntersecting);
           if (visible.length > 0) {
-            // Pick section nearest to reading line below sticky rail
+            // Pick section nearest to reading line
             visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
             const topSec = visible[0].target.getAttribute("data-section-id");
             if (topSec && topSec !== activeSectionRef.current) {
@@ -796,7 +795,7 @@ export default function BlueprintDashboard({
         },
         {
           root: container,
-          rootMargin: "-60px 0px -60% 0px",
+          rootMargin: "-20px 0px -60% 0px",
           threshold: [0, 0.1, 0.25],
         }
       );
@@ -995,18 +994,6 @@ export default function BlueprintDashboard({
         />
       ) : (
         <div className="w-full">
-          {/* Sticky Section Navigation Spy Rail */}
-          <div className="mb-6">
-            <StickySectionSpyRail
-              activeSection={activeSection}
-              onSelectSection={handleSmoothScrollToSection}
-              displayMode={displayMode}
-              onToggleDisplayMode={() =>
-                setDisplayMode((prev) => (prev === "continuous" ? "focused" : "continuous"))
-              }
-            />
-          </div>
-
           {/* MAIN CONTENT AREA */}
           <div className="w-full min-w-0">
             {/* Top Venture Banner Card */}

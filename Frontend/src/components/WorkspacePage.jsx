@@ -121,15 +121,13 @@ export default function WorkspacePage({
   }, []);
 
   // Smoothly align a blueprint section to the top of the main scroll container.
-  // Uses rect-based math with sticky spy rail offset compensation (-56px),
-  // ensuring the section header is never obscured under the sticky header.
   const scrollToSection = useCallback((sectionId) => {
     const container = mainScrollRef.current;
     const el = document.getElementById(sectionId);
     if (!container || !el) return;
     const containerRect = container.getBoundingClientRect();
     const elRect = el.getBoundingClientRect();
-    const targetTop = container.scrollTop + (elRect.top - containerRect.top) - 56;
+    const targetTop = container.scrollTop + (elRect.top - containerRect.top) - 20;
     container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
   }, []);
 
