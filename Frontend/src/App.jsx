@@ -409,6 +409,13 @@ export default function App() {
     <div className="relative min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased w-full max-w-full overflow-x-hidden">
       <SplineBackground />
 
+      {/* Global Scroll Progress Bar */}
+      <div
+        id="global-scroll-progress"
+        className="fixed top-0 left-0 h-1 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 z-50 transition-all duration-75 pointer-events-none"
+        style={{ width: "0%" }}
+      />
+
       {/* 1. Announcement Banner */}
       <AnnouncementBanner onCtaClick={handleProtectedStart} />
 

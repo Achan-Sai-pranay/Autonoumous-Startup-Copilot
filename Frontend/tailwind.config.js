@@ -39,12 +39,19 @@ export default {
       },
       fontFamily: {
         sans: [
+          '"Plus Jakarta Sans"',
           "-apple-system",
           "BlinkMacSystemFont",
           '"Segoe UI"',
           "Roboto",
           '"Helvetica Neue"',
           "Arial",
+          "sans-serif",
+        ],
+        display: [
+          '"Space Grotesk"',
+          '"Plus Jakarta Sans"',
+          "-apple-system",
           "sans-serif",
         ],
         mono: [

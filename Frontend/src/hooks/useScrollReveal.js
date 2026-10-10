@@ -1,70 +1,84 @@
 // hooks/useScrollReveal.js
 import { useEffect } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 export function useScrollReveal(dependency, containerRef) {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const scrollTarget = containerRef?.current || window;
 
-    function revealVisible() {
-      const elements = document.querySelectorAll(".reveal-on-scroll:not(.is-revealed)");
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-
-      elements.forEach((el) => {
-        const rect = el.getBoundingClientRect();
-        // If element is already anywhere in or near the viewport, reveal immediately
-        if (rect.top <= viewportHeight * 0.95 && rect.bottom >= -50) {
-          el.classList.add("is-revealed");
+    // 1. Cursor Spotlight Tracking for Bento & Mac Cards
+    function handlePointerMove(e) {
+      const cards = document.querySelectorAll(".spotlight-card, .spotlight-border");
+      cards.forEach((card) => {
+        const rect = card.getBoundingClientRect();
+        // Only update if card is visible near cursor
+        if (
+          e.clientX >= rect.left - 100 &&
+          e.clientX <= rect.right + 100 &&
+          e.clientY >= rect.top - 100 &&
+          e.clientY <= rect.bottom + 100
+        ) {
+          card.style.setProperty("--mouse-x", `${e.clientX - rect.left}px`);
+          card.style.setProperty("--mouse-y", `${e.clientY - rect.top}px`);
         }
       });
     }
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
 
-    // Run immediately on render
-    revealVisible();
-    const t1 = setTimeout(revealVisible, 50);
-    const t2 = setTimeout(revealVisible, 200);
-    const t3 = setTimeout(revealVisible, 600);
+    // 2. Scroll-driven progress
+    function updateScrollProgress() {
+      const scrollTop = window.scrollY || document.documentElement.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+      const progressBar = document.getElementById("global-scroll-progress");
+      if (progressBar) {
+        progressBar.style.width = `${progress}%`;
+      }
+    }
+    window.addEventListener("scroll", updateScrollProgress, { passive: true });
+    updateScrollProgress();
 
-    let observer;
-    if ("IntersectionObserver" in window) {
-      observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("is-revealed");
+    // 3. GSAP ScrollTrigger for smooth reveals & element entry
+    let ctx;
+    if (!isReducedMotion) {
+      ctx = gsap.context(() => {
+        const elements = document.querySelectorAll(".reveal-on-scroll:not(.is-revealed)");
+        elements.forEach((el) => {
+          gsap.fromTo(
+            el,
+            { opacity: 0, y: 28 },
+            {
+              opacity: 1,
+              y: 0,
+              duration: 0.7,
+              ease: "expo.out",
+              scrollTrigger: {
+                trigger: el,
+                start: "top 88%",
+                once: true,
+                onEnter: () => el.classList.add("is-revealed"),
+              },
             }
-          });
-        },
-        {
-          root: containerRef?.current || null,
-          threshold: 0.05,
-          rootMargin: "80px 0px 80px 0px",
-        }
-      );
-
-      const elements = document.querySelectorAll(".reveal-on-scroll");
-      elements.forEach((el) => observer.observe(el));
+          );
+        });
+      });
+    } else {
+      // Immediate reveal for reduced motion
+      document.querySelectorAll(".reveal-on-scroll").forEach((el) => el.classList.add("is-revealed"));
     }
-
-    if (scrollTarget && scrollTarget !== window) {
-      scrollTarget.addEventListener("scroll", revealVisible, { passive: true });
-    }
-    window.addEventListener("scroll", revealVisible, { passive: true });
-    window.addEventListener("resize", revealVisible, { passive: true });
 
     return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-      if (scrollTarget && scrollTarget !== window) {
-        scrollTarget.removeEventListener("scroll", revealVisible);
-      }
-      window.removeEventListener("scroll", revealVisible);
-      window.removeEventListener("resize", revealVisible);
-      if (observer) {
-        observer.disconnect();
-      }
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("scroll", updateScrollProgress);
+      if (ctx) ctx.revert();
     };
   }, [dependency, containerRef]);
 }
