@@ -33,6 +33,9 @@ import {
   Crosshair,
   Copy,
   Check,
+  CheckCircle2,
+  Clock,
+  ArrowRight,
   Rocket,
   FileDown,
   FileText,
@@ -835,7 +838,7 @@ export default function BlueprintDashboard({
             <div key={activeSection} className="animate-fade-in">
               <SectionErrorBoundary key={activeSection}>
                 {/* 1. EXECUTIVE OVERVIEW & VIABILITY */}
-                {activeSection === "overview" && (
+                {(activeSection === "overview" || activeSection === "dashboard") && (
                   <OverviewSection
                     viabilityScorecard={viabilityScorecard}
                     ideaAnalysis={ideaAnalysis}
@@ -848,6 +851,10 @@ export default function BlueprintDashboard({
                     businessStrategy={businessStrategy}
                     roadmap={roadmap}
                     launchChecklist={launchChecklist}
+                    costEstimator={costEstimator}
+                    revenueSimulator={revenueSimulator}
+                    marketResearch={marketResearch}
+                    competitorWeaknessAnalysis={competitorWeaknessAnalysis}
                     isFounderMode={isFounderMode}
                     aiDebate={aiDebate}
                     onNavigate={setActiveSection}
@@ -927,17 +934,6 @@ export default function BlueprintDashboard({
                   />
                 )}
 
-                {/* DASHBOARD OVERVIEW (legacy) */}
-                {activeSection === "dashboard" && (
-                  <DashboardOverviewSection
-                    onNavigate={setActiveSection}
-                    viabilityScorecard={viabilityScorecard}
-                    marketSizing={marketSizing}
-                    costEstimator={costEstimator}
-                    revenueSimulator={revenueSimulator}
-                    ideaAnalysis={ideaAnalysis}
-                  />
-                )}
               </SectionErrorBoundary>
             </div>
           </div>
@@ -1057,6 +1053,10 @@ function OverviewSection({
   businessStrategy,
   roadmap,
   launchChecklist,
+  costEstimator,
+  revenueSimulator,
+  marketResearch,
+  competitorWeaknessAnalysis,
   isFounderMode = true,
   aiDebate = {},
   onNavigate = () => {},
@@ -1078,24 +1078,24 @@ function OverviewSection({
   const verdict = toSafeString(viabilityScorecard?.verdict, "Proceed");
   const verdictReasoning = toSafeString(
     viabilityScorecard?.verdictReasoning,
-    "Strong domain potential with verified market tailwinds and rapid time-to-MVP."
+    "Clear everyday user demand with manageable build requirements and healthy profit potential."
   );
 
   const targetCustomer = useMemo(() => {
     const list = toSafeArray(customerPersona?.targetUsers, []);
     if (list.length > 0) return list[0];
-    return toSafeString(customerPersona?.userProfile, "Early Adopter");
+    return toSafeString(customerPersona?.userProfile, "Everyday users facing this problem");
   }, [customerPersona]);
 
   const coreMvpScope = useMemo(() => {
     const list = toSafeArray(productPlan?.mvpFeatures, []);
-    return list.slice(0, 2).join(", ") || "Production MVP";
+    return list.slice(0, 2).join(", ") || "Core MVP Launch";
   }, [productPlan]);
 
   const monetizationModel = useMemo(() => {
     return toSafeString(
       businessStrategy?.pricingIdea || businessStrategy?.revenueModel,
-      "Subscription Tier"
+      "Monthly Subscription / Freemium"
     );
   }, [businessStrategy]);
 
@@ -1103,7 +1103,7 @@ function OverviewSection({
     const milestoneTask = roadmap?.milestones?.[0]?.tasks?.[0];
     if (milestoneTask) return toSafeString(milestoneTask);
     const checklistItems = toSafeArray(launchChecklist, []);
-    return toSafeString(checklistItems[0], "Validate Mom Test questions");
+    return toSafeString(checklistItems[0], "Talk to 5-10 real target customers to confirm their interest");
   }, [roadmap, launchChecklist]);
 
   const safeRiskTraps = useMemo(() => {
@@ -1111,68 +1111,326 @@ function OverviewSection({
     return traps.length > 0
       ? traps
       : [
-          "Over-indexing on polite hypothetical feedback without demanding upfront financial commitments.",
-          "Scope creep delaying production MVP launch beyond a disciplined 4-week shipping sprint.",
-          "Underestimating enterprise procurement, single sign-on (SSO), and data compliance review timelines.",
+          "Relying on polite compliments from friends instead of seeing if people will actually use or pre-order it.",
+          "Trying to build too many features at once instead of launching a simple first version within 4 weeks.",
+          "Spending heavily on paid ads before confirming that early users stick around and tell others.",
         ];
   }, [viabilityScorecard]);
 
+  const problemText = toSafeString(
+    ideaAnalysis?.problem,
+    "Users face a repetitive, frustrating problem with existing tools that are clunky, overly complicated, or expensive."
+  );
+
+  const solutionText = toSafeString(
+    ideaAnalysis?.goal || pitch?.elevatorPitch,
+    "Provides a fast, easy-to-use, and accessible solution that directly solves this pain without friction."
+  );
+
+  const whyItWins = toSafeString(
+    aiDebate?.bull?.unfairWedge || businessStrategy?.competitiveAdvantage,
+    "Super simple design, zero setup hassle, and built specifically for what everyday users actually need."
+  );
+
+  const milestonesList = useMemo(() => {
+    const raw = roadmap?.milestones;
+    if (Array.isArray(raw) && raw.length >= 3) {
+      return raw.slice(0, 4).map((m, idx) => ({
+        week: `Week ${idx + 1}`,
+        title: toSafeString(m.phase || m.title || `Phase ${idx + 1}`),
+        task: toSafeString(m.tasks?.[0] || m.focus || m.description || "Validate with target users"),
+      }));
+    }
+    return [
+      { week: "Week 1", title: "Customer Interviews", task: "Interview 10 real users to confirm the exact pain points and test interest." },
+      { week: "Week 2", title: "Build Version 1 (MVP)", task: "Build the simplest working version containing only the #1 core feature." },
+      { week: "Week 3", title: "Private Beta Testing", task: "Give early access to 10 testers, observe how they use it, and fix rough spots." },
+      { week: "Week 4", title: "Launch & First Revenue", task: "Launch to target online communities, ask for pre-orders or paid signups." },
+    ];
+  }, [roadmap]);
+
+  const estimatedMonthlyCost = toSafeString(costEstimator?.estimatedMonthlyCost, "$20 - $50 / month");
+  const estimatedRevenue = toSafeString(
+    revenueSimulator?.year1Revenue || revenueSimulator?.estimatedYear1Revenue,
+    "$50,000 - $120,000 / year"
+  );
+
   return (
-    <div className="space-y-6">
-      {/* 🚀 Instant Action Deck: What to build & ship first */}
+    <div className="space-y-7 animate-fade-in text-slate-900">
+      {/* 1. Venture Hero Pitch Banner */}
+      <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-6 sm:p-8 shadow-md border border-slate-700/80 relative overflow-hidden">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div className="space-y-3 max-w-3xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                EXECUTIVE OVERVIEW
+              </span>
+              <span className="text-slate-400 text-xs font-mono">•</span>
+              <span className="text-xs font-mono text-slate-300">
+                {toSafeString(ideaAnalysis?.domain, "Digital Venture")}
+              </span>
+            </div>
+
+            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+              <span>{toSafeString(ventureTitle, "Startup Blueprint")}</span>
+            </h2>
+
+            <p className="text-sm sm:text-base text-slate-200 leading-relaxed italic bg-white/5 p-4 rounded-2xl border border-white/10 font-medium">
+              "{toSafeString(pitch?.elevatorPitch || originalIdea, "A clear, focused solution designed to solve real user problems fast.")}"
+            </p>
+          </div>
+
+          {/* Viability Score Badge */}
+          <div className="flex flex-col items-center justify-center bg-white/5 border border-white/10 p-5 rounded-2xl text-center shrink-0 min-w-[160px]">
+            <span className="text-[11px] font-mono uppercase text-slate-400 font-bold block mb-1">
+              Viability Score
+            </span>
+            <div className="text-4xl font-black font-mono text-orange-400 my-0.5">
+              {score}
+              <span className="text-xs font-normal text-slate-400">/100</span>
+            </div>
+            <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-mono font-bold bg-orange-500/20 text-orange-300 border border-orange-500/40">
+              {verdict}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Executive Quick Action Deck (What to build & ship first) */}
       <div className="bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-white rounded-2xl p-5 border border-orange-200/90 shadow-2xs">
         <div className="flex items-center gap-2 mb-3">
           <span className="flex items-center justify-center h-6 w-6 rounded-lg bg-orange-600 text-white">
             <Zap size={13} />
           </span>
           <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-orange-800">
-            Executive Action Deck • Your Core Next Steps
+            Executive Action Deck • Key Pillars at a Glance
           </h3>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-          <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
             <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
               🎯 Target Customer
             </span>
-            <p className="font-semibold text-slate-800 line-clamp-2">
+            <p className="font-semibold text-slate-800">
               {targetCustomer}
             </p>
           </div>
-          <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
             <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
               🛠️ Core MVP Scope
             </span>
-            <p className="font-semibold text-slate-800 line-clamp-2">
+            <p className="font-semibold text-slate-800">
               {coreMvpScope}
             </p>
           </div>
-          <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
             <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
               💰 Monetization Model
             </span>
-            <p className="font-semibold text-slate-800 line-clamp-2">
+            <p className="font-semibold text-slate-800">
               {monetizationModel}
             </p>
           </div>
-          <div className="bg-white p-3 rounded-xl border border-slate-200/80 shadow-2xs">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
             <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
               🚀 Priority This Week
             </span>
-            <p className="font-semibold text-orange-700 line-clamp-2">
+            <p className="font-semibold text-orange-700">
               {priorityThisWeek}
             </p>
           </div>
         </div>
       </div>
 
-      {/* ⚔️ 3-AI Multi-Agent Investment Committee Consensus ("VC War Room") */}
+      {/* 3. 3-AI Multi-Agent Investment Committee Consensus ("VC War Room") */}
       <AiDebateSummaryCard
         aiDebate={aiDebate}
         viabilityScorecard={viabilityScorecard}
         onEnterWarRoom={() => onNavigate("vc-debate")}
       />
 
-      {/* Hero Charts: Viability Gauge + TAM/SAM/SOM Bubbles — Side by Side on Large Screens */}
+      {/* 4. Core Value Proposition Breakdown (Problem / Solution / Advantage) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Card 1: The Problem */}
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200">
+                🛑 The Problem
+              </span>
+              <AlertTriangle size={16} className="text-rose-500" />
+            </div>
+            <h4 className="text-sm font-bold text-slate-900 mb-2">
+              What Frustrates Users Today?
+            </h4>
+            <p className="text-xs text-slate-700 leading-relaxed font-medium">
+              {problemText}
+            </p>
+          </div>
+          <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+            Pain point identified from target customer interviews.
+          </div>
+        </div>
+
+        {/* Card 2: The Solution */}
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                💡 The Solution
+              </span>
+              <Lightbulb size={16} className="text-emerald-500" />
+            </div>
+            <h4 className="text-sm font-bold text-slate-900 mb-2">
+              How Does Your Product Solve It?
+            </h4>
+            <p className="text-xs text-slate-700 leading-relaxed font-medium">
+              {solutionText}
+            </p>
+          </div>
+          <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+            Directly removes the friction with a simple, focused tool.
+          </div>
+        </div>
+
+        {/* Card 3: Key Advantage */}
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-xs font-mono font-bold uppercase tracking-wider text-orange-600 bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-200">
+                🏆 Why It Wins
+              </span>
+              <Rocket size={16} className="text-orange-500" />
+            </div>
+            <h4 className="text-sm font-bold text-slate-900 mb-2">
+              Why Customers Will Choose This
+            </h4>
+            <p className="text-xs text-slate-700 leading-relaxed font-medium">
+              {whyItWins}
+            </p>
+          </div>
+          <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
+            Your unique differentiator against alternatives.
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Venture Viability & 3 Pillars Breakdown */}
+      <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
+          <div>
+            <h3 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <ShieldCheck size={18} className="text-orange-500" />
+              <span>Startup Viability & Survival Analysis</span>
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Independent scoring based on market demand, ease of building, and monetization potential.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-mono text-slate-400">Ruling:</span>
+            <span className="px-3 py-1 rounded-xl text-xs font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200">
+              {score}/100 • {verdict}
+            </span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Pillar 1: Market Demand */}
+          <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70">
+            <div className="flex justify-between items-center text-xs mb-2">
+              <span className="text-slate-800 font-bold flex items-center gap-1.5">
+                <TrendingUp size={14} className="text-orange-500" />
+                1. Market Demand
+              </span>
+              <span className="font-bold font-mono text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
+                {marketDemandScore}%
+              </span>
+            </div>
+            <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden mb-2">
+              <div
+                className="h-full bg-orange-500 rounded-full transition-all"
+                style={{ width: `${marketDemandScore}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-slate-600 leading-relaxed">
+              Measures whether real target users have an urgent, everyday need for this solution.
+            </p>
+          </div>
+
+          {/* Pillar 2: Technical Feasibility */}
+          <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70">
+            <div className="flex justify-between items-center text-xs mb-2">
+              <span className="text-slate-800 font-bold flex items-center gap-1.5">
+                <Cpu size={14} className="text-orange-500" />
+                2. Ease of Building
+              </span>
+              <span className="font-bold font-mono text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
+                {technicalFeasibilityScore}%
+              </span>
+            </div>
+            <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden mb-2">
+              <div
+                className="h-full bg-orange-500 rounded-full transition-all"
+                style={{ width: `${technicalFeasibilityScore}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-slate-600 leading-relaxed">
+              Measures how fast and straightforward it is to build and deploy version 1 without unnecessary complexity.
+            </p>
+          </div>
+
+          {/* Pillar 3: Monetization Engine */}
+          <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70">
+            <div className="flex justify-between items-center text-xs mb-2">
+              <span className="text-slate-800 font-bold flex items-center gap-1.5">
+                <DollarSign size={14} className="text-amber-500" />
+                3. Profit & Monetization
+              </span>
+              <span className="font-bold font-mono text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
+                {monetizationScore}%
+              </span>
+            </div>
+            <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden mb-2">
+              <div
+                className="h-full bg-amber-500 rounded-full transition-all"
+                style={{ width: `${monetizationScore}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-slate-600 leading-relaxed">
+              Measures whether customers will readily pay enough to cover costs and generate sustainable profit.
+            </p>
+          </div>
+        </div>
+
+        {/* Verdict Reasoning & Traps */}
+        <div className="mt-6 pt-5 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="bg-orange-50/40 p-4 rounded-2xl border border-orange-100">
+            <span className="text-[10px] font-mono uppercase text-orange-800 font-bold block mb-1">
+              Executive Investment Thesis:
+            </span>
+            <p className="text-xs text-slate-800 leading-relaxed font-medium">
+              {verdictReasoning}
+            </p>
+          </div>
+
+          <div className="bg-rose-50/40 p-4 rounded-2xl border border-rose-100">
+            <span className="text-[10px] font-mono uppercase text-rose-700 font-bold block mb-1">
+              Top Risks to Avoid:
+            </span>
+            <div className="space-y-1.5 text-xs text-rose-900 font-medium">
+              {safeRiskTraps.map((risk, idx) => (
+                <div key={idx} className="flex items-start gap-1.5 leading-snug">
+                  <span className="text-rose-500 mt-0.5">•</span>
+                  <span>{risk}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 6. Visual Charts: Viability Gauge + Market Sizing Bubbles */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SafeChartWrapper fallbackTitle="Viability Gauge">
           <VenturusViabilityGaugeChart viabilityScorecard={viabilityScorecard} ideaTitle={ventureTitle} />
@@ -1182,142 +1440,124 @@ function OverviewSection({
         </SafeChartWrapper>
       </div>
 
-      {/* Cards Grid */}
-      <ResponsiveCardGrid>
-        {/* Card 1: Venture Viability Scorecard */}
-        <StatCard
-          title={isFounderMode ? "Startup Viability & Survival Score" : "Venture Viability Scorecard"}
-          icon={ShieldCheck}
-          iconColor="text-orange-500"
-          stat={`${score} / 100`}
-          subtitle={`Verdict: ${verdict}`}
-          detailsTitle={isFounderMode ? "Why this verdict?" : "Executive Investment Thesis"}
-          detailsText={verdictReasoning}
-        >
-          <div className="space-y-3">
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-slate-600 font-medium">Market Demand Score</span>
-                <span className="font-bold font-mono text-slate-900">
-                  {marketDemandScore}%
-                </span>
-              </div>
-              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-orange-500 rounded-full"
-                  style={{ width: `${marketDemandScore}%` }}
-                />
-              </div>
+      {/* 7. 4-Week Milestone Execution Roadmap */}
+      <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <div className="h-7 w-7 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
+              <Clock size={15} />
             </div>
             <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-slate-600 font-medium">Technical Feasibility</span>
-                <span className="font-bold font-mono text-slate-900">
-                  {technicalFeasibilityScore}%
-                </span>
-              </div>
-              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-orange-500 rounded-full"
-                  style={{ width: `${technicalFeasibilityScore}%` }}
-                />
-              </div>
-            </div>
-            <div>
-              <div className="flex justify-between text-xs mb-1">
-                <span className="text-slate-600 font-medium">Monetization Engine</span>
-                <span className="font-bold font-mono text-slate-900">
-                  {monetizationScore}%
-                </span>
-              </div>
-              <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-amber-500 rounded-full"
-                  style={{ width: `${monetizationScore}%` }}
-                />
-              </div>
-            </div>
-
-            {/* Fatal Risk Traps */}
-            <div className="pt-2 border-t border-slate-100">
-              <span className="text-[10px] font-mono uppercase text-rose-600 font-bold block mb-1.5">
-                Identified Risk Traps
-              </span>
-              <div className="space-y-1">
-                {safeRiskTraps.map((risk, i) => (
-                  <div key={i} className="text-xs text-rose-800 bg-rose-50/60 p-2 rounded-lg border border-rose-100 leading-snug">
-                    • {risk}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </StatCard>
-
-        {/* Card 2: Startup Idea Thesis */}
-        <StatCard
-          title="Startup Idea Thesis"
-          icon={Target}
-          iconColor="text-orange-500"
-          stat={toSafeString(ideaAnalysis?.domain, "Core Thesis")}
-          subtitle="Founder Problem & Mission"
-          detailsTitle="Feasibility & Execution Speed"
-          detailsText={toSafeString(ideaAnalysis?.feasibility, "High feasibility with modern serverless architecture and production AI APIs.")}
-        >
-          <div className="space-y-3 text-xs text-slate-700">
-            <div>
-              <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
-                Founder Prompt / Idea
-              </span>
-              <p className="leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100 font-medium text-slate-800">
-                {toSafeString(originalIdea, "No idea prompt provided")}
-              </p>
-            </div>
-            <div>
-              <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
-                Core Problem Statement
-              </span>
-              <p className="leading-relaxed text-slate-700">
-                {toSafeString(
-                  ideaAnalysis?.problem,
-                  "Founders and operators struggle with manual, fragmented workflows that introduce high operational overhead and slow delivery."
-                )}
-              </p>
-            </div>
-            <div>
-              <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
-                Strategic Mission & Objectives
-              </span>
-              <p className="leading-relaxed text-slate-700">
-                {toSafeString(
-                  ideaAnalysis?.goal,
-                  "Deliver an autonomous copilot platform that eliminates 80% of repetitive operational tasks and accelerates time-to-market."
-                )}
+              <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+                4-Week Founder Execution Roadmap
+              </h3>
+              <p className="text-xs text-slate-500">
+                Disciplined weekly shipping sprint from initial customer interviews to first launch.
               </p>
             </div>
           </div>
-        </StatCard>
+          <button
+            onClick={() => onNavigate("product-mvp")}
+            className="text-xs font-mono text-orange-600 font-bold hover:underline cursor-pointer"
+          >
+            View full roadmap →
+          </button>
+        </div>
 
-        {/* Card 3: Elevator Pitch */}
-        <StatCard
-          title="Elevator Pitch"
-          icon={Rocket}
-          iconColor="text-orange-500"
-          stat="Executive Pitch"
-          subtitle="1-2 Sentence Hook"
-          detailsTitle="Executive Summary"
-          detailsText={toSafeString(
-            pitch?.executiveSummary,
-            "Full executive summary synthesized from the venture analysis."
-          )}
-        >
-          <div className="text-xs text-slate-700">
-            <p className="leading-relaxed bg-orange-50/50 p-3 rounded-xl border border-orange-100 font-medium text-slate-800 italic">
-              "{toSafeString(pitch?.elevatorPitch || originalIdea, "High impact automated workflow copilot.")}"
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {milestonesList.map((m, idx) => (
+            <div
+              key={idx}
+              className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between"
+            >
+              <div>
+                <span className="text-[10px] font-mono uppercase font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-200 inline-block mb-2">
+                  {m.week}
+                </span>
+                <h4 className="text-xs font-bold text-slate-900 mb-1.5">
+                  {m.title}
+                </h4>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  {m.task}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 8. Financial Runway & Economics Snapshot */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs text-center">
+          <span className="text-xs font-mono uppercase text-slate-400 block mb-1">
+            Monthly Operating Cost
+          </span>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900 my-1">
+            {estimatedMonthlyCost}
+          </div>
+          <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200">
+            Lean Operations
+          </span>
+        </div>
+
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs text-center">
+          <span className="text-xs font-mono uppercase text-slate-400 block mb-1">
+            Estimated Year 1 Revenue
+          </span>
+          <div className="text-2xl sm:text-3xl font-black font-mono text-orange-600 my-1">
+            {estimatedRevenue}
+          </div>
+          <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200">
+            High Growth Potential
+          </span>
+        </div>
+
+        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs text-center">
+          <span className="text-xs font-mono uppercase text-slate-400 block mb-1">
+            Monetization Model
+          </span>
+          <div className="text-xl sm:text-2xl font-black text-slate-900 my-1 truncate">
+            {monetizationModel}
+          </div>
+          <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            Proven Business Model
+          </span>
+        </div>
+      </div>
+
+      {/* 9. Business Analysis Navigation Jump-Pad */}
+      <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
+              Explore Detailed Business Analysis Agents
+            </h3>
+            <p className="text-xs text-slate-500">
+              Deep dive into every dimension of this startup with specialized AI agents.
             </p>
           </div>
-        </StatCard>
-      </ResponsiveCardGrid>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {BUSINESS_SECTIONS.filter((s) => s.id !== "overview").map((sec) => (
+            <button
+              key={sec.id}
+              onClick={() => onNavigate(sec.id)}
+              className="p-4 rounded-xl bg-slate-50 hover:bg-slate-100 hover:border-orange-200 border border-slate-200/70 transition-all text-left group cursor-pointer flex items-center justify-between"
+            >
+              <div>
+                <span className="text-xs font-bold text-slate-900 group-hover:text-orange-600 block">
+                  {sec.title}
+                </span>
+                <span className="text-[11px] text-slate-500 mt-0.5 block font-mono">
+                  View breakdown →
+                </span>
+              </div>
+              <ChevronRight size={16} className="text-slate-400 group-hover:text-orange-500 transition-transform group-hover:translate-x-0.5" />
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1335,46 +1575,47 @@ function CustomerDiscoverySection({
 }) {
   const users = useMemo(() => {
     return toSafeArray(customerPersona?.targetUsers, [
-      "Early-Stage Founders & Builders",
-      "Growth Operators & Product Leads",
+      "Everyday Consumers & Users",
+      "Early Adopters Facing This Problem",
     ]);
   }, [customerPersona]);
 
   const painPoints = useMemo(() => {
     return toSafeArray(customerPersona?.painPoints, [
-      "Excessive time lost to manual configuration and non-core operational setup.",
-      "High subscription spend across fragmented point-solutions that do not interoperate.",
-      "Uncertainty around genuine buyer willingness-to-pay before committing engineering burn.",
+      "Current tools and workarounds are slow, confusing, or overly expensive.",
+      "Losing hours every week trying to do repetitive tasks manually.",
+      "Existing alternatives don't solve the core problem directly or simply.",
     ]);
   }, [customerPersona]);
 
   const profile = toSafeString(
     customerPersona?.userProfile,
-    "High-agency early-stage founder or team lead seeking maximum execution leverage and low initial burn."
+    "People who struggle with this problem today and want a fast, simple, and dependable way to solve it."
   );
 
   const interviewQuestions = useMemo(() => {
     return toSafeArray(customerDiscovery?.interviewQuestions, [
-      "What is the hardest part about handling this workflow today?",
-      "When was the last time you encountered this issue, and what specific workaround did you use?",
-      "Why was that workaround frustrating or inadequate?",
-      "How much money or staff hours have you allocated to solve this problem over the past 6 months?",
-      "Where did you look to find current solutions, and why didn't existing tools satisfy you?",
+      "What is the most frustrating part about dealing with this today?",
+      "When was the last time you experienced this problem, and how did you handle it?",
+      "Why did that workaround feel annoying or incomplete?",
+      "Have you spent any money or time trying to fix this over the last few months?",
+      "What would make you immediately recommend a new tool to others?",
     ]);
   }, [customerDiscovery]);
 
   const redFlags = useMemo(() => {
     return toSafeArray(customerDiscovery?.redFlags, [
-      "\"I would definitely use something like that if it existed\" (Hypothetical praise with zero financial commitment).",
-      "\"Send me a link once you have version 1.0 launched\" (Polite deferral masking low purchasing urgency).",
-      "\"My team would love this\" from an employee with zero procurement authority or budget ownership.",
+      "\"That sounds cool, I'd probably use that if it existed\" (Polite praise with no real intent to use or pay).",
+      "\"Send me a link once you launch in a few months\" (Polite brush-off showing low urgency).",
+      "\"Other people I know might want this\" (Passing curiosity from someone who won't use it themselves).",
     ]);
   }, [customerDiscovery]);
 
   const wtpSignals = useMemo(() => {
     return toSafeArray(customerDiscovery?.willingnessToPaySignals, [
-      "Prospect signs a Letter of Intent (LOI) or pays a refundable pilot deposit before code is written.",
-      "Customer shares proprietary internal workflow files or commits their technical team to an onboarding working session.",
+      "Customer asks when they can start using it or tries to pre-order immediately.",
+      "Customer volunteers to test your earliest prototype and share honest feedback.",
+      "Customer refers friends or coworkers who also face this exact frustration.",
     ]);
   }, [customerDiscovery]);
 
@@ -1535,30 +1776,30 @@ function MarketCompetitorsSection({
   const supplierPower = resolvePorterForce(
     "supplierPower",
     ["suppliers", "supplier_power", "vendorPower"],
-    "Low reliance on single cloud/AI vendors due to modular containerized architecture and interchangeable foundation LLM models."
+    "Low dependence on any single provider because standard cloud tools and modern APIs can easily be swapped if pricing changes."
   );
   const competitiveRivalry = resolvePorterForce(
     "competitiveRivalry",
     ["rivalry", "competition", "industryRivalry"],
-    "High density of generic tools competing on broad messaging, but low direct feature overlap in tailored vertical workflows."
+    "Existing competitors focus mostly on broad, generic features, leaving room for a tool that solves this specific task better and faster."
   );
   const threatOfSubstitutes = resolvePorterForce(
     "threatOfSubstitutes",
     ["threatOfSubstitution", "substitutes", "substitutionThreat"],
-    "Current alternatives rely on disjointed manual spreadsheets and fragmented point solutions, which are slow and error-prone."
+    "Current workarounds (like manual spreadsheets or disjointed tools) are slow, error-prone, and frustrating for users."
   );
   const threatOfNewEntry = resolvePorterForce(
     "threatOfNewEntry",
     ["threatOfNewEntrants", "newEntrants", "entryBarriers"],
-    "Low technical barriers for shallow AI wrappers, but high defensibility built through proprietary data loops and integrations."
+    "New competitors can enter quickly, but staying close to users, building brand loyalty, and keeping the product delightfully simple provides lasting defensibility."
   );
 
   // Competitor vulnerability matrix items with intelligent fallback synthesis if backend omitted it
   const competitorsList = useMemo(() => {
     return toSafeArray(marketResearch?.competitors, [
-      "Legacy Incumbent",
-      "Horizontal SaaS Platform",
-      "Manual In-House Tools",
+      "Traditional Competitor",
+      "General Tool Alternative",
+      "Manual In-House Workaround",
     ]);
   }, [marketResearch?.competitors]);
 
@@ -1571,25 +1812,25 @@ function MarketCompetitorsSection({
 
     if (rawList.length > 0) {
       return rawList.map((c) => ({
-        competitor: toSafeString(c?.competitor || c?.name, "Market Incumbent"),
+        competitor: toSafeString(c?.competitor || c?.name, "Market Alternative"),
         weaknesses: toSafeArray(c?.weaknesses || c?.weakness, [
-          "Bloated legacy codebase with slow feature turnaround and rigid multi-month deployment cycles.",
+          "Clunky, hard to use, and often too expensive for everyday users.",
         ]).join("; "),
         missedOpportunities: toSafeArray(c?.missedOpportunities || c?.missedOpportunity, []).join("; "),
         suggestedDifferentiation: toSafeString(
           c?.suggestedDifferentiation || c?.differentiation,
-          "Deliver an autonomous, zero-configuration solution that deploys in seconds."
+          "Provide a fast, friendly, zero-friction solution tailored to what users actually want."
         ),
       }));
     }
 
     return competitorsList.map((comp) => {
-      const name = toSafeString(comp, "Market Incumbent");
+      const name = toSafeString(comp, "Market Alternative");
       return {
         competitor: name,
-        weaknesses: "Bloated legacy codebase with slow feature turnaround; High enterprise setup fees.",
-        missedOpportunities: "Neglected self-serve SMB and early-stage founder onboarding experience.",
-        suggestedDifferentiation: `Deliver an autonomous, zero-configuration solution that deploys in seconds at a fraction of ${name} costs.`,
+        weaknesses: "Clunky interface, slow customer support, and expensive pricing plans.",
+        missedOpportunities: "Overlooked simple self-serve onboarding and affordable pricing for everyday users.",
+        suggestedDifferentiation: `Deliver a fast, intuitive solution that gets the job done in seconds at a fraction of ${name}'s cost.`,
       };
     });
   }, [competitorWeaknessAnalysis, competitorsList]);
@@ -1597,9 +1838,9 @@ function MarketCompetitorsSection({
   // Market opportunities with fallback
   const marketOpps = useMemo(() => {
     return toSafeArray(marketResearch?.opportunities, [
-      "Accelerating demand for autonomous agentic workflows that eliminate manual operator overhead.",
-      "Unbundling of monolithic legacy software suites into fast, modular vertical copilots.",
-      "Growing willingness among founders and operators to pay for instant time-to-value solutions.",
+      "Strong demand for tools that save time and eliminate tedious manual tasks.",
+      "Users want focused, straightforward tools instead of complex all-in-one software.",
+      "People are willing to pay for tools that make their lives or work noticeably easier.",
     ]);
   }, [marketResearch?.opportunities]);
 
@@ -2774,84 +3015,4 @@ function GoToMarketSection({ goToMarket, launchChecklist, pitch, ideaAnalysis, c
     </div>
   );
 }
-
-// ============================================================================
-// DASHBOARD OVERVIEW (kept for legacy "dashboard" route)
-// ============================================================================
-function DashboardOverviewSection({
-  onNavigate,
-  viabilityScorecard,
-  marketSizing,
-  costEstimator,
-  revenueSimulator,
-  ideaAnalysis,
-}) {
-  const score = toSafeString(viabilityScorecard?.score, "84");
-  const verdict = toSafeString(viabilityScorecard?.verdict, "Proceed");
-
-  return (
-    <div className="space-y-6">
-      {/* Top 3 KPI Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs text-center">
-          <span className="text-xs font-mono uppercase text-slate-400 block mb-1">
-            Venture Viability Score
-          </span>
-          <div className="text-3xl sm:text-4xl font-black font-mono text-orange-600 my-1">
-            {score} <span className="text-xs font-normal text-slate-400">/ 100</span>
-          </div>
-          <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200">
-            {verdict}
-          </span>
-        </div>
-
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs text-center">
-          <span className="text-xs font-mono uppercase text-slate-400 block mb-1">
-            Total Addressable Market (TAM)
-          </span>
-          <div className="text-3xl sm:text-4xl font-black font-mono text-slate-900 my-1">
-            {toSafeString(marketSizing?.tam?.value || marketSizing?.tam, "$14.2B")}
-          </div>
-          <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200">
-            High Growth
-          </span>
-        </div>
-
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs text-center">
-          <span className="text-xs font-mono uppercase text-slate-400 block mb-1">
-            Monthly Runway Budget
-          </span>
-          <div className="text-3xl sm:text-4xl font-black font-mono text-slate-900 my-1">
-            {toSafeString(costEstimator?.estimatedMonthlyCost, "$16-51")}
-          </div>
-          <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-50 text-slate-700 border border-slate-200">
-            Lean Operations
-          </span>
-        </div>
-      </div>
-
-      {/* Jump Pad to all 6 sections */}
-      <div className="p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 shadow-xs">
-        <h3 className="text-sm font-bold text-slate-900 mb-4 tracking-tight">
-          Business Analysis Navigation
-        </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {BUSINESS_SECTIONS.map((sec) => (
-            <button
-              key={sec.id}
-              onClick={() => onNavigate(sec.id)}
-              className="p-4 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/70 transition-all text-left group cursor-pointer"
-            >
-              <span className="text-xs font-bold text-slate-900 group-hover:text-orange-600 block">
-                {sec.title}
-              </span>
-              <span className="text-[11px] text-slate-500 mt-1 block font-mono">
-                View analysis →
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+

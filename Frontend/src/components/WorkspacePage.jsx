@@ -357,26 +357,26 @@ export default function WorkspacePage({
                       handleOpenStartup(history[0]);
                     }
                     setActiveView("blueprint");
-                    setActiveSection("dashboard");
+                    setActiveSection("overview");
                     setViewMode("dashboard");
                     scrollToTop();
                   }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    activeView === "blueprint" && viewMode === "dashboard" && activeSection === "dashboard"
+                    activeView === "blueprint" && viewMode === "dashboard" && (activeSection === "overview" || activeSection === "dashboard")
                       ? "bg-slate-100 text-slate-900 font-bold border border-slate-200/80 shadow-2xs"
                       : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent"
                   }`}
-                  title="Dashboard"
+                  title="Executive Overview"
                 >
                   <LayoutGrid
                     size={16}
                     className={
-                      activeView === "blueprint" && viewMode === "dashboard" && activeSection === "dashboard"
+                      activeView === "blueprint" && viewMode === "dashboard" && (activeSection === "overview" || activeSection === "dashboard")
                         ? "text-slate-900"
                         : "text-slate-400"
                     }
                   />
-                  {sidebarOpen && <span className="truncate">Dashboard</span>}
+                  {sidebarOpen && <span className="truncate">Executive Overview</span>}
                 </button>
 
                 {/* Business Analysis Expandable Section with Vertical Ash Line */}
@@ -387,7 +387,7 @@ export default function WorkspacePage({
                       setIsBusinessOpen(!isBusinessOpen);
                     }}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                      activeView === "blueprint" && viewMode === "dashboard" && activeSection !== "dashboard"
+                      activeView === "blueprint" && viewMode === "dashboard" && activeSection !== "overview" && activeSection !== "dashboard"
                         ? "text-slate-900 bg-slate-50"
                         : "text-slate-700 hover:text-slate-900 hover:bg-slate-50"
                     }`}

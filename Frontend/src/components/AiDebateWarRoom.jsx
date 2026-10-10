@@ -52,15 +52,15 @@ export function AiDebateSummaryCard({
 }) {
   const bull = aiDebate?.bull || {
     provider: "Groq (Llama 3.3 70B)",
-    thesis: "Rapid vertical wedge capitalizing on underserved workflow pain.",
-    unfairWedge: "High deployment velocity and specialized UX.",
+    thesis: "There is strong demand for a simple, focused solution that solves this specific user pain faster and easier than existing tools.",
+    unfairWedge: "Fast setup, simple design, and solving one clear problem exceptionally well.",
     convictionScore: 86,
   };
 
   const bear = aiDebate?.bear || {
     provider: "OpenRouter (DeepSeek V3)",
-    thesis: "Vulnerable to high customer acquisition friction and incumbent suite bundling.",
-    cacUnitEconomicsTrap: "Paid CAC will compress margins without organic retention.",
+    thesis: "Acquiring users affordably without expensive advertising will be challenging, especially if users already rely on existing habits.",
+    cacUnitEconomicsTrap: "Ad costs can eat up margins unless users keep returning or recommend it by word-of-mouth.",
     skepticismScore: 83,
   };
 
@@ -69,9 +69,9 @@ export function AiDebateSummaryCard({
     winningSide: bull.convictionScore >= bear.skepticismScore ? "Bull" : "Bear",
     verdictSummary:
       viabilityScorecard?.verdictReasoning ||
-      "The committee approves proceeding with strict pre-launch customer validation commitments.",
-    keyConditionToProceed: "Secure 3-5 written customer commitments before deep development.",
-    numberOneExperiment: "Run a 7-day concierge test to validate willingness-to-pay.",
+      "The committee recommends moving forward, starting with quick, direct conversations with real target users to confirm interest before heavy development.",
+    keyConditionToProceed: "Talk with 5-10 real target users to verify they actively want this solution.",
+    numberOneExperiment: "Run a simple 7-day landing page or pre-order test to prove real demand.",
   };
 
   const winningSide = judge.winningSide || "Split Consensus";
@@ -101,7 +101,7 @@ export function AiDebateSummaryCard({
               </span>
             </div>
             <p className="text-xs text-slate-300">
-              Live multi-model arbitration between Groq (Llama 3.3 70B), OpenRouter (DeepSeek V3), and Google (Gemini).
+              Live multi-model analysis between Groq (Llama 3.3), OpenRouter (DeepSeek V3), and Google (Gemini).
             </p>
           </div>
         </div>
@@ -120,10 +120,10 @@ export function AiDebateSummaryCard({
           >
             <Gavel size={13} />
             {winningSide === "Bull"
-              ? "Bull Consensus"
+              ? "Bull Consensus (Strong Upside)"
               : winningSide === "Bear"
-              ? "Bear Skepticism"
-              : "Split Consensus"}
+              ? "Bear Skepticism (High Caution)"
+              : "Balanced Consensus"}
           </span>
         </div>
       </div>
@@ -144,13 +144,13 @@ export function AiDebateSummaryCard({
             <span className="text-[10px] text-slate-400 font-mono block mb-2">
               {safeText(bull.provider, "Groq • Llama 3.3 70B")}
             </span>
-            <p className="text-xs text-slate-200 leading-relaxed line-clamp-3 mb-2 font-medium">
+            <p className="text-xs text-slate-200 leading-relaxed mb-3 font-medium">
               "{safeText(bull.thesis)}"
             </p>
           </div>
-          <div className="pt-2 border-t border-white/5 text-[11px] text-emerald-300/90 font-medium">
-            <span className="text-slate-400 font-mono text-[10px] block">Unfair Wedge:</span>
-            <span className="line-clamp-2">{safeText(bull.unfairWedge)}</span>
+          <div className="pt-2.5 border-t border-white/10 text-[11px] text-emerald-300/90 font-medium">
+            <span className="text-slate-400 font-mono text-[10px] block mb-0.5">Key Advantage:</span>
+            <span>{safeText(bull.unfairWedge)}</span>
           </div>
         </div>
 
@@ -168,13 +168,13 @@ export function AiDebateSummaryCard({
             <span className="text-[10px] text-slate-400 font-mono block mb-2">
               {safeText(bear.provider, "OpenRouter • DeepSeek V3")}
             </span>
-            <p className="text-xs text-slate-200 leading-relaxed line-clamp-3 mb-2 font-medium">
+            <p className="text-xs text-slate-200 leading-relaxed mb-3 font-medium">
               "{safeText(bear.thesis)}"
             </p>
           </div>
-          <div className="pt-2 border-t border-white/5 text-[11px] text-rose-300/90 font-medium">
-            <span className="text-slate-400 font-mono text-[10px] block">Fatal Trap:</span>
-            <span className="line-clamp-2">{safeText(bear.cacUnitEconomicsTrap)}</span>
+          <div className="pt-2.5 border-t border-white/10 text-[11px] text-rose-300/90 font-medium">
+            <span className="text-slate-400 font-mono text-[10px] block mb-0.5">Top Risk to Avoid:</span>
+            <span>{safeText(bear.cacUnitEconomicsTrap)}</span>
           </div>
         </div>
 
@@ -192,13 +192,13 @@ export function AiDebateSummaryCard({
             <span className="text-[10px] text-slate-400 font-mono block mb-2">
               {safeText(judge.provider, "Google • Gemini 2.5 Flash")}
             </span>
-            <p className="text-xs text-slate-200 leading-relaxed line-clamp-3 mb-2 font-medium">
+            <p className="text-xs text-slate-200 leading-relaxed mb-3 font-medium">
               {safeText(judge.verdictSummary)}
             </p>
           </div>
-          <div className="pt-2 border-t border-white/5 text-[11px] text-amber-300/90 font-medium">
-            <span className="text-slate-400 font-mono text-[10px] block">Condition to Proceed:</span>
-            <span className="line-clamp-2">{safeText(judge.keyConditionToProceed)}</span>
+          <div className="pt-2.5 border-t border-white/10 text-[11px] text-amber-300/90 font-medium">
+            <span className="text-slate-400 font-mono text-[10px] block mb-0.5">First Goal to Prove:</span>
+            <span>{safeText(judge.keyConditionToProceed)}</span>
           </div>
         </div>
       </div>
@@ -211,10 +211,10 @@ export function AiDebateSummaryCard({
           </div>
           <div className="text-xs">
             <span className="text-slate-400 font-mono text-[10px] uppercase font-bold mr-2">
-              #1 Lean Experiment:
+              #1 Quick Test to Run:
             </span>
             <span className="text-slate-200 font-medium">
-              {safeText(judge.numberOneExperiment, "Test 10 customer interviews before building.")}
+              {safeText(judge.numberOneExperiment, "Talk with 10 potential customers before writing code.")}
             </span>
           </div>
         </div>
@@ -250,26 +250,26 @@ export default function AiDebateWarRoomSection({
 
   const bull = aiDebate?.bull || {
     provider: "Groq (Llama 3.3 70B)",
-    thesis: "Rapid vertical wedge capitalizing on underserved workflow pain with massive tailwinds.",
+    thesis: "There is strong genuine demand for a simple, focused solution that solves this specific user pain faster and easier than existing alternatives.",
     marketTailwinds: [
-      "Accelerating adoption of automated specialized workflows.",
-      "Early adopters urgently demanding point solutions over bloated legacy suites.",
-      "Minimal serverless infrastructure costs enabling fast ROI.",
+      "Growing user demand for simple tools that get straight to the point.",
+      "Early adopters are actively seeking faster solutions to replace manual or clunky workarounds.",
+      "Modern cloud tools make it affordable and quick to build and launch version 1.",
     ],
-    unfairWedge: "High deployment velocity, zero bloat, and specialized vertical workflow precision.",
+    unfairWedge: "Fast setup, simple design, and solving one clear problem exceptionally well.",
     convictionScore: 88,
   };
 
   const bear = aiDebate?.bear || {
     provider: "OpenRouter (DeepSeek V3)",
-    thesis: "Vulnerable to fatal customer acquisition cost (CAC) traps and rapid incumbent feature replication.",
+    thesis: "Acquiring users affordably without expensive advertising will be challenging, especially if users already rely on existing habits.",
     fatalFlaws: [
-      "Paid acquisition channels will outstrip contract value without viral mechanics.",
-      "Low switching costs leave product exposed to high month-3 churn.",
-      "Major platforms can bundle this as a free minor feature in their core suite.",
+      "Advertising costs can quickly exceed revenues if customers don't stick around long-term.",
+      "If it's too easy for users to switch away, retention could drop after the first month.",
+      "Larger established apps could add similar features if they notice high demand.",
     ],
-    cacUnitEconomicsTrap: "Customer acquisition costs risk exceeding initial lifetime value unless organic distribution is pre-secured.",
-    incumbentMoatThreat: "Entrenched enterprise software can roll this out as a minor update without charging extra.",
+    cacUnitEconomicsTrap: "Customer acquisition costs could exceed customer lifetime spend unless word-of-mouth or direct outreach works well.",
+    incumbentMoatThreat: "Existing popular tools already have established user bases and could add this as a free perk.",
     skepticismScore: 84,
   };
 
@@ -277,22 +277,22 @@ export default function AiDebateWarRoomSection({
     provider: "Google (Gemini 2.5 Flash)",
     winningSide: bull.convictionScore >= bear.skepticismScore ? "Bull" : "Bear",
     scorecard: {
-      marketDemand: { winner: "Bull", rationale: "Clear workflow friction and verified user search intent." },
-      defensibility: { winner: "Bear", rationale: "Incumbents maintain deep data gravity; defensibility requires proprietary workflows." },
-      technicalFeasibility: { winner: "Bull", rationale: "Serverless modern tech stack enables lean 4-week MVP development." },
-      unitEconomics: { winner: "Bear", rationale: "CAC payback period must be verified through real pre-launch commitments." },
+      marketDemand: { winner: "Bull", rationale: "Clear everyday frustration and real search interest from users." },
+      defensibility: { winner: "Bear", rationale: "Needs a unique feature or loyal community to keep bigger tools from copying it." },
+      technicalFeasibility: { winner: "Bull", rationale: "A clean, functional prototype can be built and tested within 3 to 4 weeks." },
+      unitEconomics: { winner: "Bear", rationale: "Must prove people will actively pay before spending heavily on ads or building complex code." },
     },
     verdictSummary:
-      "The committee agrees that high customer demand exists, but the founder must resolve unit economics before heavy engineering.",
-    keyConditionToProceed: "Secure 3-5 pre-commitments, pilot deposits, or signed letters of intent (LOIs).",
-    numberOneExperiment: "Run a 7-day concierge test to prove buyer commitment without writing code.",
+      "The committee agrees real customer demand exists, but the founder must confirm willingness to pay through quick direct interviews before writing extensive code.",
+    keyConditionToProceed: "Talk to 5-10 real target customers to confirm they actively want and will use this.",
+    numberOneExperiment: "Run a simple 7-day pre-order or waitlist test to prove real customer commitment.",
   };
 
   const rebuttalRound = aiDebate?.rebuttalRound || {
     bullRebuttal:
-      "The focused product scope and acute pain point overcome initial CAC hurdles by unlocking organic word-of-mouth among early adopters.",
+      "A simple, highly focused tool solves the exact daily headache better than bloated legacy software, driving strong organic word-of-mouth.",
     bearRebuttal:
-      "Until written customer pre-commitments are verified, low switching barriers leave high risk of churn and slow payback cycles.",
+      "Until real customers put down money or sign up eagerly, the business risks high churn and slow payback cycles.",
   };
 
   const isLocalhost =
@@ -410,9 +410,9 @@ export default function AiDebateWarRoomSection({
   };
 
   const sampleTestimonies = [
-    "We already secured 2 signed pilot letters of intent (LOIs) with target teams.",
-    "Our initial distribution is via an existing 12,000-member practitioner Slack community, giving us $0 CAC.",
-    "Our team includes a former domain specialist with 8 years of proprietary workflow insight.",
+    "We already talked to 15 target users who confirmed this is an everyday headache they want fixed.",
+    "We have a direct organic way to reach target users (e.g. niche communities, existing followers) without spending on ads.",
+    "Our team has years of direct personal experience dealing with this exact problem firsthand.",
   ];
 
   return (
@@ -438,8 +438,8 @@ export default function AiDebateWarRoomSection({
             </h2>
             <p className="text-sm text-slate-300 mt-2 max-w-2xl leading-relaxed">
               Every startup idea is pressure-tested by three specialized AI models from separate providers.
-              The Bull VC (Groq Llama 3.3 70B) defends upside, the Bear VC (OpenRouter DeepSeek V3) attacks fatal traps,
-              and the Chief Judge (Google Gemini) delivers the binding ruling that calibrates your blueprint.
+              The Bull VC (Groq Llama 3.3 70B) defends upside, the Bear VC (OpenRouter DeepSeek V3) attacks risks,
+              and the Chief Judge (Google Gemini) delivers the balanced ruling that shapes your blueprint.
             </p>
           </div>
 
@@ -479,7 +479,7 @@ export default function AiDebateWarRoomSection({
               </span>
             </div>
             <h4 className="text-base font-bold text-slate-900 tracking-tight mb-1">
-              The Upside Advocate
+              The Growth Advocate
             </h4>
             <p className="text-xs text-slate-500 font-mono mb-4">
               {safeText(bull.provider, "Groq Cloud • Llama 3.3 70B")}
@@ -490,7 +490,7 @@ export default function AiDebateWarRoomSection({
           </div>
           <div>
             <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
-              Core Unfair Wedge:
+              Key Advantage:
             </span>
             <p className="text-xs text-slate-700 font-medium">
               {safeText(bull.unfairWedge)}
@@ -511,7 +511,7 @@ export default function AiDebateWarRoomSection({
               </span>
             </div>
             <h4 className="text-base font-bold text-slate-900 tracking-tight mb-1">
-              The Unit Economics Hawk
+              The Critical Skeptic
             </h4>
             <p className="text-xs text-slate-500 font-mono mb-4">
               {safeText(bear.provider, "OpenRouter • DeepSeek V3 Free")}
@@ -522,7 +522,7 @@ export default function AiDebateWarRoomSection({
           </div>
           <div>
             <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
-              CAC & Incumbent Moat Trap:
+              Biggest Financial & Competitor Risk:
             </span>
             <p className="text-xs text-slate-700 font-medium">
               {safeText(bear.cacUnitEconomicsTrap)}
@@ -539,11 +539,11 @@ export default function AiDebateWarRoomSection({
                 <Scale size={14} /> AI 3 • Chief Judge
               </span>
               <span className="text-xs font-mono font-black text-indigo-700 bg-indigo-100/70 px-2.5 py-0.5 rounded-full border border-indigo-200">
-                {judge.winningSide || "Split"} Winner
+                {judge.winningSide || "Balanced"} Ruling
               </span>
             </div>
             <h4 className="text-base font-bold text-slate-900 tracking-tight mb-1">
-              The Venture Arbitrator
+              The Independent Arbitrator
             </h4>
             <p className="text-xs text-slate-500 font-mono mb-4">
               {safeText(judge.provider, "Google Gemini 2.5 Flash")}
@@ -554,7 +554,7 @@ export default function AiDebateWarRoomSection({
           </div>
           <div>
             <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
-              Key Condition to Proceed:
+              Key Milestone to Prove First:
             </span>
             <p className="text-xs text-slate-700 font-medium">
               {safeText(judge.keyConditionToProceed)}
@@ -637,7 +637,7 @@ export default function AiDebateWarRoomSection({
               </div>
               <div className="mt-4 pt-4 border-t border-emerald-200">
                 <span className="text-[11px] font-mono uppercase text-emerald-800 font-bold block mb-1">
-                  Asymmetric Wedge:
+                  Why Customers Will Choose This:
                 </span>
                 <p className="text-xs text-slate-800 font-medium bg-white p-2.5 rounded-xl border border-emerald-200">
                   {safeText(bull.unfairWedge)}
@@ -650,7 +650,7 @@ export default function AiDebateWarRoomSection({
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-sm font-bold text-rose-950 flex items-center gap-2">
                   <AlertTriangle size={16} className="text-rose-600" />
-                  Bear Case: Fatal Flaws & CAC Traps
+                  Bear Case: Critical Risks & Potential Hurdles
                 </h4>
                 <span className="text-[11px] font-mono font-bold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full">
                   OpenRouter DeepSeek V3
@@ -661,7 +661,7 @@ export default function AiDebateWarRoomSection({
               </p>
               <div className="space-y-2">
                 <span className="text-[11px] font-mono uppercase text-rose-800 font-bold block">
-                  Fatal Vulnerabilities & Traps:
+                  Identified Risks & Traps:
                 </span>
                 {(Array.isArray(bear.fatalFlaws) ? bear.fatalFlaws : []).map(
                   (ff, i) => (
@@ -677,7 +677,7 @@ export default function AiDebateWarRoomSection({
               </div>
               <div className="mt-4 pt-4 border-t border-rose-200">
                 <span className="text-[11px] font-mono uppercase text-rose-800 font-bold block mb-1">
-                  Incumbent Platform Moat Threat:
+                  Risk of Existing Competitors Copying This:
                 </span>
                 <p className="text-xs text-slate-800 font-medium bg-white p-2.5 rounded-xl border border-rose-200">
                   {safeText(bear.incumbentMoatThreat)}
@@ -860,7 +860,7 @@ export default function AiDebateWarRoomSection({
             onChange={(e) => setFounderTestimony(e.target.value)}
             disabled={isDebating}
             rows={3}
-            placeholder="Type your defense testimony here... (e.g. 'We already interviewed 12 target design engineers, have 2 signed enterprise pilot LOIs, and our initial wedge is distributing via existing Slack community with 15k active users.')"
+            placeholder="Type your defense testimony here... (e.g. 'We interviewed 15 target users who confirmed this problem, our first plan is to reach them directly in active online communities, and we have 20 people on our waiting list.')"
             className="w-full text-xs text-slate-800 bg-slate-50 border border-slate-200 rounded-2xl p-4 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:bg-white transition-all disabled:opacity-50"
           />
 

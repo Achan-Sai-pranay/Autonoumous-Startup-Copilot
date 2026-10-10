@@ -2,16 +2,16 @@
 // ---------------------------------------------------------------------------
 // 3-AI Multi-Agent Debate Engine ("The VC War Room")
 //
-// Pipeline:
+// Models:
 //   - AI 1 (Bull Partner): Groq Cloud (llama-3.3-70b-versatile)
 //   - AI 2 (Bear Partner): OpenRouter (deepseek/deepseek-chat:free)
 //   - AI 3 (Chief Judge + 12 Agents): Google Gemini
 //
-// Features:
-//   - Multi-key round-robin rotation for free-tier scaling (GROQ_API_KEY=k1,k2, etc.)
-//   - Zero-config fallbacks (Groq -> OpenRouter -> Gemini -> heuristic synthesis)
-//   - Parallel execution with strict timeout guards (~6.5s)
-//   - Interactive War Room cross-examination with Founder Testimony
+// Key Principles:
+//   - Crystal-clear, plain-English explanations (no confusing buzzwords or MBA jargon)
+//   - 100% grounded in the user's specific startup idea and real customers
+//   - Multi-key round-robin rotation for free-tier scaling
+//   - Resilient zero-config fallback to Gemini or idea-aware heuristics
 // ---------------------------------------------------------------------------
 
 import dotenv from "dotenv";
@@ -97,24 +97,67 @@ function withTimeout(promise, ms, timeoutMsg = "Request timed out") {
   ]);
 }
 
+// Idea-aware fallback generators (plain English, no hardcoded SaaS templates)
+function buildIdeaSnippet(idea) {
+  const clean = (idea || "").replace(/["\n\r]/g, " ").trim();
+  return clean.length > 90 ? clean.slice(0, 90) + "..." : clean;
+}
+
+function getContextualBullFallback(idea) {
+  const snippet = buildIdeaSnippet(idea);
+  return {
+    provider: "Committee Bull Partner",
+    thesis: `This idea solves a clear, real problem for its target users. By keeping the initial version simple, focused, and fast to use, it can quickly win loyal early fans who are tired of existing clunky workarounds.`,
+    marketTailwinds: [
+      `Strong and growing interest from people specifically looking for better solutions for ${snippet}.`,
+      "Users today prefer focused, easy tools that save time rather than bloated, complicated software.",
+      "Low startup costs make it possible to build an MVP and start getting real feedback within weeks.",
+    ],
+    unfairWedge: "High personal touch with early users, faster updates, and a much simpler experience than competitors.",
+    convictionScore: 84,
+  };
+}
+
+function getContextualBearFallback(idea) {
+  const snippet = buildIdeaSnippet(idea);
+  return {
+    provider: "Committee Bear Partner",
+    thesis: `The biggest danger is getting noticed and convincing people to pay. Even if ${snippet} is a great idea, finding customers and getting them to switch from what they already do is harder and costs more than founders expect.`,
+    fatalFlaws: [
+      "Willingness to Pay Risk: People might say the idea sounds cool in casual conversations, but hesitate when asked to actually pay real money.",
+      "Marketing Cost Trap: If you have to pay for online ads to find every single user, advertising costs can quickly exceed what customers pay you.",
+      "Competitor Copycats: Established tools or larger existing platforms might easily add a similar feature once they see you getting traction.",
+    ],
+    cacUnitEconomicsTrap: "Finding paying customers through ads will drain money quickly unless your early users love it enough to recommend it by word-of-mouth.",
+    incumbentMoatThreat: "Big existing companies already have millions of users and could roll out a similar feature for free to keep users on their platform.",
+    skepticismScore: 82,
+  };
+}
+
 // --- 3. AI 1: The Bull Partner (Groq Cloud Llama 3.3 70B) ------------------
 export async function callBullAgent(idea, context = "") {
   const apiKey = groqPool.getNextKey();
 
-  const systemPrompt = `You are the Bull VC Partner in an elite 3-AI Startup Investment Committee ("The VC War Room").
-Your mandate: Defend this startup idea with high conviction and intellectual rigor.
-Uncover the asymmetric upside, non-obvious market tailwinds, why now (timing), and the unfair distribution/product wedge that allows them to win against incumbents.
-Be concrete, analytical, and direct. Avoid generic startup clichés.
+  const systemPrompt = `You are the Bull Partner in a 3-AI Startup Committee ("The VC War Room").
+Your mandate: Defend this startup idea with high conviction, practical optimism, and simple, plain English.
+Explain clearly why customers will love this product, what real-world trends make this the right time to build it, and what unfair advantage allows this startup to win against existing competitors.
+
+CRITICAL LANGUAGE MANDATES:
+1. USE SIMPLE, EVERYDAY 8TH-GRADE ENGLISH: Speak like a smart, friendly mentor talking to a friend over coffee. Keep sentences short, punchy, and clear.
+2. BANNED WORDS (DO NOT USE ANY OF THESE):
+   - NO financial jargon: "CAPEX", "OPEX", "CAC", "LTV", "EBITDA", "ROI", "unit economics".
+   - NO consulting buzzwords: "cohort", "secular migration", "suburban nodes", "nodes", "hyper-local", "asymmetric wedge", "wedge", "paradigm shift", "vector of disruption", "deep data gravity", "vertical point solution", "point solution", "flywheel", "disintermediation".
+3. 100% SPECIFIC TO THIS IDEA: Ground every sentence directly in this exact startup concept: "${idea}". Name the actual people (e.g. neighbors, families, dog owners, shoppers, students) and what they actually buy or do.
 
 Respond with ONLY valid JSON with this exact structure:
 {
-  "thesis": "2-3 sentence high-conviction thesis on why this startup can win and scale.",
+  "thesis": "2-3 clear, enthusiastic sentences in plain English explaining why this startup can succeed and grow.",
   "marketTailwinds": [
-    "Concrete macro or industry tailwind 1",
-    "Concrete regulatory, technological, or behavioral shift 2",
-    "Concrete market tailwind 3"
+    "Simple real-world trend or user habit shift 1 that helps this idea",
+    "Simple real-world trend or helpful technology shift 2",
+    "Simple real-world trend 3"
   ],
-  "unfairWedge": "The specific asymmetric wedge or product defensibility that protects them.",
+  "unfairWedge": "The single biggest practical advantage or unique edge that lets this startup win customers.",
   "convictionScore": 88
 }`;
 
@@ -138,7 +181,7 @@ Respond with ONLY valid JSON with this exact structure:
                 { role: "system", content: systemPrompt },
                 { role: "user", content: userPrompt },
               ],
-              temperature: 0.85,
+              temperature: 0.8,
               response_format: { type: "json_object" },
             }),
           }),
@@ -155,7 +198,7 @@ Respond with ONLY valid JSON with this exact structure:
               provider: `Groq (${model.includes("70b") ? "Llama 3.3 70B" : "Llama 3.1 8B"})`,
               thesis: parsed.thesis,
               marketTailwinds: Array.isArray(parsed.marketTailwinds) ? parsed.marketTailwinds : [],
-              unfairWedge: parsed.unfairWedge || "High product agility and tight vertical specialization.",
+              unfairWedge: parsed.unfairWedge || "Focused product experience and personal connection with early adopters.",
               convictionScore: Math.min(99, Math.max(50, Number(parsed.convictionScore) || 85)),
             };
           }
@@ -173,10 +216,10 @@ Respond with ONLY valid JSON with this exact structure:
     const parsed = parseJsonSafely(raw);
     if (parsed && parsed.thesis) {
       return {
-        provider: "Google Gemini (Bull Partner Mode)",
+        provider: "Google Gemini (Bull Partner)",
         thesis: parsed.thesis,
         marketTailwinds: Array.isArray(parsed.marketTailwinds) ? parsed.marketTailwinds : [],
-        unfairWedge: parsed.unfairWedge || "Focused product specialization and rapid iteration velocity.",
+        unfairWedge: parsed.unfairWedge || "Simple product design and rapid iteration speed.",
         convictionScore: Math.min(99, Math.max(50, Number(parsed.convictionScore) || 84)),
       };
     }
@@ -184,40 +227,38 @@ Respond with ONLY valid JSON with this exact structure:
     console.warn(`[Bull Agent] Gemini fallback failed: ${geminiErr.message}`);
   }
 
-  // High-Signal Algorithmic Default (if all external APIs are unreachable)
-  return {
-    provider: "Committee Bull Synthesis",
-    thesis: `This concept capitalizes on a high-friction workflow gap where legacy competitors are too bloated to provide an agile, dedicated solution.`,
-    marketTailwinds: [
-      "Accelerating adoption of automated specialized workflows across digital operators.",
-      "Increasing willingness of early adopters to pay for focused point-solutions.",
-      "Compressed time-to-market enabled by modern serverless infrastructure.",
-    ],
-    unfairWedge: "Ultra-fast execution, zero-bloat onboarding, and specialized workflow precision.",
-    convictionScore: 82,
-  };
+  return getContextualBullFallback(idea);
 }
 
 // --- 4. AI 2: The Bear Partner (OpenRouter DeepSeek Free / Groq Llama) -------
 export async function callBearAgent(idea, context = "") {
   const openRouterKey = openRouterPool.getNextKey();
 
-  const systemPrompt = `You are the Bear VC Partner in an elite 3-AI Startup Investment Committee ("The VC War Room").
-Your mandate: Attack this startup idea with ruthless commercial skepticism and unit-economics rigor.
-Pinpoint fatal CAC traps (Customer Acquisition Cost), low switching costs, customer churn, platform dependency, and why incumbents (Google, Microsoft, vertical giants) or open source will commoditize or crush this.
-Be blunt, unsparing, and mathematically grounded. Despise unfounded founder optimism.
+  const systemPrompt = `You are the Bear Partner in a 3-AI Startup Committee ("The VC War Room").
+Your mandate: Protect the founder from blind optimism by highlighting the real, honest risks and dangers of this startup in simple, plain English.
+Explain why customers might not pay, why finding customers could cost too much, and why existing competitors or large platforms might crush or copy this.
+
+CRITICAL LANGUAGE MANDATES:
+1. USE SIMPLE, EVERYDAY 8TH-GRADE ENGLISH: Speak like an experienced, caring startup mentor who is being 100% honest about failure modes. Keep sentences short and clear.
+2. BANNED WORDS (DO NOT USE ANY OF THESE):
+   - NO financial jargon: "CAPEX", "OPEX", "CAC", "LTV", "EBITDA", "ROI", "unit economics", "TAM".
+   - NO consulting buzzwords: "cohort", "secular migration", "suburban nodes", "nodes", "hyper-local", "asymmetric wedge", "wedge", "paradigm shift", "vector of disruption", "deep data gravity", "vertical point solution", "point solution", "flywheel", "disintermediation", "incumbent bundling", "feature commoditization".
+   - Instead of "high CAC trap", write "spending more on advertising than each customer actually pays".
+   - Instead of "incumbent bundling", write "big existing companies adding this feature for free".
+   - Instead of "low switching barriers", write "customers easily canceling and going elsewhere".
+3. 100% SPECIFIC TO THIS IDEA: Ground every warning directly in this exact startup concept: "${idea}".
 
 Respond with ONLY valid JSON with this exact structure:
 {
-  "thesis": "2-3 sentence ruthless critique pinpointing the core commercial and market vulnerability.",
+  "thesis": "2-3 clear, honest sentences in plain English pinpointing the biggest practical dangers and why this could fail.",
   "fatalFlaws": [
-    "Specific fatal flaw 1 regarding unit economics or CAC",
-    "Specific distribution or retention failure mode 2",
-    "Structural incumbent or defensibility risk 3"
+    "Specific customer or willingness-to-pay risk 1",
+    "Specific marketing or customer-finding trap 2",
+    "Specific competitor or copycat danger 3"
   ],
-  "cacUnitEconomicsTrap": "Analysis of why acquisition costs may exceed customer lifetime value (LTV).",
-  "incumbentMoatThreat": "Why incumbents or hyperscalers will easily copy, integrate, or bundle this.",
-  "skepticismScore": 86
+  "cacUnitEconomicsTrap": "Simple explanation of why getting customers might cost more money than they pay you.",
+  "incumbentMoatThreat": "Simple explanation of how big existing companies or competitors could copy or undercut this.",
+  "skepticismScore": 84
 }`;
 
   const userPrompt = `Startup Idea: "${idea}"${context ? `\nAdditional Context / Bull Thesis: ${context}` : ""}`;
@@ -259,8 +300,8 @@ Respond with ONLY valid JSON with this exact structure:
               provider: model.includes("deepseek") ? "OpenRouter (DeepSeek V3)" : "OpenRouter (Llama 3.3 70B)",
               thesis: parsed.thesis,
               fatalFlaws: Array.isArray(parsed.fatalFlaws) ? parsed.fatalFlaws : [],
-              cacUnitEconomicsTrap: parsed.cacUnitEconomicsTrap || "Customer acquisition costs risk outstripping low ACV without viral mechanics.",
-              incumbentMoatThreat: parsed.incumbentMoatThreat || "Major incumbent players can replicate this as a free minor feature in their ecosystem.",
+              cacUnitEconomicsTrap: parsed.cacUnitEconomicsTrap || "Marketing and ad costs risk exceeding what users actually pay.",
+              incumbentMoatThreat: parsed.incumbentMoatThreat || "Larger competitors can easily copy this feature into their existing apps.",
               skepticismScore: Math.min(99, Math.max(50, Number(parsed.skepticismScore) || 85)),
             };
           }
@@ -305,9 +346,9 @@ Respond with ONLY valid JSON with this exact structure:
             provider: "Groq (Llama 3.1 8B Bear Mode)",
             thesis: parsed.thesis,
             fatalFlaws: Array.isArray(parsed.fatalFlaws) ? parsed.fatalFlaws : [],
-            cacUnitEconomicsTrap: parsed.cacUnitEconomicsTrap || "High customer acquisition friction compared to early churn rate.",
-            incumbentMoatThreat: parsed.incumbentMoatThreat || "Incumbent suite bundling makes standalone adoption difficult.",
-            skepticismScore: Math.min(99, Math.max(50, Number(parsed.skepticismScore) || 86)),
+            cacUnitEconomicsTrap: parsed.cacUnitEconomicsTrap || "Ad spend can eat up all profit unless early users spread the word.",
+            incumbentMoatThreat: parsed.incumbentMoatThreat || "Established apps could release a similar feature for free.",
+            skepticismScore: Math.min(99, Math.max(50, Number(parsed.skepticismScore) || 85)),
           };
         }
       }
@@ -323,11 +364,11 @@ Respond with ONLY valid JSON with this exact structure:
     const parsed = parseJsonSafely(raw);
     if (parsed && parsed.thesis) {
       return {
-        provider: "Google Gemini (Bear Partner Mode)",
+        provider: "Google Gemini (Bear Partner)",
         thesis: parsed.thesis,
         fatalFlaws: Array.isArray(parsed.fatalFlaws) ? parsed.fatalFlaws : [],
-        cacUnitEconomicsTrap: parsed.cacUnitEconomicsTrap || "High customer acquisition costs relative to initial contract value.",
-        incumbentMoatThreat: parsed.incumbentMoatThreat || "Incumbents can bundle equivalent functionality into their existing core subscriptions.",
+        cacUnitEconomicsTrap: parsed.cacUnitEconomicsTrap || "Getting customers through paid ads risks burning cash too quickly.",
+        incumbentMoatThreat: parsed.incumbentMoatThreat || "Existing market leaders could add similar functionality for free.",
         skepticismScore: Math.min(99, Math.max(50, Number(parsed.skepticismScore) || 83)),
       };
     }
@@ -335,26 +376,10 @@ Respond with ONLY valid JSON with this exact structure:
     console.warn(`[Bear Agent] Gemini Bear fallback failed: ${geminiErr.message}`);
   }
 
-  // High-Signal Algorithmic Default
-  return {
-    provider: "Committee Bear Synthesis",
-    thesis: "Without an existing organic distribution channel, customer acquisition costs will exceed lifetime value in year one.",
-    fatalFlaws: [
-      "Vulnerability to feature commoditization as AI foundations become widespread.",
-      "High sales cycle friction if buyers view this as a 'nice-to-have' tool rather than mission-critical infrastructure.",
-      "Potential high churn rate once the initial novelty wears off unless deeply embedded in user habits.",
-    ],
-    cacUnitEconomicsTrap: "Paid ad channels will burn cash quickly unless proprietary organic word-of-mouth or community distribution is secured upfront.",
-    incumbentMoatThreat: "Incumbent industry software can roll this out as an update without charging extra, cutting off standalone growth.",
-    skepticismScore: 84,
-  };
+  return getContextualBearFallback(idea);
 }
 
 // --- 5. Parallel Opening Clash --------------------------------------------
-/**
- * Executes the Bull (Groq) and Bear (OpenRouter) agents in parallel.
- * Completes in ~2.5s and supplies the arguments to Gemini (The Chief Judge).
- */
 export async function runOpeningClash(idea) {
   const [bullResult, bearResult] = await Promise.allSettled([
     callBullAgent(idea),
@@ -364,35 +389,17 @@ export async function runOpeningClash(idea) {
   const bull =
     bullResult.status === "fulfilled"
       ? bullResult.value
-      : {
-          provider: "Bull Partner",
-          thesis: "Agile wedge with strong early adopter potential.",
-          marketTailwinds: ["Accelerating market demand for automated vertical workflows."],
-          unfairWedge: "Fast deployment velocity and focus on high-friction pain points.",
-          convictionScore: 80,
-        };
+      : getContextualBullFallback(idea);
 
   const bear =
     bearResult.status === "fulfilled"
       ? bearResult.value
-      : {
-          provider: "Bear Partner",
-          thesis: "High customer acquisition costs and low defensibility against incumbents.",
-          fatalFlaws: ["Customer acquisition cost trap", "Risk of rapid competitor copycats"],
-          cacUnitEconomicsTrap: "Paid marketing will erode margin without organic retention.",
-          incumbentMoatThreat: "Entrenched market platforms can easily offer similar workflows.",
-          skepticismScore: 80,
-        };
+      : getContextualBearFallback(idea);
 
   return { bull, bear };
 }
 
 // --- 6. Interactive VC War Room Engine (Founder Testimony Re-Scoring) -------
-/**
- * Runs an on-demand cross-examination where the founder submits testimony or
- * evidence (e.g. pilot LOIs, distribution wedge).
- * Streams stage updates, then outputs updated debate arguments and recalibrated viabilityScorecard.
- */
 export async function runInteractiveWarRoomDebate(
   idea,
   blueprintContext = null,
@@ -402,12 +409,12 @@ export async function runInteractiveWarRoomDebate(
   onStageUpdate({
     stage: "bull",
     agent: "AI 1 — The Bull Partner (Groq Llama 3.3 70B)",
-    message: "Evaluating Founder Testimony & reinforcing the upside thesis...",
+    message: "Evaluating your evidence & reinforcing the upside thesis...",
   });
 
   const bullRound2 = await callBullAgent(
     idea,
-    `FOUNDER TESTIMONY & DEFENSE:\n"${founderTestimony}"\n\nActive Blueprint Viability Score: ${
+    `FOUNDER DEFENSE & EVIDENCE:\n"${founderTestimony}"\n\nCurrent Viability Score: ${
       blueprintContext?.viabilityScorecard?.score || "N/A"
     }`
   );
@@ -415,22 +422,22 @@ export async function runInteractiveWarRoomDebate(
   onStageUpdate({
     stage: "bear",
     agent: "AI 2 — The Bear Partner (OpenRouter DeepSeek V3)",
-    message: "Cross-examining Founder claims & testing unit economics...",
+    message: "Cross-examining claims & checking customer economics...",
   });
 
   const bearRound2 = await callBearAgent(
     idea,
-    `FOUNDER TESTIMONY & CLAIMS:\n"${founderTestimony}"\n\nBull Defense to counter:\n"${bullRound2.thesis}"`
+    `FOUNDER DEFENSE & CLAIMS:\n"${founderTestimony}"\n\nBull Counter-Argument:\n"${bullRound2.thesis}"`
   );
 
   onStageUpdate({
     stage: "judge",
-    agent: "AI 3 — Chief Judge & Committee (Google Gemini)",
-    message: "Delivering final gavel ruling and recalibrating viability scorecard...",
+    agent: "AI 3 — Chief Judge (Google Gemini)",
+    message: "Issuing final plain-English ruling & updating scorecard...",
   });
 
-  const judgePrompt = `You are the Chief Judge in the 3-AI Startup Investment Committee ("The VC War Room").
-The founder has submitted formal testimony to defend their startup against the Bear partner's critique.
+  const judgePrompt = `You are the Chief Judge in the 3-AI Startup Committee ("The VC War Room").
+The founder has submitted formal testimony/evidence to defend their startup against the Bear partner's critique.
 
 Startup Idea: "${idea}"
 Founder Defense Testimony: "${founderTestimony}"
@@ -446,23 +453,17 @@ Fatal Flaws: ${bearRound2.fatalFlaws.join(" | ")}
 CAC Trap: ${bearRound2.cacUnitEconomicsTrap}
 Skepticism: ${bearRound2.skepticismScore}/100
 
-Your task:
-1. Arbitrate the debate impartially. Award winners across the 4 battleground categories:
-   - marketDemand (winner: "Bull" or "Bear", rationale: 1 sentence)
-   - defensibility (winner: "Bull" or "Bear", rationale: 1 sentence)
-   - technicalFeasibility (winner: "Bull" or "Bear", rationale: 1 sentence)
-   - unitEconomics (winner: "Bull" or "Bear", rationale: 1 sentence)
-2. Decide the overall winner: exactly one of "Bull" | "Bear" | "Split Consensus".
-3. Write a decisive 2-3 sentence final verdict synthesis reflecting how the founder's testimony affected the outcome.
-4. Specify the single most critical condition to proceed and the #1 Lean experiment to run this week.
-5. Recalibrate the startup's viabilityScorecard based on the testimony:
-   - score (integer 0-100)
-   - marketDemandScore (0-100)
-   - technicalFeasibilityScore (0-100)
-   - monetizationScore (0-100)
-   - verdict ("Proceed" | "Proceed with Caution" | "Pivot Recommended")
-   - verdictReasoning (2 sentences)
-   - fatalRiskTraps (array of 3 items)
+CRITICAL LANGUAGE MANDATES:
+1. USE SIMPLE, EVERYDAY 8TH-GRADE ENGLISH: Speak like a clear, wise advisor explaining the decision in plain words.
+2. BANNED WORDS (DO NOT USE ANY OF THESE):
+   - NO financial jargon: "CAPEX", "OPEX", "CAC", "LTV", "EBITDA", "ROI", "unit economics", "TAM".
+   - NO consulting buzzwords: "cohort", "secular migration", "suburban nodes", "nodes", "hyper-local", "asymmetric wedge", "wedge", "paradigm shift", "vector of disruption", "deep data gravity", "vertical point solution", "point solution", "flywheel", "disintermediation", "incumbent bundling".
+3. 100% RELEVANT: Talk specifically about this exact startup concept and the founder's testimony.
+4. Award winners across the 4 key battleground questions:
+   - marketDemand: Do real people want this? (winner: "Bull" or "Bear", rationale: 1 simple sentence)
+   - defensibility: Can competitors easily copy or kill this? (winner: "Bull" or "Bear", rationale: 1 simple sentence)
+   - technicalFeasibility: Can the founder build it quickly? (winner: "Bull" or "Bear", rationale: 1 simple sentence)
+   - unitEconomics: Can the business make a healthy profit per customer? (winner: "Bull" or "Bear", rationale: 1 simple sentence)
 
 Respond with ONLY valid JSON with this exact structure:
 {
@@ -470,18 +471,18 @@ Respond with ONLY valid JSON with this exact structure:
     "provider": "Google (Gemini 2.5 Flash)",
     "winningSide": "Bull",
     "scorecard": {
-      "marketDemand": { "winner": "Bull", "rationale": "Clear pull demonstrated by user testimony." },
-      "defensibility": { "winner": "Bear", "rationale": "Moat remains thin without proprietary data." },
-      "technicalFeasibility": { "winner": "Bull", "rationale": "High build velocity confirmed." },
-      "unitEconomics": { "winner": "Bear", "rationale": "CAC payback period needs pre-launch validation." }
+      "marketDemand": { "winner": "Bull", "rationale": "Clear demand verified by founder testimony." },
+      "defensibility": { "winner": "Bear", "rationale": "Defensibility still needs unique features to stop copycats." },
+      "technicalFeasibility": { "winner": "Bull", "rationale": "Simple first version can be built quickly." },
+      "unitEconomics": { "winner": "Bull", "rationale": "Direct customer access helps keep marketing costs low." }
     },
-    "verdictSummary": "Detailed synthesis of the Chief Judge.",
-    "keyConditionToProceed": "The founder must secure written pre-commitments before building.",
-    "numberOneExperiment": "Launch a concierge validation test with 10 target operators."
+    "verdictSummary": "2-3 clear, helpful sentences explaining the final ruling in plain English.",
+    "keyConditionToProceed": "The single most important milestone the founder must hit before spending big money.",
+    "numberOneExperiment": "A simple, practical test the founder can run this week with real people to prove customer interest."
   },
   "rebuttalRound": {
-    "bullRebuttal": "Bull counter-attack addressing Bear concerns with founder testimony context.",
-    "bearRebuttal": "Bear counter-attack probing unproven assumptions in the founder testimony."
+    "bullRebuttal": "Bull counter-attack in plain English addressing Bear concerns with the founder's new evidence.",
+    "bearRebuttal": "Bear counter-attack in plain English pointing out remaining unproven assumptions."
   },
   "viabilityScorecard": {
     "score": 87,
@@ -489,11 +490,11 @@ Respond with ONLY valid JSON with this exact structure:
     "technicalFeasibilityScore": 85,
     "monetizationScore": 86,
     "verdict": "Proceed",
-    "verdictReasoning": "Updated executive investment thesis incorporating founder testimony.",
+    "verdictReasoning": "Two friendly, plain-English sentences explaining the updated score.",
     "fatalRiskTraps": [
-      "Specific risk trap 1",
-      "Specific risk trap 2",
-      "Specific risk trap 3"
+      "Real risk 1 in plain English",
+      "Real risk 2 in plain English",
+      "Real risk 3 in plain English"
     ]
   }
 }`;
@@ -510,19 +511,19 @@ Respond with ONLY valid JSON with this exact structure:
     provider: "Google Gemini (Chief Judge)",
     winningSide: bullRound2.convictionScore >= bearRound2.skepticismScore ? "Bull" : "Bear",
     scorecard: {
-      marketDemand: { winner: "Bull", rationale: "Founder testimony establishes initial organic demand signal." },
-      defensibility: { winner: "Bear", rationale: "Defensibility against deep-pocketed competitors requires sustained execution." },
-      technicalFeasibility: { winner: "Bull", rationale: "Modern serverless architecture enables lean MVP build." },
-      unitEconomics: { winner: "Bear", rationale: "Customer acquisition economics require pilot contract verification." },
+      marketDemand: { winner: "Bull", rationale: "Founder testimony provides encouraging early signal of real demand." },
+      defensibility: { winner: "Bear", rationale: "Defending against larger rivals will require fast execution and loyal users." },
+      technicalFeasibility: { winner: "Bull", rationale: "A simple MVP can be launched and tested with modern tools quickly." },
+      unitEconomics: { winner: "Bear", rationale: "Customer willingness to pay must be verified through real paid orders." },
     },
-    verdictSummary: "The founder testimony addresses early validation concerns, but the committee demands strict pre-commitments before heavy capital deployment.",
-    keyConditionToProceed: "Validate buyer willingness to pay via paid pilot deposit or binding LOI.",
-    numberOneExperiment: "Run a 5-prospect concierge validation test within 7 days.",
+    verdictSummary: "The founder testimony addresses early concerns well. The committee approves moving forward with advice to pre-sell to 5 customers before heavy coding.",
+    keyConditionToProceed: "Get 3 to 5 real customers to pre-order or commit before building the full product.",
+    numberOneExperiment: "Run a 7-day concierge test to see if 5 people will pay for the solution manually.",
   };
 
   const finalRebuttal = judgeResult?.rebuttalRound || {
-    bullRebuttal: `The founder's evidence proves that user friction is acute enough to overcome inertia. Early pilots provide the ideal distribution wedge.`,
-    bearRebuttal: `Pilot interest is not repeatable revenue. If sales cycles drag beyond 45 days, runway will deplete faster than modeled.`,
+    bullRebuttal: `The founder's evidence shows that user pain is real and pressing. Personal outreach provides a strong starting distribution channel.`,
+    bearRebuttal: `Early interest is a great start, but until money changes hands, low switching costs leave risk of customer drop-off.`,
   };
 
   const finalViabilityScorecard = judgeResult?.viabilityScorecard || {
@@ -531,7 +532,7 @@ Respond with ONLY valid JSON with this exact structure:
     technicalFeasibilityScore: 84,
     monetizationScore: Math.round(100 - bearRound2.skepticismScore * 0.2),
     verdict: "Proceed with Caution",
-    verdictReasoning: "Founder testimony strengthens market conviction, but unit economics and defensibility require rapid pre-launch proof.",
+    verdictReasoning: "Founder testimony strengthens market conviction. Focus on getting your first 3 paying customers this week.",
     fatalRiskTraps: bearRound2.fatalFlaws,
   };
 
