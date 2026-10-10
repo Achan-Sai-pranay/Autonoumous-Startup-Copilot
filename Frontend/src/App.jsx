@@ -286,6 +286,7 @@ export default function App() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idea }),
+        signal: AbortSignal.timeout(180000),
       });
 
       if (!response.ok) {
@@ -501,11 +502,15 @@ async function readNdjsonStream(response, { onProgress, onResult, onError }) {
 
     for (const line of lines) {
       if (!line.trim()) continue;
-      const event = JSON.parse(line);
+      try {
+        const event = JSON.parse(line);
 
-      if (event.type === "progress") onProgress(event);
-      else if (event.type === "result") onResult(event.data);
-      else if (event.type === "error") onError(event.message);
+        if (event.type === "progress") onProgress(event);
+        else if (event.type === "result") onResult(event.data);
+        else if (event.type === "error") onError(event.message);
+      } catch (e) {
+        console.warn("[NDJSON] Skipping invalid stream chunk:", line.slice(0, 80));
+      }
     }
   }
 }

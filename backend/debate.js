@@ -166,46 +166,35 @@ Respond with ONLY valid JSON with this exact structure:
   // Try Groq Cloud if API key is provided
   if (apiKey) {
     const models = [
-      "openai/gpt-oss-120b",
-      "qwen/qwen3.8-27b",
       "llama-3.3-70b-versatile",
       "llama-3.1-8b-instant",
     ];
     for (const model of models) {
       try {
-        const res = await withTimeout(
-          fetch("https://api.groq.com/openai/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-              model,
-              messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt },
-              ],
-              temperature: 0.8,
-              response_format: { type: "json_object" },
-            }),
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            temperature: 0.8,
+            response_format: { type: "json_object" },
           }),
-          6500,
-          `Groq ${model} timed out`
-        );
+          signal: AbortSignal.timeout(3500),
+        });
 
         if (res.ok) {
           const data = await res.json();
           const content = data?.choices?.[0]?.message?.content;
           const parsed = parseJsonSafely(content);
           if (parsed && parsed.thesis) {
-            const displayModel = model.includes("gpt-oss-120b")
-              ? "GPT-OSS 120B"
-              : model.includes("qwen")
-              ? "Qwen 3.8 27B"
-              : model.includes("70b")
-              ? "Llama 3.3 70B"
-              : "Llama 3.1 8B";
+            const displayModel = model.includes("70b") ? "Llama 3.3 70B" : "Llama 3.1 8B";
             return {
               provider: `Groq (${displayModel})`,
               thesis: parsed.thesis,
@@ -221,10 +210,10 @@ Respond with ONLY valid JSON with this exact structure:
     }
   }
 
-  // Zero-Config Fallback: Google Gemini with Bull Partner persona
+  // Zero-Config Fallback: Google Gemini with Bull Partner persona (3.5s timeout)
   try {
     const geminiPrompt = `${systemPrompt}\n\n${userPrompt}`;
-    const raw = await withTimeout(callGemini(geminiPrompt), 6500, "Gemini Bull fallback timed out");
+    const raw = await withTimeout(callGemini(geminiPrompt), 3500, "Gemini Bull fallback timed out");
     const parsed = parseJsonSafely(raw);
     if (parsed && parsed.thesis) {
       return {
@@ -275,49 +264,86 @@ Respond with ONLY valid JSON with this exact structure:
 
   const userPrompt = `Startup Idea: "${idea}"${context ? `\nAdditional Context / Bull Thesis: ${context}` : ""}`;
 
-  // Try OpenRouter if key is present
-  if (openRouterKey) {
-    const models = [
-      "google/gemma-4-31b-it:free",
-      "nvidia/nemotron-3-super-120b-a12b:free",
-      "deepseek/deepseek-chat:free",
-      "meta-llama/llama-3.3-70b-instruct:free",
-    ];
-    for (const model of models) {
+  // 1. Primary Fast Path: Groq Cloud (Llama 3.3 70B / 3.1 8B Bear Mode) - 1.2s latency
+  const groqKey = groqPool.getNextKey();
+  if (groqKey) {
+    const groqModels = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+    for (const model of groqModels) {
       try {
-        const res = await withTimeout(
-          fetch("https://openrouter.ai/api/v1/chat/completions", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${openRouterKey}`,
-              "HTTP-Referer": "https://launchpilot.local",
-              "X-Title": "LaunchPilot VC War Room",
-            },
-            body: JSON.stringify({
-              model,
-              messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt },
-              ],
-              temperature: 0.4,
-              response_format: { type: "json_object" },
-            }),
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${groqKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            temperature: 0.4,
+            response_format: { type: "json_object" },
           }),
-          6500,
-          `OpenRouter ${model} timed out`
-        );
+          signal: AbortSignal.timeout(3500),
+        });
 
         if (res.ok) {
           const data = await res.json();
           const content = data?.choices?.[0]?.message?.content;
           const parsed = parseJsonSafely(content);
           if (parsed && parsed.thesis) {
-            const providerName = model.includes("gemma")
-              ? "OpenRouter (Gemma 4 31B)"
-              : model.includes("nemotron")
-              ? "OpenRouter (Nemotron 120B)"
-              : model.includes("deepseek")
+            const displayModel = model.includes("70b") ? "Llama 3.3 70B" : "Llama 3.1 8B";
+            return {
+              provider: `Groq (${displayModel} Bear Mode)`,
+              thesis: parsed.thesis,
+              fatalFlaws: Array.isArray(parsed.fatalFlaws) ? parsed.fatalFlaws : [],
+              cacUnitEconomicsTrap: parsed.cacUnitEconomicsTrap || "Ad spend can eat up all profit unless early users spread the word.",
+              incumbentMoatThreat: parsed.incumbentMoatThreat || "Established apps could release a similar feature for free.",
+              skepticismScore: Math.min(99, Math.max(50, Number(parsed.skepticismScore) || 85)),
+            };
+          }
+        }
+      } catch (groqErr) {
+        console.warn(`[Bear Agent] Groq ${model} attempt failed: ${groqErr.message}`);
+      }
+    }
+  }
+
+  // 2. Secondary Path: OpenRouter DeepSeek / Llama Free (3.5s timeout)
+  if (openRouterKey) {
+    const models = [
+      "deepseek/deepseek-chat:free",
+      "meta-llama/llama-3.3-70b-instruct:free",
+    ];
+    for (const model of models) {
+      try {
+        const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${openRouterKey}`,
+            "HTTP-Referer": "https://launchpilot.local",
+            "X-Title": "LaunchPilot VC War Room",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+            ],
+            temperature: 0.4,
+            response_format: { type: "json_object" },
+          }),
+          signal: AbortSignal.timeout(3500),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const content = data?.choices?.[0]?.message?.content;
+          const parsed = parseJsonSafely(content);
+          if (parsed && parsed.thesis) {
+            const providerName = model.includes("deepseek")
               ? "OpenRouter (DeepSeek V3)"
               : "OpenRouter (Llama 3.3 70B)";
             return {
@@ -336,55 +362,10 @@ Respond with ONLY valid JSON with this exact structure:
     }
   }
 
-  // Secondary Free Fallback: Groq Cloud with Bear prompt
-  const groqKey = groqPool.getNextKey();
-  if (groqKey) {
-    try {
-      const res = await withTimeout(
-        fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${groqKey}`,
-          },
-          body: JSON.stringify({
-            model: "llama-3.1-8b-instant",
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-            ],
-            temperature: 0.4,
-            response_format: { type: "json_object" },
-          }),
-        }),
-        6500,
-        "Groq Bear fallback timed out"
-      );
-
-      if (res.ok) {
-        const data = await res.json();
-        const content = data?.choices?.[0]?.message?.content;
-        const parsed = parseJsonSafely(content);
-        if (parsed && parsed.thesis) {
-          return {
-            provider: "Groq (Llama 3.1 8B Bear Mode)",
-            thesis: parsed.thesis,
-            fatalFlaws: Array.isArray(parsed.fatalFlaws) ? parsed.fatalFlaws : [],
-            cacUnitEconomicsTrap: parsed.cacUnitEconomicsTrap || "Ad spend can eat up all profit unless early users spread the word.",
-            incumbentMoatThreat: parsed.incumbentMoatThreat || "Established apps could release a similar feature for free.",
-            skepticismScore: Math.min(99, Math.max(50, Number(parsed.skepticismScore) || 85)),
-          };
-        }
-      }
-    } catch (groqErr) {
-      console.warn(`[Bear Agent] Groq Bear fallback failed: ${groqErr.message}`);
-    }
-  }
-
-  // Tertiary Zero-Config Fallback: Google Gemini with Bear Partner persona
+  // 3. Tertiary Zero-Config Fallback: Google Gemini with Bear Partner persona (3.5s timeout)
   try {
     const geminiPrompt = `${systemPrompt}\n\n${userPrompt}`;
-    const raw = await withTimeout(callGemini(geminiPrompt), 6500, "Gemini Bear fallback timed out");
+    const raw = await withTimeout(callGemini(geminiPrompt), 3500, "Gemini Bear fallback timed out");
     const parsed = parseJsonSafely(raw);
     if (parsed && parsed.thesis) {
       return {
@@ -403,24 +384,38 @@ Respond with ONLY valid JSON with this exact structure:
   return getContextualBearFallback(idea);
 }
 
-// --- 5. Parallel Opening Clash --------------------------------------------
+// --- 5. Parallel Opening Clash (Strict 5.5s overall cap) -------------------
 export async function runOpeningClash(idea) {
-  const [bullResult, bearResult] = await Promise.allSettled([
-    callBullAgent(idea),
-    callBearAgent(idea),
-  ]);
+  try {
+    const clashPromise = Promise.allSettled([
+      callBullAgent(idea),
+      callBearAgent(idea),
+    ]);
 
-  const bull =
-    bullResult.status === "fulfilled"
-      ? bullResult.value
-      : getContextualBullFallback(idea);
+    const [bullResult, bearResult] = await withTimeout(
+      clashPromise,
+      5500,
+      "Opening clash overall timeout exceeded"
+    );
 
-  const bear =
-    bearResult.status === "fulfilled"
-      ? bearResult.value
-      : getContextualBearFallback(idea);
+    const bull =
+      bullResult?.status === "fulfilled" && bullResult?.value?.thesis
+        ? bullResult.value
+        : getContextualBullFallback(idea);
 
-  return { bull, bear };
+    const bear =
+      bearResult?.status === "fulfilled" && bearResult?.value?.thesis
+        ? bearResult.value
+        : getContextualBearFallback(idea);
+
+    return { bull, bear };
+  } catch (err) {
+    console.warn(`[War Room] Opening clash timed out: ${err.message}. Using instant contextual consensus.`);
+    return {
+      bull: getContextualBullFallback(idea),
+      bear: getContextualBearFallback(idea),
+    };
+  }
 }
 
 // --- 6. Interactive VC War Room Engine (Founder Testimony Re-Scoring) -------

@@ -11,8 +11,45 @@
 //      the Judge's ruling)
 // ---------------------------------------------------------------------------
 
+import { jsonrepair } from "jsonrepair";
 import { callGemini, streamGemini } from "./gemini.js";
 import { runOpeningClash } from "./debate.js";
+
+function parseBlueprintJson(text) {
+  if (!text || typeof text !== "string") return null;
+  const cleaned = text
+    .trim()
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```\s*$/i, "")
+    .replace(/,\s*([\]}])/g, "$1")
+    .trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    try {
+      const repaired = jsonrepair(cleaned);
+      return JSON.parse(repaired);
+    } catch {
+      const start = cleaned.indexOf("{");
+      const end = cleaned.lastIndexOf("}");
+      if (start !== -1 && end > start) {
+        const slice = cleaned.slice(start, end + 1);
+        try {
+          return JSON.parse(slice);
+        } catch {
+          try {
+            return JSON.parse(jsonrepair(slice));
+          } catch {
+            return null;
+          }
+        }
+      }
+      return null;
+    }
+  }
+}
 
 // Shared instruction so Gemini always returns clean, parseable JSON.
 const JSON_ONLY_RULE = `
@@ -431,12 +468,14 @@ export async function runAllAgents(idea, onProgress = () => {}) {
 
   try {
     const prompt = buildMegaPrompt(idea, openingClash);
+    let lastStepTime = Date.now();
+    let lastCharCount = 0;
+
     const rawText = await streamGemini(prompt, (_chunk, fullRawText) => {
-      // Check if any subsequent step has started streaming in the model output
-      for (let i = activeStep + 1; i < STEP_START_KEYS.length; i++) {
-        const triggerKey = `"${STEP_START_KEYS[i]}"`;
-        if (fullRawText.includes(triggerKey)) {
-          // Mark all previous running/pending steps up to i as done
+      // 1. Key-based transition detection: check if ANY key belonging to subsequent steps appears
+      for (let i = activeStep + 1; i < STEPS.length; i++) {
+        const hasTrigger = STEPS[i].keys.some((k) => fullRawText.includes(`"${k}"`));
+        if (hasTrigger) {
           for (let prev = activeStep; prev < i; prev++) {
             if (stepStates[prev] !== "done") {
               stepStates[prev] = "done";
@@ -444,9 +483,28 @@ export async function runAllAgents(idea, onProgress = () => {}) {
             }
           }
           activeStep = i;
+          lastStepTime = Date.now();
+          lastCharCount = fullRawText.length;
           stepStates[i] = "running";
           onProgress({ step: i, agent: STEPS[i].name, status: "running" });
+          break;
         }
+      }
+
+      // 2. Continuous pacing fallback: if text has grown by >1400 chars and >6s passed without a key match, advance
+      if (
+        activeStep < STEPS.length - 1 &&
+        Date.now() - lastStepTime > 6000 &&
+        fullRawText.length - lastCharCount > 1400
+      ) {
+        const nextStep = activeStep + 1;
+        stepStates[activeStep] = "done";
+        onProgress({ step: activeStep, agent: STEPS[activeStep].name, status: "done" });
+        activeStep = nextStep;
+        lastStepTime = Date.now();
+        lastCharCount = fullRawText.length;
+        stepStates[nextStep] = "running";
+        onProgress({ step: nextStep, agent: STEPS[nextStep].name, status: "running" });
       }
     });
 
@@ -458,17 +516,13 @@ export async function runAllAgents(idea, onProgress = () => {}) {
       }
     }
 
-    const cleaned = rawText
-      .trim()
-      .replace(/,\s*([\]}])/g, "$1");
-    parsed = JSON.parse(cleaned);
+    parsed = parseBlueprintJson(rawText);
   } catch (error) {
     console.error("Stream blueprint generation failed, attempting fallback:", error.message);
     try {
       const prompt = buildMegaPrompt(idea, openingClash);
       const rawText = await callGemini(prompt);
-      const cleaned = rawText.trim().replace(/,\s*([\]}])/g, "$1");
-      parsed = JSON.parse(cleaned);
+      parsed = parseBlueprintJson(rawText);
       for (let i = 0; i < STEPS.length; i++) {
         onProgress({ step: i, agent: STEPS[i].name, status: "done" });
       }

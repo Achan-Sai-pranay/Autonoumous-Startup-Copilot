@@ -51,8 +51,14 @@ export default function LoadingTimeline({ steps }) {
   const completedSteps = steps.filter((s) => s.status === "done").length;
   const runningStepIndex = steps.findIndex((s) => s.status === "running");
   const runningStep = runningStepIndex !== -1 ? steps[runningStepIndex] : null;
-  const progressPercent = Math.round((completedSteps / totalSteps) * 100);
-  const estimatedRemaining = Math.max(0, 35 - elapsed);
+  const basePercent = Math.round(((completedSteps + (runningStep ? 0.4 : 0)) / totalSteps) * 100);
+  const progressPercent = Math.min(98, Math.max(6, basePercent));
+  
+  const estimatedRemaining = elapsed < 35 
+    ? `~${35 - elapsed}s` 
+    : elapsed < 65 
+    ? "Synthesizing" 
+    : "Wrapping up";
 
   const formatTime = (secs) => {
     const m = Math.floor(secs / 60);
@@ -88,7 +94,7 @@ export default function LoadingTimeline({ steps }) {
             <div>
               <span className="font-mono text-[10px] text-slate-400 block uppercase">Est. Left</span>
               <p className="font-mono text-xs font-bold text-orange-600">
-                ~{estimatedRemaining > 0 ? `${estimatedRemaining}s` : "Wrapping up"}
+                {estimatedRemaining}
               </p>
             </div>
             <div>

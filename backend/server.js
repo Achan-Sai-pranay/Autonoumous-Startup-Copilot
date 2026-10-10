@@ -27,6 +27,13 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+process.on("uncaughtException", (err) => {
+  console.error("[Uncaught Exception]", err);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[Unhandled Rejection]", reason);
+});
+
 const app = express();
 const PORT = process.env.PORT || 5001;
 
@@ -133,18 +140,36 @@ app.post("/api/generate-blueprint", blueprintLimiter, async (req, res) => {
     });
   }
 
-  // Switch to streaming NDJSON response
+  // Switch to streaming NDJSON response with immediate anti-buffering headers
   res.writeHead(200, {
     "Content-Type": "application/x-ndjson",
-    "Cache-Control": "no-cache",
+    "Cache-Control": "no-cache, no-transform",
     Connection: "keep-alive",
+    "X-Accel-Buffering": "no",
+  });
+  if (typeof res.flushHeaders === "function") {
+    res.flushHeaders();
+  }
+
+  let clientConnected = true;
+  req.on("close", () => {
+    clientConnected = false;
+  });
+  req.on("error", (err) => {
+    clientConnected = false;
+    console.warn("[Req Error]", err.message);
+  });
+  res.on("error", (err) => {
+    clientConnected = false;
+    console.warn("[Res Error]", err.message);
   });
 
   const writeEvent = (event) => {
+    if (!clientConnected || res.writableEnded) return;
     try {
       res.write(JSON.stringify(event) + "\n");
     } catch {
-      // client may have disconnected
+      clientConnected = false;
     }
   };
 

@@ -111,6 +111,7 @@ async function streamRequestOnce(prompt, apiKey, onChunk, model = PRIMARY_MODEL)
         maxOutputTokens: MAX_OUTPUT_TOKENS,
       },
     }),
+    signal: AbortSignal.timeout(45000),
   });
 
   if (!response.ok) {
@@ -218,6 +219,7 @@ async function requestOnce(prompt, apiKey, model = PRIMARY_MODEL) {
         maxOutputTokens: MAX_OUTPUT_TOKENS,
       },
     }),
+    signal: AbortSignal.timeout(45000),
   });
 
   if (!response.ok) {
@@ -315,7 +317,16 @@ function extractJSON(text) {
   // Brace depth never balanced (likely truncated response) or the balanced
   // slice couldn't be repaired — give jsonrepair the rest of the text too,
   // since it can also complete truncated JSON.
-  return tryRepair(cleaned.substring(startIdx)) || cleaned;
+  const repairedRemainder = tryRepair(cleaned.substring(startIdx));
+  if (repairedRemainder) return repairedRemainder;
+
+  const lastEndIdx = cleaned.lastIndexOf("}");
+  if (lastEndIdx > startIdx) {
+    const repairedSlice = tryRepair(cleaned.substring(startIdx, lastEndIdx + 1));
+    if (repairedSlice) return repairedSlice;
+  }
+
+  return cleaned;
 }
 
 /**
