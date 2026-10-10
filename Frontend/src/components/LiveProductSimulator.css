@@ -63,7 +63,6 @@
   color: inherit;
   cursor: pointer;
   border: 0;
-  background: none;
 }
 .lps :focus-visible {
   outline: 2px solid var(--lps-orange-soft);
@@ -988,6 +987,9 @@
   font-size: 13.5px;
   color: var(--lps-text-3);
 }
+
+.lps .lps-cta,
+button.lps-cta,
 .lps-cta {
   display: inline-flex;
   align-items: center;
@@ -998,22 +1000,31 @@
   font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.012em;
-  color: #fff;
+  color: #fff !important;
   white-space: nowrap;
-  background: linear-gradient(180deg, #fb8a3c 0%, #f97316 55%, #ea6a0a 100%);
+  background: linear-gradient(180deg, #fb8a3c 0%, #f97316 55%, #ea6a0a 100%) !important;
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 8px 24px rgba(249, 115, 22, 0.4);
+  border: 0 !important;
+  cursor: pointer;
   transition: transform 0.35s var(--lps-ease), box-shadow 0.35s;
 }
 .lps-cta svg {
   transition: transform 0.35s var(--lps-ease);
 }
+.lps .lps-cta:hover,
+button.lps-cta:hover,
 .lps-cta:hover {
   transform: translateY(-1px) scale(1.03);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 12px 32px rgba(249, 115, 22, 0.55);
+  background: linear-gradient(180deg, #fc944d 0%, #fa7b22 55%, #ee7314 100%) !important;
 }
+.lps .lps-cta:hover svg,
+button.lps-cta:hover svg,
 .lps-cta:hover svg {
   transform: translateX(3px);
 }
+.lps .lps-cta:active,
+button.lps-cta:active,
 .lps-cta:active {
   transform: scale(0.97);
 }
