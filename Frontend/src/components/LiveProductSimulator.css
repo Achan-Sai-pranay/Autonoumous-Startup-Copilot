@@ -7,13 +7,13 @@
   --lps-font: "Geist", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --lps-ease: cubic-bezier(0.16, 1, 0.3, 1);
 
-  --lps-bg: #161618;
-  --lps-surface: #1d1d20;
-  --lps-surface-2: #252528;
+  --lps-bg: #0a0b0f;
+  --lps-surface: #12131a;
+  --lps-surface-2: #191b24;
   --lps-line: rgba(255, 255, 255, 0.08);
-  --lps-text: #f5f5f7;
-  --lps-text-2: #a1a1a6;
-  --lps-text-3: #7c7c82;
+  --lps-text: #ffffff;
+  --lps-text-2: #94a3b8;
+  --lps-text-3: #64748b;
 
   --lps-orange: #f97316;
   --lps-orange-soft: #fdba74;
@@ -103,14 +103,14 @@
 }
 
 /* ------------------------------------------------------------------ */
-/* Scroll-driven rise (--p goes 0 → 1 as the window enters the view)    */
+/* Scroll-driven rise                                                  */
 /* ------------------------------------------------------------------ */
 .lps-rise {
-  transform: perspective(1800px) translateY(calc((1 - var(--p, 1)) * 56px))
-    rotateX(calc((1 - var(--p, 1)) * 9deg)) scale(calc(0.92 + 0.08 * var(--p, 1)));
+  transform: perspective(1800px) translateY(calc((1 - var(--p, 1)) * 40px))
+    rotateX(calc((1 - var(--p, 1)) * 6deg)) scale(calc(0.96 + 0.04 * var(--p, 1)));
   transform-origin: 50% 0%;
-  opacity: calc(0.35 + 0.65 * var(--p, 1));
-  will-change: transform, opacity;
+  opacity: 1;
+  will-change: transform;
 }
 
 /* Hairline metal edge around the window */
@@ -119,12 +119,12 @@
   border-radius: 28px;
   background: linear-gradient(
     150deg,
-    rgba(255, 255, 255, 0.55) 0%,
+    rgba(255, 255, 255, 0.45) 0%,
     rgba(255, 255, 255, 0.06) 28%,
     rgba(255, 255, 255, 0.04) 70%,
-    rgba(255, 255, 255, 0.28) 100%
+    rgba(255, 255, 255, 0.22) 100%
   );
-  box-shadow: 0 80px 120px -40px rgba(24, 24, 40, 0.5), 0 40px 70px -30px rgba(249, 115, 22, 0.28);
+  box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.6), 0 20px 50px -15px rgba(249, 115, 22, 0.25);
 }
 
 .lps-tilt {
@@ -151,7 +151,7 @@
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(520px circle at var(--mx) var(--my), rgba(255, 255, 255, 0.07), transparent 60%);
+  background: radial-gradient(520px circle at var(--mx, 50%) var(--my, 50%), rgba(255, 255, 255, 0.025), transparent 60%);
 }
 .lps-window > *:not(.lps-sheen) {
   position: relative;

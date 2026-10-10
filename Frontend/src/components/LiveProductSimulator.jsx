@@ -302,7 +302,7 @@ export function LiveProductSimulator({ onCtaClick }) {
   };
 
   return (
-    <section id="demo" className="lps" ref={sectionRef} style={{ "--p": 0 }}>
+    <section id="demo" className="lps" ref={sectionRef} style={{ "--p": 1 }}>
       <div className="lps-inner">
         <header className="lps-head">
           <h2>See what a validated idea looks like.</h2>
