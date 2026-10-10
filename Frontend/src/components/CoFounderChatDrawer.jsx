@@ -31,7 +31,14 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-const rawApiUrl = import.meta.env.VITE_API_URL || "https://ideapulse-y1n5.onrender.com/api/generate-blueprint";
+const isLocalhost =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
+
+const rawApiUrl = isLocalhost
+  ? (import.meta.env.VITE_LOCAL_API_URL || "http://localhost:5001/api/generate-blueprint")
+  : (import.meta.env.VITE_API_URL || "https://ideapulse-y1n5.onrender.com/api/generate-blueprint");
+
 const CONSULTANT_URL = rawApiUrl.includes("/api/")
   ? rawApiUrl.replace(/\/api\/[a-zA-Z0-9_-]+$/, "/api/consultant")
   : `${rawApiUrl.replace(/\/+$/, "")}/api/consultant`;

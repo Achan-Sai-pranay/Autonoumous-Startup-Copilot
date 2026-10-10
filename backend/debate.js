@@ -165,7 +165,12 @@ Respond with ONLY valid JSON with this exact structure:
 
   // Try Groq Cloud if API key is provided
   if (apiKey) {
-    const models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+    const models = [
+      "openai/gpt-oss-120b",
+      "qwen/qwen3.8-27b",
+      "llama-3.3-70b-versatile",
+      "llama-3.1-8b-instant",
+    ];
     for (const model of models) {
       try {
         const res = await withTimeout(
@@ -194,8 +199,15 @@ Respond with ONLY valid JSON with this exact structure:
           const content = data?.choices?.[0]?.message?.content;
           const parsed = parseJsonSafely(content);
           if (parsed && parsed.thesis) {
+            const displayModel = model.includes("gpt-oss-120b")
+              ? "GPT-OSS 120B"
+              : model.includes("qwen")
+              ? "Qwen 3.8 27B"
+              : model.includes("70b")
+              ? "Llama 3.3 70B"
+              : "Llama 3.1 8B";
             return {
-              provider: `Groq (${model.includes("70b") ? "Llama 3.3 70B" : "Llama 3.1 8B"})`,
+              provider: `Groq (${displayModel})`,
               thesis: parsed.thesis,
               marketTailwinds: Array.isArray(parsed.marketTailwinds) ? parsed.marketTailwinds : [],
               unfairWedge: parsed.unfairWedge || "Focused product experience and personal connection with early adopters.",
@@ -265,7 +277,12 @@ Respond with ONLY valid JSON with this exact structure:
 
   // Try OpenRouter if key is present
   if (openRouterKey) {
-    const models = ["deepseek/deepseek-chat:free", "meta-llama/llama-3.3-70b-instruct:free"];
+    const models = [
+      "google/gemma-4-31b-it:free",
+      "nvidia/nemotron-3-super-120b-a12b:free",
+      "deepseek/deepseek-chat:free",
+      "meta-llama/llama-3.3-70b-instruct:free",
+    ];
     for (const model of models) {
       try {
         const res = await withTimeout(
@@ -296,8 +313,15 @@ Respond with ONLY valid JSON with this exact structure:
           const content = data?.choices?.[0]?.message?.content;
           const parsed = parseJsonSafely(content);
           if (parsed && parsed.thesis) {
+            const providerName = model.includes("gemma")
+              ? "OpenRouter (Gemma 4 31B)"
+              : model.includes("nemotron")
+              ? "OpenRouter (Nemotron 120B)"
+              : model.includes("deepseek")
+              ? "OpenRouter (DeepSeek V3)"
+              : "OpenRouter (Llama 3.3 70B)";
             return {
-              provider: model.includes("deepseek") ? "OpenRouter (DeepSeek V3)" : "OpenRouter (Llama 3.3 70B)",
+              provider: providerName,
               thesis: parsed.thesis,
               fatalFlaws: Array.isArray(parsed.fatalFlaws) ? parsed.fatalFlaws : [],
               cacUnitEconomicsTrap: parsed.cacUnitEconomicsTrap || "Marketing and ad costs risk exceeding what users actually pay.",
