@@ -14,13 +14,19 @@ import AuthModal from "./components/AuthModal.jsx";
 import PaymentModal from "./components/PaymentModal.jsx";
 import CoFounderChatDrawer from "./components/CoFounderChatDrawer.jsx";
 import {
+  AnnouncementBanner,
+  HeroSection,
+  LiveProductSimulator,
   MarqueeLogos,
-  StatsSection,
-  FeaturesGrid,
+  VcWarRoomSpotlight,
+  PipelineWorkflowSection,
+  BentoFeatureGrid,
+  ComparisonSection,
   AudienceTabs,
   TestimonialsSection,
   PricingSection,
   FaqSection,
+  FinalCtaBanner,
   FullFooter,
 } from "./components/MarketingSections.jsx";
 import {
@@ -172,6 +178,13 @@ export default function App() {
   }, [currentUser, history.length]);
 
   function handleProtectedStart() {
+    navigateTo("workspace");
+  }
+
+  function handleStartWithIdea(customIdea) {
+    if (customIdea && typeof customIdea === "string") {
+      setIdea(customIdea);
+    }
     navigateTo("workspace");
   }
 
@@ -394,6 +407,9 @@ export default function App() {
     <div className="relative min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased">
       <SplineBackground />
 
+      {/* 1. Announcement Banner */}
+      <AnnouncementBanner onCtaClick={handleProtectedStart} />
+
       {/* 2. Sticky Glass Navbar */}
       <Navbar
         onOpenHistory={handleOpenHistory}
@@ -423,33 +439,54 @@ export default function App() {
 
       {/* 3. Main Content Container */}
       <main className="relative z-10 flex-1 flex flex-col items-center w-full">
-        {/* Hero Section */}
-        <Hero
-          onStartClick={handleProtectedStart}
+        {/* Hero Section with Interactive Prompt Station */}
+        <HeroSection
+          onStartWithIdea={handleStartWithIdea}
+          initialIdea={idea}
         />
 
-        {/* Feature & Value Sections */}
-        <div className="w-full">
-          <MarqueeLogos />
-          <div id="how-it-works">
-            <StatsSection />
-          </div>
-          <FeaturesGrid />
-          <div id="samples">
-            <AudienceTabs onSelectTab={handleProtectedStart} />
-          </div>
-          <TestimonialsSection />
-          <PricingSection
-            onSelectPlan={(plan) => {
-              if (plan === "pro" || (typeof plan === "string" && plan.toLowerCase().includes("pro"))) {
-                handleOpenPayment();
-              } else {
-                handleProtectedStart();
-              }
-            }}
-          />
-          <FaqSection onCtaClick={handleProtectedStart} />
+        {/* Live Product Simulator (Interactive Mac Window with 5 Tabs) */}
+        <LiveProductSimulator onCtaClick={handleProtectedStart} />
+
+        {/* Ecosystem Trust Marquee */}
+        <MarqueeLogos />
+
+        {/* Dedicated 3-AI VC War Room Spotlight */}
+        <VcWarRoomSpotlight onCtaClick={handleProtectedStart} />
+
+        {/* 6-Stage Continuous Validation Journey */}
+        <PipelineWorkflowSection />
+
+        {/* Bento Grid: 12 Specialists & Proprietary Tool Suite */}
+        <BentoFeatureGrid />
+
+        {/* Head-to-Head Comparison Matrix */}
+        <ComparisonSection onCtaClick={handleProtectedStart} />
+
+        {/* Real Sample Blueprints */}
+        <div id="samples" className="w-full">
+          <AudienceTabs onSelectTab={handleStartWithIdea} />
         </div>
+
+        {/* Founder Testimonials */}
+        <TestimonialsSection />
+
+        {/* Transparent Pricing */}
+        <PricingSection
+          onSelectPlan={(plan) => {
+            if (plan === "pro" || (typeof plan === "string" && plan.toLowerCase().includes("pro"))) {
+              handleOpenPayment();
+            } else {
+              handleProtectedStart();
+            }
+          }}
+        />
+
+        {/* Frequently Asked Questions */}
+        <FaqSection onCtaClick={handleProtectedStart} />
+
+        {/* High-Impact Final CTA Banner */}
+        <FinalCtaBanner onCtaClick={handleProtectedStart} />
       </main>
 
       {/* 4. Full Clean Footer */}
@@ -556,15 +593,25 @@ function Navbar({
       </div>
 
       {/* Nav Links */}
-      <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-gray-700">
-        <a href="#how-it-works" className="hover:text-orange-600 transition-colors">
-          How It Works
+      <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold text-gray-700">
+        <a href="#demo" className="hover:text-orange-600 transition-colors">
+          Live Demo
+        </a>
+        <a href="#vc-debate" className="hover:text-orange-600 transition-colors flex items-center gap-1">
+          <span>VC War Room</span>
+          <span className="text-[9px] bg-orange-100 text-orange-700 px-1.5 py-0.2 rounded font-bold uppercase">New</span>
+        </a>
+        <a href="#pipeline" className="hover:text-orange-600 transition-colors">
+          6-Stage Process
         </a>
         <a href="#features" className="hover:text-orange-600 transition-colors">
-          12 AI Co-Founders
+          12 AI Agents
+        </a>
+        <a href="#compare" className="hover:text-orange-600 transition-colors">
+          Compare
         </a>
         <a href="#samples" className="hover:text-orange-600 transition-colors">
-          Sample Output
+          Samples
         </a>
         <a href="#pricing" className="hover:text-orange-600 transition-colors">
           Pricing
@@ -665,63 +712,4 @@ function Navbar({
     </header>
   );
 }
-
-// --- IdeaPulse Hero Section --------------------------------------
-function Hero({ onStartClick }) {
-  return (
-    <section className="relative z-10 text-center max-w-5xl pt-12 sm:pt-16 pb-8 px-4 w-full">
-      {/* Pill Badge */}
-      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-orange-50 border border-orange-200 text-orange-700 text-xs font-mono font-bold mb-6 animate-slide-up">
-        <Sparkles size={13} className="text-orange-600" />
-        <span>Know What the Market Thinks • v1 Beta</span>
-      </div>
-
-      {/* Main Headline */}
-      <h1 className="text-4xl xs:text-5xl md:text-6xl lg:text-7xl font-black tracking-tight text-slate-900 mb-6 leading-tight animate-slide-up">
-        Know what the market thinks.
-        <span className="block text-orange-600 mt-2">Validate before you build.</span>
-      </h1>
-
-      {/* Subtitle */}
-      <p className="mb-8 font-normal text-base md:text-lg lg:text-xl text-slate-600 max-w-2xl mx-auto leading-relaxed animate-slide-up">
-        Enter your raw startup concept. 12 autonomous AI specialists simulate your co-founding team —
-        benchmarking competitors, modeling financial viability, predicting market sentiment, and engineering your launch roadmap in 30 seconds.
-      </p>
-
-      {/* CTA Buttons */}
-      <div className="flex flex-col space-y-3 xs:flex-row xs:space-y-0 xs:space-x-4 justify-center items-center mb-8 animate-slide-up">
-        <button
-          onClick={onStartClick}
-          className="inline-flex justify-center items-center py-3.5 px-8 text-sm font-bold text-center rounded-xl bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-600/25 transition-all cursor-pointer active:scale-95"
-        >
-          <Zap size={16} className="mr-2" />
-          <span>Validate Your Idea (3 Free / Week)</span>
-          <ArrowRight size={16} className="ml-2" />
-        </button>
-
-        <a
-          href="#how-it-works"
-          className="inline-flex justify-center items-center py-3.5 px-6 text-sm font-semibold text-center text-slate-700 rounded-xl border border-slate-300 hover:bg-slate-50 transition-all cursor-pointer active:scale-95 bg-white shadow-2xs"
-        >
-          Explore How It Works
-        </a>
-      </div>
-
-      {/* Trust & Transparency */}
-      <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-slate-500 font-medium pt-2">
-        <span className="flex items-center gap-1.5">
-          <Check size={14} className="text-emerald-600" />
-          <span>Zero credit card required</span>
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Check size={14} className="text-emerald-600" />
-          <span>100% Free Public Beta</span>
-        </span>
-        <span className="flex items-center gap-1.5">
-          <Check size={14} className="text-emerald-600" />
-          <span>Full PDF & Markdown export</span>
-        </span>
-      </div>
-    </section>
-  );
-}
+
