@@ -12,7 +12,6 @@ const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 export const FREE_WEEKLY_LIMIT = 3;
-export const FREE_WEEKLY_LIMIT = 3;
 export const PRO_WEEKLY_LIMIT = 100;
 const PRO_STORAGE_PREFIX = "ideapulse_pro_tier_";
 export const VALID_VOUCHERS = ["FOUNDER_PASS", "IDEAPULSE2026", "BETA_PRO", "VIP_FOUNDER"];
