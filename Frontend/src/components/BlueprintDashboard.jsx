@@ -60,6 +60,7 @@ import {
   HelpCircle,
   X,
   Zap,
+  Bot,
 } from "lucide-react";
 import { downloadMarkdown, downloadPdf } from "../components/exportBlueprint.js";
 import {
@@ -73,21 +74,77 @@ import {
 import AiDebateWarRoomSection, {
   AiDebateSummaryCard,
 } from "./AiDebateWarRoom.jsx";
-import SectionContinuumPortal from "./SectionContinuumPortal.jsx";
 import StickySectionSpyRail from "./StickySectionSpyRail.jsx";
 
 
 // ---------------------------------------------------------------------------
 // Business Analysis Sub-Sections — 7-stage Institutional Startup Flow
+// Enriched with specialized AI Agent co-founder metadata & telemetry.
 // ---------------------------------------------------------------------------
 export const BUSINESS_SECTIONS = [
-  { id: "overview", label: "Executive Overview", title: "Executive Overview & Viability" },
-  { id: "vc-debate", label: "AI Debate (War Room)", title: "3-AI Investment Committee Debate" },
-  { id: "customer-discovery", label: "Customer & Discovery", title: "Customer Persona & Discovery" },
-  { id: "market-competitors", label: "Market & Competitors", title: "Market & Competitive Intelligence" },
-  { id: "product-mvp", label: "Product & MVP", title: "Product Architecture & MVP Scope" },
-  { id: "finances", label: "Financial Model", title: "Financial Model & Unit Economics" },
-  { id: "gtm", label: "Go-to-Market", title: "Go-to-Market & Launch Execution" },
+  {
+    id: "overview",
+    label: "Executive Overview",
+    title: "Executive Overview & Viability",
+    agent: "Venture Synthesizer & Lead Analyst",
+    agentShort: "Lead Synthesizer",
+    agentRole: "Core Synthesis",
+    numeral: "01",
+  },
+  {
+    id: "vc-debate",
+    label: "AI Debate (War Room)",
+    title: "3-AI Investment Committee Debate",
+    agent: "Groq Llama 3.3, DeepSeek V3 & Gemini",
+    agentShort: "Groq & DeepSeek VCs",
+    agentRole: "VC War Room",
+    numeral: "02",
+  },
+  {
+    id: "customer-discovery",
+    label: "Customer & Discovery",
+    title: "Customer Persona & Discovery",
+    agent: "Customer Discovery & Mom Test Agent",
+    agentShort: "Customer Discovery",
+    agentRole: "Lean Discovery",
+    numeral: "03",
+  },
+  {
+    id: "market-competitors",
+    label: "Market & Competitors",
+    title: "Market & Competitive Intelligence",
+    agent: "Market Sizing & Competitor Intel Agent",
+    agentShort: "Market & Intel",
+    agentRole: "Competitive Intel",
+    numeral: "04",
+  },
+  {
+    id: "product-mvp",
+    label: "Product & MVP",
+    title: "Product Architecture & MVP Scope",
+    agent: "Product & Technical Architect",
+    agentShort: "Product Architect",
+    agentRole: "MVP & Tech Stack",
+    numeral: "05",
+  },
+  {
+    id: "finances",
+    label: "Financial Model",
+    title: "Financial Model & Unit Economics",
+    agent: "Financial Modeler & Unit Economics Agent",
+    agentShort: "Financial Modeler",
+    agentRole: "Cloud & Revenue Model",
+    numeral: "06",
+  },
+  {
+    id: "gtm",
+    label: "Go-to-Market",
+    title: "Go-to-Market & Launch Execution",
+    agent: "Growth Hacker & GTM Strategist",
+    agentShort: "Growth Strategist",
+    agentRole: "Launch Engine",
+    numeral: "07",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -475,43 +532,51 @@ function EditableList({
 }
 
 // ---------------------------------------------------------------------------
-// Section Gateway Header for Continuous Story Flow
+// Section Gateway Header for Continuous Story Flow & AI Agent Telemetry
+// Elevated card layout with signature orange gradient top bar matching Section 1.
 // ---------------------------------------------------------------------------
 function SectionGatewayHeader({ numeral, title, subtitle, badge, agent, onJumpTop }) {
   return (
-    <div className="relative mb-6 pt-6 pb-3 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-      <div className="flex items-center gap-3.5">
-        <span className="text-3xl sm:text-4xl font-black font-mono text-slate-300 select-none">
-          {numeral}
-        </span>
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              {title}
-            </h2>
-            {badge && (
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200 uppercase tracking-wider">
-                {badge}
-              </span>
+    <div className="rounded-3xl bg-white border border-slate-200/90 p-6 sm:p-7 mb-7 shadow-xs relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative z-10">
+        <div className="space-y-2.5 max-w-3xl">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200 uppercase tracking-wider">
+              Stage {numeral} • {badge || title}
+            </span>
+            {agent && (
+              <>
+                <span className="text-slate-300 text-xs font-mono">•</span>
+                <span className="inline-flex items-center gap-1.5 text-xs font-mono text-slate-500">
+                  <Bot size={13} className="text-orange-500" />
+                  Specialist: <strong className="text-slate-800">{agent}</strong>
+                </span>
+              </>
             )}
           </div>
-          {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
+            <span>{title}</span>
+          </h2>
+
+          {subtitle && (
+            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-sans">
+              {subtitle}
+            </p>
+          )}
         </div>
-      </div>
-      <div className="flex items-center gap-3">
-        {agent && (
-          <span className="text-xs font-mono text-slate-400 hidden sm:inline">
-            Specialist: <strong className="text-slate-700">{agent}</strong>
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={onJumpTop}
-          className="text-[11px] font-mono text-slate-400 hover:text-orange-600 transition-colors cursor-pointer"
-          title="Scroll to top of blueprint"
-        >
-          Top ↑
-        </button>
+
+        <div className="flex items-center gap-3 shrink-0 self-start sm:self-center">
+          <button
+            type="button"
+            onClick={onJumpTop}
+            className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-slate-400 hover:text-orange-600 px-3 py-1.5 rounded-xl border border-slate-200/80 hover:border-orange-200 hover:bg-orange-50 transition-colors cursor-pointer"
+            title="Scroll to top of blueprint"
+          >
+            Top ↑
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -581,6 +646,10 @@ export default function BlueprintDashboard({
 
   const [displayMode, setDisplayMode] = useState("continuous"); // "continuous" | "focused"
   const isProgrammaticScrollRef = useRef(false);
+  const activeSectionRef = useRef(activeSection);
+  useEffect(() => {
+    activeSectionRef.current = activeSection;
+  }, [activeSection]);
 
   const sectionHeaderRef = useRef(null);
   const prevBlueprintRef = useRef(blueprint);
@@ -632,28 +701,36 @@ export default function BlueprintDashboard({
     showToast("Updated item & saved to vault");
   }, [setBlueprint, showToast]);
 
-  // Smooth scroll jump to target section
+  // Bidirectional smooth jump with sticky header offset compensation
   const handleSmoothScrollToSection = useCallback((secId) => {
     setActiveSection(secId);
+    activeSectionRef.current = secId;
     isProgrammaticScrollRef.current = true;
 
-    if (displayMode === "continuous") {
-      const el = document.getElementById(`section-${secId}`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    } else {
-      const anchor = document.getElementById("blueprint-section-anchor");
-      if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+    const scrollTarget = scrollContainerRef?.current;
+    const targetEl = document.getElementById(`section-${secId}`);
+
+    if (scrollTarget && targetEl) {
+      const containerRect = scrollTarget.getBoundingClientRect();
+      const targetRect = targetEl.getBoundingClientRect();
+      // Apply -56px offset so section heading lands cleanly below the sticky spy rail
+      const targetTop = scrollTarget.scrollTop + (targetRect.top - containerRect.top) - 56;
+      scrollTarget.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+    } else if (targetEl) {
+      targetEl.scrollIntoView({ behavior: "smooth", block: "start" });
     }
 
     setTimeout(() => {
       isProgrammaticScrollRef.current = false;
-    }, 850);
-  }, [displayMode, setActiveSection]);
+    }, 700);
+  }, [setActiveSection, scrollContainerRef]);
+
+  // Seamless accelerator from SectionContinuumPortal
+  const handleDescendToSection = handleSmoothScrollToSection;
 
   const handleScrollToTop = useCallback(() => {
     isProgrammaticScrollRef.current = true;
+    activeSectionRef.current = "overview";
     const scrollTarget = scrollContainerRef?.current || document.querySelector("main.overflow-y-auto") || window;
     if (scrollTarget.scrollTo) {
       scrollTarget.scrollTo({ top: 0, behavior: "smooth" });
@@ -663,24 +740,31 @@ export default function BlueprintDashboard({
     setActiveSection("overview");
     setTimeout(() => {
       isProgrammaticScrollRef.current = false;
-    }, 850);
+    }, 800);
   }, [scrollContainerRef, setActiveSection]);
 
-  // Smart scroll management on initial mount or focused section switch
+  // Smart scroll management on initial mount or blueprint swap only
+  // DO NOT scroll on activeSection change - that causes the auto-scroll-to-top bug
   useEffect(() => {
     if (prevBlueprintRef.current !== blueprint || isFirstMountRef.current) {
       prevBlueprintRef.current = blueprint;
       isFirstMountRef.current = false;
       const mainEl = scrollContainerRef?.current || document.querySelector("main.overflow-y-auto") || document.querySelector("main");
-      if (mainEl) mainEl.scrollTop = 0;
-      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      if (mainEl) {
+        mainEl.scrollTop = 0;
+        // Also scroll window to top for any fixed elements
+        if (mainEl !== window) {
+          window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+        }
+      }
       return;
     }
 
+    // Only scroll to section header in focused mode when user clicks nav (not on scroll-driven section change)
     if (displayMode === "focused" && sectionHeaderRef.current && !isProgrammaticScrollRef.current) {
       sectionHeaderRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [activeSection, blueprint, displayMode, scrollContainerRef]);
+  }, [blueprint, displayMode, scrollContainerRef]); // Removed activeSection dependency
 
   // Intersection Observer for continuous scrolling spy rail sync
   useEffect(() => {
@@ -690,39 +774,43 @@ export default function BlueprintDashboard({
     let observer;
 
     const setupObserver = () => {
-      const sectionElements = document.querySelectorAll("[data-section-id]");
+      // Strictly target blueprint sections (never sticky buttons or rail elements)
+      const sectionElements = document.querySelectorAll("section.blueprint-section[data-section-id]");
       if (sectionElements.length === 0) return;
 
       observer = new IntersectionObserver(
         (entries) => {
+          // Guard: don't update activeSection during programmatic scrolls
           if (isProgrammaticScrollRef.current) return;
 
           const visible = entries.filter((e) => e.isIntersecting);
           if (visible.length > 0) {
-            visible.sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+            // Pick section nearest to reading line below sticky rail
+            visible.sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
             const topSec = visible[0].target.getAttribute("data-section-id");
-            if (topSec && topSec !== activeSection) {
+            if (topSec && topSec !== activeSectionRef.current) {
+              activeSectionRef.current = topSec;
               setActiveSection(topSec);
             }
           }
         },
         {
           root: container,
-          rootMargin: "-10% 0px -40% 0px",
-          threshold: [0.1, 0.25, 0.4],
+          rootMargin: "-60px 0px -60% 0px",
+          threshold: [0, 0.1, 0.25],
         }
       );
 
       sectionElements.forEach((el) => observer.observe(el));
     };
 
-    const timer = setTimeout(setupObserver, 200);
+    const timer = setTimeout(setupObserver, 100);
 
     return () => {
       clearTimeout(timer);
       if (observer) observer.disconnect();
     };
-  }, [displayMode, activeSection, setActiveSection, scrollContainerRef]);
+  }, [displayMode, scrollContainerRef, setActiveSection]);
 
 
   const handleExportPdf = useCallback(async () => {
@@ -992,7 +1080,7 @@ export default function BlueprintDashboard({
                 <section
                   id="section-overview"
                   data-section-id="overview"
-                  className="section-anchor animate-section-in scroll-mt-24"
+                  className="blueprint-section section-anchor animate-section-in scroll-mt-20"
                 >
                   <SectionErrorBoundary key="overview">
                     <OverviewSection
@@ -1016,25 +1104,13 @@ export default function BlueprintDashboard({
                       onNavigate={handleSmoothScrollToSection}
                     />
                   </SectionErrorBoundary>
-
-                  <SectionContinuumPortal
-                    currentSectionNumber={1}
-                    totalSections={7}
-                    currentSectionTitle="Executive Overview"
-                    nextSectionId="vc-debate"
-                    nextSectionNumber={2}
-                    nextSectionTitle="3-AI Investment Committee Debate"
-                    nextSectionSubtitle="Witness the Bull vs. Bear debate between Groq (Llama 3.3), DeepSeek V3, and Google Gemini."
-                    nextSectionAgent="Groq & DeepSeek VCs"
-                    onContinue={handleSmoothScrollToSection}
-                  />
                 </section>
 
                 {/* 2. 3-AI WAR ROOM DEBATE */}
                 <section
                   id="section-vc-debate"
                   data-section-id="vc-debate"
-                  className="section-anchor animate-section-in scroll-mt-24"
+                  className="blueprint-section section-anchor animate-section-in scroll-mt-20"
                 >
                   <SectionGatewayHeader
                     numeral="02"
@@ -1054,25 +1130,13 @@ export default function BlueprintDashboard({
                       onToast={showToast}
                     />
                   </SectionErrorBoundary>
-
-                  <SectionContinuumPortal
-                    currentSectionNumber={2}
-                    totalSections={7}
-                    currentSectionTitle="AI Debate War Room"
-                    nextSectionId="customer-discovery"
-                    nextSectionNumber={3}
-                    nextSectionTitle="Customer Persona & Lean Discovery"
-                    nextSectionSubtitle="Deep-dive into verified ICPs, Mom Test interview questions, red flags, and willingness-to-pay signals."
-                    nextSectionAgent="Customer Discovery Agent"
-                    onContinue={handleSmoothScrollToSection}
-                  />
                 </section>
 
                 {/* 3. CUSTOMER & DISCOVERY */}
                 <section
                   id="section-customer-discovery"
                   data-section-id="customer-discovery"
-                  className="section-anchor animate-section-in scroll-mt-24"
+                  className="blueprint-section section-anchor animate-section-in scroll-mt-20"
                 >
                   <SectionGatewayHeader
                     numeral="03"
@@ -1092,25 +1156,13 @@ export default function BlueprintDashboard({
                       onUpdateWtpSignals={(val) => updateSectionField("customerDiscovery", "willingnessToPaySignals", val)}
                     />
                   </SectionErrorBoundary>
-
-                  <SectionContinuumPortal
-                    currentSectionNumber={3}
-                    totalSections={7}
-                    currentSectionTitle="Customer & Discovery"
-                    nextSectionId="market-competitors"
-                    nextSectionNumber={4}
-                    nextSectionTitle="Market & Competitive Intelligence"
-                    nextSectionSubtitle="SWOT analysis, Porter's Five Forces, bottom-up TAM/SAM/SOM, and competitor blind spot matrix."
-                    nextSectionAgent="Competitive Intelligence Agent"
-                    onContinue={handleSmoothScrollToSection}
-                  />
                 </section>
 
                 {/* 4. MARKET & COMPETITORS */}
                 <section
                   id="section-market-competitors"
                   data-section-id="market-competitors"
-                  className="section-anchor animate-section-in scroll-mt-24"
+                  className="blueprint-section section-anchor animate-section-in scroll-mt-20"
                 >
                   <SectionGatewayHeader
                     numeral="04"
@@ -1130,25 +1182,13 @@ export default function BlueprintDashboard({
                       blueprint={blueprint}
                     />
                   </SectionErrorBoundary>
-
-                  <SectionContinuumPortal
-                    currentSectionNumber={4}
-                    totalSections={7}
-                    currentSectionTitle="Market & Competitors"
-                    nextSectionId="product-mvp"
-                    nextSectionNumber={5}
-                    nextSectionTitle="Product Architecture & MVP Scope"
-                    nextSectionSubtitle="Scoped 4-week MVP feature set, system architecture diagram, and recommended tech stack."
-                    nextSectionAgent="Product & Tech Architect"
-                    onContinue={handleSmoothScrollToSection}
-                  />
                 </section>
 
                 {/* 5. PRODUCT & MVP */}
                 <section
                   id="section-product-mvp"
                   data-section-id="product-mvp"
-                  className="section-anchor animate-section-in scroll-mt-24"
+                  className="blueprint-section section-anchor animate-section-in scroll-mt-20"
                 >
                   <SectionGatewayHeader
                     numeral="05"
@@ -1167,25 +1207,13 @@ export default function BlueprintDashboard({
                       onUpdateFutureFeatures={(val) => updateSectionField("productPlan", "futureFeatures", val)}
                     />
                   </SectionErrorBoundary>
-
-                  <SectionContinuumPortal
-                    currentSectionNumber={5}
-                    totalSections={7}
-                    currentSectionTitle="Product & MVP"
-                    nextSectionId="finances"
-                    nextSectionNumber={6}
-                    nextSectionTitle="Financial Model & Unit Economics"
-                    nextSectionSubtitle="Dynamic cloud infrastructure cost estimator, user-tier revenue milestones, and LTV:CAC health."
-                    nextSectionAgent="Financial Modeler Agent"
-                    onContinue={handleSmoothScrollToSection}
-                  />
                 </section>
 
                 {/* 6. FINANCIAL MODEL */}
                 <section
                   id="section-finances"
                   data-section-id="finances"
-                  className="section-anchor animate-section-in scroll-mt-24"
+                  className="blueprint-section section-anchor animate-section-in scroll-mt-20"
                 >
                   <SectionGatewayHeader
                     numeral="06"
@@ -1206,25 +1234,13 @@ export default function BlueprintDashboard({
                       blueprint={blueprint}
                     />
                   </SectionErrorBoundary>
-
-                  <SectionContinuumPortal
-                    currentSectionNumber={6}
-                    totalSections={7}
-                    currentSectionTitle="Financial Model"
-                    nextSectionId="gtm"
-                    nextSectionNumber={7}
-                    nextSectionTitle="Go-to-Market & Launch Execution"
-                    nextSectionSubtitle="Social launch copy for Reddit and Twitter, outbound cold email templates, and launch checklist."
-                    nextSectionAgent="Growth & GTM Strategist"
-                    onContinue={handleSmoothScrollToSection}
-                  />
                 </section>
 
                 {/* 7. GO-TO-MARKET */}
                 <section
                   id="section-gtm"
                   data-section-id="gtm"
-                  className="section-anchor animate-section-in scroll-mt-24"
+                  className="blueprint-section section-anchor animate-section-in scroll-mt-20"
                 >
                   <SectionGatewayHeader
                     numeral="07"

@@ -66,6 +66,20 @@ export default function LoadingTimeline({ steps }) {
     return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
   };
 
+  const listContainerRef = useRef(null);
+
+  // Auto-scroll the active agent step into view smoothly within the pipeline
+  useEffect(() => {
+    if (runningStepIndex >= 0 && listContainerRef.current) {
+      const activeEl = listContainerRef.current.querySelector(
+        `[data-agent-index="${runningStepIndex}"]`
+      );
+      if (activeEl) {
+        activeEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+  }, [runningStepIndex]);
+
   return (
     <div className="w-full max-w-xl mx-auto mt-8 animate-fade-in">
       {/* Elevated Status Header Card */}
@@ -119,8 +133,11 @@ export default function LoadingTimeline({ steps }) {
         </div>
       </div>
 
-      {/* Structured Agent Pipeline Grid */}
-      <div className="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm divide-y divide-slate-100">
+      {/* Structured Agent Pipeline Grid with Smooth Scroll */}
+      <div
+        ref={listContainerRef}
+        className="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm divide-y divide-slate-100 max-h-[460px] overflow-y-auto"
+      >
         {steps.map((step, idx) => {
           const isRunning = step.status === "running";
           const isDone = step.status === "done";
@@ -129,14 +146,19 @@ export default function LoadingTimeline({ steps }) {
           return (
             <div
               key={step.name}
+              data-agent-index={idx}
               className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all duration-200 ${
                 isRunning
-                  ? "bg-orange-50/80 border border-orange-200"
+                  ? "bg-orange-50/90 border border-orange-200 shadow-xs"
                   : "hover:bg-slate-50"
               }`}
             >
               <div className="flex items-center gap-3 min-w-0">
-                <span className="font-mono text-[11px] text-slate-400 w-5">
+                <span
+                  className={`font-mono text-[11px] w-5 ${
+                    isRunning ? "text-orange-600 font-bold" : "text-slate-400"
+                  }`}
+                >
                   {(idx + 1).toString().padStart(2, "0")}
                 </span>
                 <StepIcon status={step.status} />

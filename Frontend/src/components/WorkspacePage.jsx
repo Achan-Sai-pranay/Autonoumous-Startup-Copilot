@@ -120,6 +120,19 @@ export default function WorkspacePage({
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
   }, []);
 
+  // Smoothly align a blueprint section to the top of the main scroll container.
+  // Uses rect-based math with sticky spy rail offset compensation (-56px),
+  // ensuring the section header is never obscured under the sticky header.
+  const scrollToSection = useCallback((sectionId) => {
+    const container = mainScrollRef.current;
+    const el = document.getElementById(sectionId);
+    if (!container || !el) return;
+    const containerRect = container.getBoundingClientRect();
+    const elRect = el.getBoundingClientRect();
+    const targetTop = container.scrollTop + (elRect.top - containerRect.top) - 56;
+    container.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+  }, []);
+
   // Active view inside the platform:
   // "startups" (Your Startups hub) | "new" (Analyze new startup prompt) | "blueprint" (Viewing current blueprint)
   const [activeView, setActiveView] = useState(() => {
@@ -134,29 +147,48 @@ export default function WorkspacePage({
   const [viewMode, setViewMode] = useState("dashboard"); // "dashboard" | "prd"
   const [isBusinessOpen, setIsBusinessOpen] = useState(true);
 
-  // Keep view updated if user generates a new blueprint or starts loading
+  // Keep view updated if user generates a new blueprint or starts loading.
+  // NOTE: only reset activeSection to "overview" when the PROJECT changes
+  // (i.e. a different idea). Live in-place edits produce a new blueprint
+  // object but must NOT reset the section the user is currently reading.
+  const lastIdeaForResetRef = useRef(idea);
+
   useEffect(() => {
     if (isLoading) {
       setActiveView("new");
+      // Smoothly scroll down so the live agent telemetry pipeline is immediately visible
+      setTimeout(() => {
+        const timelineEl = document.getElementById("agent-loading-timeline");
+        if (timelineEl && mainScrollRef.current) {
+          const containerRect = mainScrollRef.current.getBoundingClientRect();
+          const targetRect = timelineEl.getBoundingClientRect();
+          const targetTop = mainScrollRef.current.scrollTop + (targetRect.top - containerRect.top) - 20;
+          mainScrollRef.current.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+        }
+      }, 100);
     } else if (blueprint) {
       setActiveView("blueprint");
-      setActiveSection("overview");
-      scrollToTop();
+      if (lastIdeaForResetRef.current !== idea) {
+        lastIdeaForResetRef.current = idea;
+        setActiveSection("overview");
+      }
     }
-  }, [isLoading, blueprint, scrollToTop]);
+  }, [isLoading, blueprint, idea]);
 
-  // Ensure scroll container is always reset to the top when navigating to a blueprint
+  // Ensure scroll container is reset to top ONLY on initial navigation to blueprint view
+  // Use a ref to track if we've already scrolled for this blueprint session
+  const hasScrolledToTopRef = useRef(false);
+
   useEffect(() => {
-    if (activeView === "blueprint") {
-      scrollToTop();
-      const t1 = setTimeout(scrollToTop, 20);
-      const t2 = setTimeout(scrollToTop, 100);
-      const t3 = setTimeout(scrollToTop, 300);
-      return () => {
-        clearTimeout(t1);
-        clearTimeout(t2);
-        clearTimeout(t3);
-      };
+    if (activeView === "blueprint" && blueprint) {
+      if (!hasScrolledToTopRef.current) {
+        hasScrolledToTopRef.current = true;
+        // Single scroll to top on initial blueprint load
+        scrollToTop();
+      }
+    } else {
+      // Reset flag when leaving blueprint view
+      hasScrolledToTopRef.current = false;
     }
   }, [activeView, blueprint, scrollToTop]);
 
@@ -362,7 +394,7 @@ export default function WorkspacePage({
                     setTimeout(() => {
                       const el = document.getElementById("section-overview");
                       if (el) {
-                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                        scrollToSection("section-overview");
                       } else {
                         scrollToTop();
                       }
@@ -433,19 +465,25 @@ export default function WorkspacePage({
                               setActiveSection(sec.id);
                               setViewMode("dashboard");
                               setTimeout(() => {
-                                const el = document.getElementById(`section-${sec.id}`);
-                                if (el) {
-                                  el.scrollIntoView({ behavior: "smooth", block: "start" });
-                                }
+                                scrollToSection(`section-${sec.id}`);
                               }, 40);
                             }}
-                            className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-colors cursor-pointer ${
+                            className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-colors cursor-pointer flex items-center justify-between group ${
                               isActive
-                                ? "bg-slate-100 text-slate-900 font-semibold"
-                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-medium"
+                                ? "bg-slate-900 text-white font-semibold shadow-xs"
+                                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium"
                             }`}
                           >
-                            {sec.label}
+                            <span className="truncate">{sec.label}</span>
+                            <span
+                              className={`text-[10px] font-mono px-1 rounded ${
+                                isActive
+                                  ? "text-orange-400 font-bold"
+                                  : "text-slate-400 group-hover:text-slate-600"
+                              }`}
+                            >
+                              {sec.numeral}
+                            </span>
                           </button>
                         );
                       })}
@@ -1051,7 +1089,10 @@ export default function WorkspacePage({
 
                 {/* Live Timeline Streaming Animation */}
                 {isLoading && (
-                  <div className="mt-8 w-full bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm animate-fade-in">
+                  <div
+                    id="agent-loading-timeline"
+                    className="mt-8 w-full bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm animate-fade-in scroll-mt-6"
+                  >
                     <LoadingTimeline steps={agentSteps} />
                   </div>
                 )}

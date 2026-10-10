@@ -8,7 +8,6 @@ body {
   background-color: #ffffff;
   color: #0f172a; /* slate-900 */
   margin: 0;
-  scroll-behavior: smooth;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -309,6 +308,36 @@ body {
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(226, 232, 240, 0.9);
+}
+
+/* --------------------------------------------------------------------------- */
+/* Smooth Agent Continuity Gateway & Micro-Interactions                        */
+/* --------------------------------------------------------------------------- */
+.sticky-glass-rail {
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* Custom sleek scrollbar for telemetry timelines & spy rail */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Smooth section anchors with top spacing compensation */
+.blueprint-section {
+  scroll-margin-top: 5rem;
 }
 
 /* Accessibility: Respect Reduced Motion */
