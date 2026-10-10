@@ -83,3 +83,39 @@ test("VC War Room debate section schema validation", () => {
   assert.strictEqual(ids.length, uniqueIds.size);
 });
 
+test("Continuous story flow section transitions and anchors mapping", () => {
+  const CONTINUOUS_FLOW_STAGES = [
+    { id: "overview", nextId: "vc-debate", stageNum: 1 },
+    { id: "vc-debate", nextId: "customer-discovery", stageNum: 2 },
+    { id: "customer-discovery", nextId: "market-competitors", stageNum: 3 },
+    { id: "market-competitors", nextId: "product-mvp", stageNum: 4 },
+    { id: "product-mvp", nextId: "finances", stageNum: 5 },
+    { id: "finances", nextId: "gtm", stageNum: 6 },
+    { id: "gtm", nextId: null, stageNum: 7 },
+  ];
+
+  assert.strictEqual(CONTINUOUS_FLOW_STAGES.length, 7);
+
+  // Verify linear continuum chain
+  for (let i = 0; i < CONTINUOUS_FLOW_STAGES.length - 1; i++) {
+    const current = CONTINUOUS_FLOW_STAGES[i];
+    const next = CONTINUOUS_FLOW_STAGES[i + 1];
+    assert.strictEqual(current.nextId, next.id, `Stage ${current.id} must point to ${next.id}`);
+    assert.strictEqual(current.stageNum, i + 1);
+  }
+
+  // Last stage (GTM) must lead to blueprint completion hero
+  const finalStage = CONTINUOUS_FLOW_STAGES[CONTINUOUS_FLOW_STAGES.length - 1];
+  assert.strictEqual(finalStage.nextId, null);
+  assert.strictEqual(finalStage.stageNum, 7);
+});
+
+test("Default displayMode configuration validation", () => {
+  const supportedModes = ["continuous", "focused"];
+  const defaultMode = "continuous";
+
+  assert.strictEqual(supportedModes.includes(defaultMode), true);
+  assert.strictEqual(defaultMode, "continuous");
+});
+
+

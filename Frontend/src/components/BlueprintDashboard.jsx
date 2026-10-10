@@ -73,6 +73,9 @@ import {
 import AiDebateWarRoomSection, {
   AiDebateSummaryCard,
 } from "./AiDebateWarRoom.jsx";
+import SectionContinuumPortal from "./SectionContinuumPortal.jsx";
+import StickySectionSpyRail from "./StickySectionSpyRail.jsx";
+
 
 // ---------------------------------------------------------------------------
 // Business Analysis Sub-Sections — 7-stage Institutional Startup Flow
@@ -471,6 +474,96 @@ function EditableList({
   );
 }
 
+// ---------------------------------------------------------------------------
+// Section Gateway Header for Continuous Story Flow
+// ---------------------------------------------------------------------------
+function SectionGatewayHeader({ numeral, title, subtitle, badge, agent, onJumpTop }) {
+  return (
+    <div className="relative mb-6 pt-6 pb-3 border-b border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="flex items-center gap-3.5">
+        <span className="text-3xl sm:text-4xl font-black font-mono text-slate-300 select-none">
+          {numeral}
+        </span>
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              {title}
+            </h2>
+            {badge && (
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200 uppercase tracking-wider">
+                {badge}
+              </span>
+            )}
+          </div>
+          {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+        </div>
+      </div>
+      <div className="flex items-center gap-3">
+        {agent && (
+          <span className="text-xs font-mono text-slate-400 hidden sm:inline">
+            Specialist: <strong className="text-slate-700">{agent}</strong>
+          </span>
+        )}
+        <button
+          type="button"
+          onClick={onJumpTop}
+          className="text-[11px] font-mono text-slate-400 hover:text-orange-600 transition-colors cursor-pointer"
+          title="Scroll to top of blueprint"
+        >
+          Top ↑
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Blueprint Completion Celebration Hero at end of all 7 sections
+// ---------------------------------------------------------------------------
+function BlueprintCompletionHero({ onExportPdf, onExportMarkdown, onScrollToTop }) {
+  return (
+    <div className="mt-12 p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white text-center shadow-xl border border-slate-800 relative overflow-hidden animate-section-in">
+      <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="relative z-10 max-w-xl mx-auto space-y-4">
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-orange-500/20 text-orange-400 border border-orange-500/30">
+          <Sparkles size={13} /> Complete 7-Stage Analysis
+        </span>
+        <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+          You've Reviewed Your Entire Startup Thesis!
+        </h3>
+        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+          All 12 autonomous AI specialists have stress-tested your viability, ICPs, SWOT, MVP build scope, unit economics, and go-to-market engine.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <button
+            type="button"
+            onClick={onExportPdf}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-orange-500/25 transition-all cursor-pointer active:scale-95"
+          >
+            <FileDown size={15} />
+            <span>Export Executive PDF</span>
+          </button>
+          <button
+            type="button"
+            onClick={onExportMarkdown}
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm border border-white/20 transition-all cursor-pointer active:scale-95"
+          >
+            <FileText size={15} />
+            <span>Download Markdown</span>
+          </button>
+          <button
+            type="button"
+            onClick={onScrollToTop}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs sm:text-sm transition-all cursor-pointer"
+          >
+            <span>Back to Top ↑</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function BlueprintDashboard({
   blueprint,
   setBlueprint,
@@ -479,11 +572,15 @@ export default function BlueprintDashboard({
   setActiveSection: setControlledActiveSection,
   viewMode: controlledViewMode,
   setViewMode: setControlledViewMode,
+  scrollContainerRef,
 }) {
   const [internalActiveSection, setInternalActiveSection] = useState("overview");
   const activeSection =
     controlledActiveSection !== undefined ? controlledActiveSection : internalActiveSection;
   const setActiveSection = setControlledActiveSection || setInternalActiveSection;
+
+  const [displayMode, setDisplayMode] = useState("continuous"); // "continuous" | "focused"
+  const isProgrammaticScrollRef = useRef(false);
 
   const sectionHeaderRef = useRef(null);
   const prevBlueprintRef = useRef(blueprint);
@@ -535,21 +632,98 @@ export default function BlueprintDashboard({
     showToast("Updated item & saved to vault");
   }, [setBlueprint, showToast]);
 
-  // Smart scroll management
+  // Smooth scroll jump to target section
+  const handleSmoothScrollToSection = useCallback((secId) => {
+    setActiveSection(secId);
+    isProgrammaticScrollRef.current = true;
+
+    if (displayMode === "continuous") {
+      const el = document.getElementById(`section-${secId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    } else {
+      const anchor = document.getElementById("blueprint-section-anchor");
+      if (anchor) anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    setTimeout(() => {
+      isProgrammaticScrollRef.current = false;
+    }, 850);
+  }, [displayMode, setActiveSection]);
+
+  const handleScrollToTop = useCallback(() => {
+    isProgrammaticScrollRef.current = true;
+    const scrollTarget = scrollContainerRef?.current || document.querySelector("main.overflow-y-auto") || window;
+    if (scrollTarget.scrollTo) {
+      scrollTarget.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      scrollTarget.scrollTop = 0;
+    }
+    setActiveSection("overview");
+    setTimeout(() => {
+      isProgrammaticScrollRef.current = false;
+    }, 850);
+  }, [scrollContainerRef, setActiveSection]);
+
+  // Smart scroll management on initial mount or focused section switch
   useEffect(() => {
     if (prevBlueprintRef.current !== blueprint || isFirstMountRef.current) {
       prevBlueprintRef.current = blueprint;
       isFirstMountRef.current = false;
-      const mainEl = document.querySelector("main.overflow-y-auto") || document.querySelector("main");
+      const mainEl = scrollContainerRef?.current || document.querySelector("main.overflow-y-auto") || document.querySelector("main");
       if (mainEl) mainEl.scrollTop = 0;
       window.scrollTo({ top: 0, left: 0, behavior: "instant" });
       return;
     }
 
-    if (sectionHeaderRef.current) {
+    if (displayMode === "focused" && sectionHeaderRef.current && !isProgrammaticScrollRef.current) {
       sectionHeaderRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
-  }, [activeSection, blueprint]);
+  }, [activeSection, blueprint, displayMode, scrollContainerRef]);
+
+  // Intersection Observer for continuous scrolling spy rail sync
+  useEffect(() => {
+    if (displayMode !== "continuous" || typeof window === "undefined") return;
+
+    const container = scrollContainerRef?.current || null;
+    let observer;
+
+    const setupObserver = () => {
+      const sectionElements = document.querySelectorAll("[data-section-id]");
+      if (sectionElements.length === 0) return;
+
+      observer = new IntersectionObserver(
+        (entries) => {
+          if (isProgrammaticScrollRef.current) return;
+
+          const visible = entries.filter((e) => e.isIntersecting);
+          if (visible.length > 0) {
+            visible.sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+            const topSec = visible[0].target.getAttribute("data-section-id");
+            if (topSec && topSec !== activeSection) {
+              setActiveSection(topSec);
+            }
+          }
+        },
+        {
+          root: container,
+          rootMargin: "-10% 0px -40% 0px",
+          threshold: [0.1, 0.25, 0.4],
+        }
+      );
+
+      sectionElements.forEach((el) => observer.observe(el));
+    };
+
+    const timer = setTimeout(setupObserver, 200);
+
+    return () => {
+      clearTimeout(timer);
+      if (observer) observer.disconnect();
+    };
+  }, [displayMode, activeSection, setActiveSection, scrollContainerRef]);
+
 
   const handleExportPdf = useCallback(async () => {
     setExporting("pdf");
@@ -733,6 +907,18 @@ export default function BlueprintDashboard({
         />
       ) : (
         <div className="w-full">
+          {/* Sticky Section Navigation Spy Rail */}
+          <div className="mb-6">
+            <StickySectionSpyRail
+              activeSection={activeSection}
+              onSelectSection={handleSmoothScrollToSection}
+              displayMode={displayMode}
+              onToggleDisplayMode={() =>
+                setDisplayMode((prev) => (prev === "continuous" ? "focused" : "continuous"))
+              }
+            />
+          </div>
+
           {/* MAIN CONTENT AREA */}
           <div className="w-full min-w-0">
             {/* Top Venture Banner Card */}
@@ -799,146 +985,412 @@ export default function BlueprintDashboard({
               </div>
             </div>
 
-            {/* Section Header with Star and < Previous / Next > Navigation */}
-            <div
-              id="blueprint-section-anchor"
-              ref={sectionHeaderRef}
-              className="flex items-center justify-between mb-6 pb-2 scroll-mt-6"
-            >
-              <div className="flex items-center gap-2">
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                  <span>{currentSectionObj.title}</span>
-                  <span className="text-orange-500 text-xl font-normal">★</span>
-                </h2>
-              </div>
-
-              <div className="flex items-center gap-2.5">
-                {prevSection && (
-                  <button
-                    onClick={() => setActiveSection(prevSection.id)}
-                    className="flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 transition-colors cursor-pointer"
-                  >
-                    <ChevronLeft size={14} />
-                    <span>Previous</span>
-                  </button>
-                )}
-                {nextSection && (
-                  <button
-                    onClick={() => setActiveSection(nextSection.id)}
-                    className="flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 transition-colors cursor-pointer"
-                  >
-                    <span>Next</span>
-                    <ChevronRight size={14} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Render Section Content */}
-            <div key={activeSection} className="animate-fade-in">
-              <SectionErrorBoundary key={activeSection}>
+            {/* Continuous vs Focused Section Rendering */}
+            {displayMode === "continuous" ? (
+              <div className="space-y-16">
                 {/* 1. EXECUTIVE OVERVIEW & VIABILITY */}
-                {(activeSection === "overview" || activeSection === "dashboard") && (
-                  <OverviewSection
-                    viabilityScorecard={viabilityScorecard}
-                    ideaAnalysis={ideaAnalysis}
-                    marketSizing={marketSizing}
-                    originalIdea={originalIdea}
-                    pitch={pitch}
-                    ventureTitle={ventureTitle}
-                    customerPersona={customerPersona}
-                    productPlan={productPlan}
-                    businessStrategy={businessStrategy}
-                    roadmap={roadmap}
-                    launchChecklist={launchChecklist}
-                    costEstimator={costEstimator}
-                    revenueSimulator={revenueSimulator}
-                    marketResearch={marketResearch}
-                    competitorWeaknessAnalysis={competitorWeaknessAnalysis}
-                    isFounderMode={isFounderMode}
-                    aiDebate={aiDebate}
-                    onNavigate={setActiveSection}
-                  />
-                )}
+                <section
+                  id="section-overview"
+                  data-section-id="overview"
+                  className="section-anchor animate-section-in scroll-mt-24"
+                >
+                  <SectionErrorBoundary key="overview">
+                    <OverviewSection
+                      viabilityScorecard={viabilityScorecard}
+                      ideaAnalysis={ideaAnalysis}
+                      marketSizing={marketSizing}
+                      originalIdea={originalIdea}
+                      pitch={pitch}
+                      ventureTitle={ventureTitle}
+                      customerPersona={customerPersona}
+                      productPlan={productPlan}
+                      businessStrategy={businessStrategy}
+                      roadmap={roadmap}
+                      launchChecklist={launchChecklist}
+                      costEstimator={costEstimator}
+                      revenueSimulator={revenueSimulator}
+                      marketResearch={marketResearch}
+                      competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                      isFounderMode={isFounderMode}
+                      aiDebate={aiDebate}
+                      onNavigate={handleSmoothScrollToSection}
+                    />
+                  </SectionErrorBoundary>
 
-                {/* 1B. 3-AI MULTI-AGENT VC WAR ROOM DEBATE */}
-                {activeSection === "vc-debate" && (
-                  <AiDebateWarRoomSection
-                    aiDebate={aiDebate}
-                    blueprint={blueprint}
-                    originalIdea={originalIdea}
-                    onUpdateAiDebate={(val) => updateRootField("aiDebate", val)}
-                    onUpdateViabilityScorecard={(val) => updateRootField("viabilityScorecard", val)}
-                    onToast={showToast}
+                  <SectionContinuumPortal
+                    currentSectionNumber={1}
+                    totalSections={7}
+                    currentSectionTitle="Executive Overview"
+                    nextSectionId="vc-debate"
+                    nextSectionNumber={2}
+                    nextSectionTitle="3-AI Investment Committee Debate"
+                    nextSectionSubtitle="Witness the Bull vs. Bear debate between Groq (Llama 3.3), DeepSeek V3, and Google Gemini."
+                    nextSectionAgent="Groq & DeepSeek VCs"
+                    onContinue={handleSmoothScrollToSection}
                   />
-                )}
+                </section>
 
-                {/* 2. CUSTOMER PERSONA & DISCOVERY */}
-                {activeSection === "customer-discovery" && (
-                  <CustomerDiscoverySection
-                    customerPersona={customerPersona}
-                    customerDiscovery={customerDiscovery}
-                    onUpdatePainPoints={(val) => updateSectionField("customerPersona", "painPoints", val)}
-                    onUpdateQuestions={(val) => updateSectionField("customerDiscovery", "interviewQuestions", val)}
-                    onUpdateRedFlags={(val) => updateSectionField("customerDiscovery", "redFlags", val)}
-                    onUpdateWtpSignals={(val) => updateSectionField("customerDiscovery", "willingnessToPaySignals", val)}
+                {/* 2. 3-AI WAR ROOM DEBATE */}
+                <section
+                  id="section-vc-debate"
+                  data-section-id="vc-debate"
+                  className="section-anchor animate-section-in scroll-mt-24"
+                >
+                  <SectionGatewayHeader
+                    numeral="02"
+                    title="3-AI Investment Committee Debate"
+                    subtitle="Autonomous VC War Room clashing Bull, Bear, and Judge models."
+                    badge="VC War Room"
+                    agent="Groq Llama, DeepSeek & Gemini"
+                    onJumpTop={handleScrollToTop}
                   />
-                )}
+                  <SectionErrorBoundary key="vc-debate">
+                    <AiDebateWarRoomSection
+                      aiDebate={aiDebate}
+                      blueprint={blueprint}
+                      originalIdea={originalIdea}
+                      onUpdateAiDebate={(val) => updateRootField("aiDebate", val)}
+                      onUpdateViabilityScorecard={(val) => updateRootField("viabilityScorecard", val)}
+                      onToast={showToast}
+                    />
+                  </SectionErrorBoundary>
 
-                {/* 3. MARKET & COMPETITIVE INTELLIGENCE */}
-                {activeSection === "market-competitors" && (
-                  <MarketCompetitorsSection
-                    swotAnalysis={swotAnalysis}
-                    portersFiveForces={portersFiveForces}
-                    competitorWeaknessAnalysis={competitorWeaknessAnalysis}
-                    marketResearch={marketResearch}
-                    ideaAnalysis={ideaAnalysis}
-                    blueprint={blueprint}
+                  <SectionContinuumPortal
+                    currentSectionNumber={2}
+                    totalSections={7}
+                    currentSectionTitle="AI Debate War Room"
+                    nextSectionId="customer-discovery"
+                    nextSectionNumber={3}
+                    nextSectionTitle="Customer Persona & Lean Discovery"
+                    nextSectionSubtitle="Deep-dive into verified ICPs, Mom Test interview questions, red flags, and willingness-to-pay signals."
+                    nextSectionAgent="Customer Discovery Agent"
+                    onContinue={handleSmoothScrollToSection}
                   />
-                )}
+                </section>
 
-                {/* 4. PRODUCT ARCHITECTURE & MVP SCOPE */}
-                {activeSection === "product-mvp" && (
-                  <ProductMvpSection
-                    productPlan={productPlan}
-                    technicalArchitecture={technicalArchitecture}
-                    roadmap={roadmap}
-                    onUpdateMvpFeatures={(val) => updateSectionField("productPlan", "mvpFeatures", val)}
-                    onUpdateFutureFeatures={(val) => updateSectionField("productPlan", "futureFeatures", val)}
+                {/* 3. CUSTOMER & DISCOVERY */}
+                <section
+                  id="section-customer-discovery"
+                  data-section-id="customer-discovery"
+                  className="section-anchor animate-section-in scroll-mt-24"
+                >
+                  <SectionGatewayHeader
+                    numeral="03"
+                    title="Customer Persona & Lean Discovery"
+                    subtitle="Uncompromising customer empathy based on The Mom Test methodology."
+                    badge="ICP & Personas"
+                    agent="Customer Discovery Agent"
+                    onJumpTop={handleScrollToTop}
                   />
-                )}
+                  <SectionErrorBoundary key="customer-discovery">
+                    <CustomerDiscoverySection
+                      customerPersona={customerPersona}
+                      customerDiscovery={customerDiscovery}
+                      onUpdatePainPoints={(val) => updateSectionField("customerPersona", "painPoints", val)}
+                      onUpdateQuestions={(val) => updateSectionField("customerDiscovery", "interviewQuestions", val)}
+                      onUpdateRedFlags={(val) => updateSectionField("customerDiscovery", "redFlags", val)}
+                      onUpdateWtpSignals={(val) => updateSectionField("customerDiscovery", "willingnessToPaySignals", val)}
+                    />
+                  </SectionErrorBoundary>
 
-                {/* 5. FINANCIAL MODEL & UNIT ECONOMICS */}
-                {activeSection === "finances" && (
-                  <FinancesSection
-                    costEstimator={costEstimator}
-                    revenueSimulator={revenueSimulator}
-                    businessStrategy={businessStrategy}
-                    marketResearch={marketResearch}
-                    ideaAnalysis={ideaAnalysis}
-                    productPlan={productPlan}
-                    blueprint={blueprint}
+                  <SectionContinuumPortal
+                    currentSectionNumber={3}
+                    totalSections={7}
+                    currentSectionTitle="Customer & Discovery"
+                    nextSectionId="market-competitors"
+                    nextSectionNumber={4}
+                    nextSectionTitle="Market & Competitive Intelligence"
+                    nextSectionSubtitle="SWOT analysis, Porter's Five Forces, bottom-up TAM/SAM/SOM, and competitor blind spot matrix."
+                    nextSectionAgent="Competitive Intelligence Agent"
+                    onContinue={handleSmoothScrollToSection}
                   />
-                )}
+                </section>
 
-                {/* 6. GO-TO-MARKET & LAUNCH EXECUTION */}
-                {activeSection === "gtm" && (
-                  <GoToMarketSection
-                    goToMarket={goToMarket}
-                    launchChecklist={launchChecklist}
-                    pitch={pitch}
-                    ideaAnalysis={ideaAnalysis}
-                    customerPersona={blueprint?.customerPersona}
-                    onToast={showToast}
-                    onUpdateChecklist={(val) => updateRootField("launchChecklist", val)}
+                {/* 4. MARKET & COMPETITORS */}
+                <section
+                  id="section-market-competitors"
+                  data-section-id="market-competitors"
+                  className="section-anchor animate-section-in scroll-mt-24"
+                >
+                  <SectionGatewayHeader
+                    numeral="04"
+                    title="Market & Competitive Intelligence"
+                    subtitle="Strategic frameworks, industry dynamics, and incumbent vulnerability mapping."
+                    badge="Market Intelligence"
+                    agent="Competitive Intelligence Agent"
+                    onJumpTop={handleScrollToTop}
                   />
-                )}
+                  <SectionErrorBoundary key="market-competitors">
+                    <MarketCompetitorsSection
+                      swotAnalysis={swotAnalysis}
+                      portersFiveForces={portersFiveForces}
+                      competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                      marketResearch={marketResearch}
+                      ideaAnalysis={ideaAnalysis}
+                      blueprint={blueprint}
+                    />
+                  </SectionErrorBoundary>
 
-              </SectionErrorBoundary>
-            </div>
+                  <SectionContinuumPortal
+                    currentSectionNumber={4}
+                    totalSections={7}
+                    currentSectionTitle="Market & Competitors"
+                    nextSectionId="product-mvp"
+                    nextSectionNumber={5}
+                    nextSectionTitle="Product Architecture & MVP Scope"
+                    nextSectionSubtitle="Scoped 4-week MVP feature set, system architecture diagram, and recommended tech stack."
+                    nextSectionAgent="Product & Tech Architect"
+                    onContinue={handleSmoothScrollToSection}
+                  />
+                </section>
+
+                {/* 5. PRODUCT & MVP */}
+                <section
+                  id="section-product-mvp"
+                  data-section-id="product-mvp"
+                  className="section-anchor animate-section-in scroll-mt-24"
+                >
+                  <SectionGatewayHeader
+                    numeral="05"
+                    title="Product Architecture & MVP Scope"
+                    subtitle="Disciplined lean feature scoping and modern production technology choices."
+                    badge="Architecture & MVP"
+                    agent="Product & Tech Architect"
+                    onJumpTop={handleScrollToTop}
+                  />
+                  <SectionErrorBoundary key="product-mvp">
+                    <ProductMvpSection
+                      productPlan={productPlan}
+                      technicalArchitecture={technicalArchitecture}
+                      roadmap={roadmap}
+                      onUpdateMvpFeatures={(val) => updateSectionField("productPlan", "mvpFeatures", val)}
+                      onUpdateFutureFeatures={(val) => updateSectionField("productPlan", "futureFeatures", val)}
+                    />
+                  </SectionErrorBoundary>
+
+                  <SectionContinuumPortal
+                    currentSectionNumber={5}
+                    totalSections={7}
+                    currentSectionTitle="Product & MVP"
+                    nextSectionId="finances"
+                    nextSectionNumber={6}
+                    nextSectionTitle="Financial Model & Unit Economics"
+                    nextSectionSubtitle="Dynamic cloud infrastructure cost estimator, user-tier revenue milestones, and LTV:CAC health."
+                    nextSectionAgent="Financial Modeler Agent"
+                    onContinue={handleSmoothScrollToSection}
+                  />
+                </section>
+
+                {/* 6. FINANCIAL MODEL */}
+                <section
+                  id="section-finances"
+                  data-section-id="finances"
+                  className="section-anchor animate-section-in scroll-mt-24"
+                >
+                  <SectionGatewayHeader
+                    numeral="06"
+                    title="Financial Model & Unit Economics"
+                    subtitle="Realistic cost models and revenue simulators tailored to your business archetype."
+                    badge="Financial Modeler"
+                    agent="Financial Modeler Agent"
+                    onJumpTop={handleScrollToTop}
+                  />
+                  <SectionErrorBoundary key="finances">
+                    <FinancesSection
+                      costEstimator={costEstimator}
+                      revenueSimulator={revenueSimulator}
+                      businessStrategy={businessStrategy}
+                      marketResearch={marketResearch}
+                      ideaAnalysis={ideaAnalysis}
+                      productPlan={productPlan}
+                      blueprint={blueprint}
+                    />
+                  </SectionErrorBoundary>
+
+                  <SectionContinuumPortal
+                    currentSectionNumber={6}
+                    totalSections={7}
+                    currentSectionTitle="Financial Model"
+                    nextSectionId="gtm"
+                    nextSectionNumber={7}
+                    nextSectionTitle="Go-to-Market & Launch Execution"
+                    nextSectionSubtitle="Social launch copy for Reddit and Twitter, outbound cold email templates, and launch checklist."
+                    nextSectionAgent="Growth & GTM Strategist"
+                    onContinue={handleSmoothScrollToSection}
+                  />
+                </section>
+
+                {/* 7. GO-TO-MARKET */}
+                <section
+                  id="section-gtm"
+                  data-section-id="gtm"
+                  className="section-anchor animate-section-in scroll-mt-24"
+                >
+                  <SectionGatewayHeader
+                    numeral="07"
+                    title="Go-to-Market & Launch Execution"
+                    subtitle="Zero-to-one organic distribution engine and interactive launch checklist."
+                    badge="Launch Playbook"
+                    agent="Growth & GTM Strategist"
+                    onJumpTop={handleScrollToTop}
+                  />
+                  <SectionErrorBoundary key="gtm">
+                    <GoToMarketSection
+                      goToMarket={goToMarket}
+                      launchChecklist={launchChecklist}
+                      pitch={pitch}
+                      ideaAnalysis={ideaAnalysis}
+                      customerPersona={blueprint?.customerPersona}
+                      onToast={showToast}
+                      onUpdateChecklist={(val) => updateRootField("launchChecklist", val)}
+                    />
+                  </SectionErrorBoundary>
+
+                  {/* Blueprint Completion & Export Hero */}
+                  <BlueprintCompletionHero
+                    onExportPdf={handleExportPdf}
+                    onExportMarkdown={handleExportMarkdown}
+                    onScrollToTop={handleScrollToTop}
+                  />
+                </section>
+              </div>
+            ) : (
+              /* Single Section Focused Mode */
+              <div>
+                {/* Section Header with Star and < Previous / Next > Navigation */}
+                <div
+                  id="blueprint-section-anchor"
+                  ref={sectionHeaderRef}
+                  className="flex items-center justify-between mb-6 pb-2 scroll-mt-6"
+                >
+                  <div className="flex items-center gap-2">
+                    <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
+                      <span>{currentSectionObj.title}</span>
+                      <span className="text-orange-500 text-xl font-normal">★</span>
+                    </h2>
+                  </div>
+
+                  <div className="flex items-center gap-2.5">
+                    {prevSection && (
+                      <button
+                        onClick={() => handleSmoothScrollToSection(prevSection.id)}
+                        className="flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 transition-colors cursor-pointer"
+                      >
+                        <ChevronLeft size={14} />
+                        <span>Previous</span>
+                      </button>
+                    )}
+                    {nextSection && (
+                      <button
+                        onClick={() => handleSmoothScrollToSection(nextSection.id)}
+                        className="flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 transition-colors cursor-pointer"
+                      >
+                        <span>Next</span>
+                        <ChevronRight size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div key={activeSection} className="animate-fade-in">
+                  <SectionErrorBoundary key={activeSection}>
+                    {(activeSection === "overview" || activeSection === "dashboard") && (
+                      <OverviewSection
+                        viabilityScorecard={viabilityScorecard}
+                        ideaAnalysis={ideaAnalysis}
+                        marketSizing={marketSizing}
+                        originalIdea={originalIdea}
+                        pitch={pitch}
+                        ventureTitle={ventureTitle}
+                        customerPersona={customerPersona}
+                        productPlan={productPlan}
+                        businessStrategy={businessStrategy}
+                        roadmap={roadmap}
+                        launchChecklist={launchChecklist}
+                        costEstimator={costEstimator}
+                        revenueSimulator={revenueSimulator}
+                        marketResearch={marketResearch}
+                        competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                        isFounderMode={isFounderMode}
+                        aiDebate={aiDebate}
+                        onNavigate={handleSmoothScrollToSection}
+                      />
+                    )}
+
+                    {activeSection === "vc-debate" && (
+                      <AiDebateWarRoomSection
+                        aiDebate={aiDebate}
+                        blueprint={blueprint}
+                        originalIdea={originalIdea}
+                        onUpdateAiDebate={(val) => updateRootField("aiDebate", val)}
+                        onUpdateViabilityScorecard={(val) => updateRootField("viabilityScorecard", val)}
+                        onToast={showToast}
+                      />
+                    )}
+
+                    {activeSection === "customer-discovery" && (
+                      <CustomerDiscoverySection
+                        customerPersona={customerPersona}
+                        customerDiscovery={customerDiscovery}
+                        onUpdatePainPoints={(val) => updateSectionField("customerPersona", "painPoints", val)}
+                        onUpdateQuestions={(val) => updateSectionField("customerDiscovery", "interviewQuestions", val)}
+                        onUpdateRedFlags={(val) => updateSectionField("customerDiscovery", "redFlags", val)}
+                        onUpdateWtpSignals={(val) => updateSectionField("customerDiscovery", "willingnessToPaySignals", val)}
+                      />
+                    )}
+
+                    {activeSection === "market-competitors" && (
+                      <MarketCompetitorsSection
+                        swotAnalysis={swotAnalysis}
+                        portersFiveForces={portersFiveForces}
+                        competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+                        marketResearch={marketResearch}
+                        ideaAnalysis={ideaAnalysis}
+                        blueprint={blueprint}
+                      />
+                    )}
+
+                    {activeSection === "product-mvp" && (
+                      <ProductMvpSection
+                        productPlan={productPlan}
+                        technicalArchitecture={technicalArchitecture}
+                        roadmap={roadmap}
+                        onUpdateMvpFeatures={(val) => updateSectionField("productPlan", "mvpFeatures", val)}
+                        onUpdateFutureFeatures={(val) => updateSectionField("productPlan", "futureFeatures", val)}
+                      />
+                    )}
+
+                    {activeSection === "finances" && (
+                      <FinancesSection
+                        costEstimator={costEstimator}
+                        revenueSimulator={revenueSimulator}
+                        businessStrategy={businessStrategy}
+                        marketResearch={marketResearch}
+                        ideaAnalysis={ideaAnalysis}
+                        productPlan={productPlan}
+                        blueprint={blueprint}
+                      />
+                    )}
+
+                    {activeSection === "gtm" && (
+                      <GoToMarketSection
+                        goToMarket={goToMarket}
+                        launchChecklist={launchChecklist}
+                        pitch={pitch}
+                        ideaAnalysis={ideaAnalysis}
+                        customerPersona={blueprint?.customerPersona}
+                        onToast={showToast}
+                        onUpdateChecklist={(val) => updateRootField("launchChecklist", val)}
+                      />
+                    )}
+                  </SectionErrorBoundary>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
+
 
       {/* Success Toast */}
       {toast && (
@@ -1157,39 +1609,40 @@ function OverviewSection({
 
   return (
     <div className="space-y-7 animate-fade-in text-slate-900">
-      {/* 1. Venture Hero Pitch Banner */}
-      <div className="rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white p-6 sm:p-8 shadow-md border border-slate-700/80 relative overflow-hidden">
+      {/* 1. Executive Viability Spotlight Header */}
+      <div className="rounded-3xl bg-white border border-slate-200/90 p-6 sm:p-7 shadow-xs relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600" />
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
           <div className="space-y-3 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-2.5 py-1 rounded-full text-xs font-mono font-bold bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                EXECUTIVE OVERVIEW
+              <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200 uppercase tracking-wider">
+                Stage 01 • Executive Overview & Viability
               </span>
-              <span className="text-slate-400 text-xs font-mono">•</span>
-              <span className="text-xs font-mono text-slate-300">
-                {toSafeString(ideaAnalysis?.domain, "Digital Venture")}
+              <span className="text-slate-300 text-xs font-mono">•</span>
+              <span className="text-xs font-mono text-slate-500">
+                Industry: <strong className="text-slate-800">{toSafeString(ideaAnalysis?.domain, "Digital Venture")}</strong>
               </span>
             </div>
 
-            <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
+            <h2 className="text-xl sm:text-2xl font-black tracking-tight text-slate-900 flex items-center gap-3">
               <span>{toSafeString(ventureTitle, "Startup Blueprint")}</span>
             </h2>
 
-            <p className="text-sm sm:text-base text-slate-200 leading-relaxed italic bg-white/5 p-4 rounded-2xl border border-white/10 font-medium">
+            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 text-slate-700 text-xs sm:text-sm leading-relaxed italic font-medium">
               "{toSafeString(pitch?.elevatorPitch || originalIdea, "A clear, focused solution designed to solve real user problems fast.")}"
-            </p>
+            </div>
           </div>
 
           {/* Viability Score Badge */}
-          <div className="flex flex-col items-center justify-center bg-white/5 border border-white/10 p-5 rounded-2xl text-center shrink-0 min-w-[160px]">
-            <span className="text-[11px] font-mono uppercase text-slate-400 font-bold block mb-1">
+          <div className="flex flex-col items-center justify-center bg-slate-50 border border-slate-200/80 p-5 rounded-2xl text-center shrink-0 min-w-[170px] shadow-2xs">
+            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
               Viability Score
             </span>
-            <div className="text-4xl font-black font-mono text-orange-400 my-0.5">
+            <div className="text-4xl font-black font-mono text-orange-600 my-0.5">
               {score}
               <span className="text-xs font-normal text-slate-400">/100</span>
             </div>
-            <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-mono font-bold bg-orange-500/20 text-orange-300 border border-orange-500/40">
+            <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-mono font-bold bg-orange-100 text-orange-800 border border-orange-200">
               {verdict}
             </span>
           </div>
@@ -1197,12 +1650,12 @@ function OverviewSection({
       </div>
 
       {/* 2. Executive Quick Action Deck (What to build & ship first) */}
-      <div className="bg-gradient-to-br from-orange-500/10 via-amber-500/5 to-white rounded-2xl p-5 border border-orange-200/90 shadow-2xs">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="flex items-center justify-center h-6 w-6 rounded-lg bg-orange-600 text-white">
+      <div className="bg-gradient-to-br from-orange-50/40 via-white to-slate-50/40 rounded-3xl p-5 sm:p-6 border border-orange-200/80 shadow-2xs">
+        <div className="flex items-center gap-2 mb-3.5">
+          <span className="flex items-center justify-center h-6 w-6 rounded-lg bg-orange-600 text-white shadow-xs">
             <Zap size={13} />
           </span>
-          <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-orange-800">
+          <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-800">
             Executive Action Deck • Key Pillars at a Glance
           </h3>
         </div>
@@ -1211,7 +1664,7 @@ function OverviewSection({
             <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
               🎯 Target Customer
             </span>
-            <p className="font-semibold text-slate-800">
+            <p className="font-semibold text-slate-800 leading-snug">
               {targetCustomer}
             </p>
           </div>
@@ -1219,7 +1672,7 @@ function OverviewSection({
             <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
               🛠️ Core MVP Scope
             </span>
-            <p className="font-semibold text-slate-800">
+            <p className="font-semibold text-slate-800 leading-snug">
               {coreMvpScope}
             </p>
           </div>
@@ -1227,7 +1680,7 @@ function OverviewSection({
             <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
               💰 Monetization Model
             </span>
-            <p className="font-semibold text-slate-800">
+            <p className="font-semibold text-slate-800 leading-snug">
               {monetizationModel}
             </p>
           </div>
@@ -1235,12 +1688,13 @@ function OverviewSection({
             <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
               🚀 Priority This Week
             </span>
-            <p className="font-semibold text-orange-700">
+            <p className="font-semibold text-orange-700 leading-snug">
               {priorityThisWeek}
             </p>
           </div>
         </div>
       </div>
+
 
       {/* 3. 3-AI Multi-Agent Investment Committee Consensus ("VC War Room") */}
       <AiDebateSummaryCard

@@ -359,7 +359,14 @@ export default function WorkspacePage({
                     setActiveView("blueprint");
                     setActiveSection("overview");
                     setViewMode("dashboard");
-                    scrollToTop();
+                    setTimeout(() => {
+                      const el = document.getElementById("section-overview");
+                      if (el) {
+                        el.scrollIntoView({ behavior: "smooth", block: "start" });
+                      } else {
+                        scrollToTop();
+                      }
+                    }, 40);
                   }}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
                     activeView === "blueprint" && viewMode === "dashboard" && (activeSection === "overview" || activeSection === "dashboard")
@@ -425,6 +432,12 @@ export default function WorkspacePage({
                               setActiveView("blueprint");
                               setActiveSection(sec.id);
                               setViewMode("dashboard");
+                              setTimeout(() => {
+                                const el = document.getElementById(`section-${sec.id}`);
+                                if (el) {
+                                  el.scrollIntoView({ behavior: "smooth", block: "start" });
+                                }
+                              }, 40);
                             }}
                             className={`w-full text-left text-xs py-1.5 px-2.5 rounded-lg transition-colors cursor-pointer ${
                               isActive
@@ -1123,6 +1136,7 @@ export default function WorkspacePage({
                 setActiveSection={setActiveSection}
                 viewMode={viewMode}
                 setViewMode={setViewMode}
+                scrollContainerRef={mainScrollRef}
               />
             </div>
           )}

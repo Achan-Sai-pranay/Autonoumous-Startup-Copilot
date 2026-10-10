@@ -1,9 +1,11 @@
 // hooks/useScrollReveal.js
 import { useEffect } from "react";
 
-export function useScrollReveal(dependency) {
+export function useScrollReveal(dependency, containerRef) {
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    const scrollTarget = containerRef?.current || window;
 
     function revealVisible() {
       const elements = document.querySelectorAll(".reveal-on-scroll:not(.is-revealed)");
@@ -35,6 +37,7 @@ export function useScrollReveal(dependency) {
           });
         },
         {
+          root: containerRef?.current || null,
           threshold: 0.05,
           rootMargin: "80px 0px 80px 0px",
         }
@@ -44,6 +47,9 @@ export function useScrollReveal(dependency) {
       elements.forEach((el) => observer.observe(el));
     }
 
+    if (scrollTarget && scrollTarget !== window) {
+      scrollTarget.addEventListener("scroll", revealVisible, { passive: true });
+    }
     window.addEventListener("scroll", revealVisible, { passive: true });
     window.addEventListener("resize", revealVisible, { passive: true });
 
@@ -51,11 +57,15 @@ export function useScrollReveal(dependency) {
       clearTimeout(t1);
       clearTimeout(t2);
       clearTimeout(t3);
+      if (scrollTarget && scrollTarget !== window) {
+        scrollTarget.removeEventListener("scroll", revealVisible);
+      }
       window.removeEventListener("scroll", revealVisible);
       window.removeEventListener("resize", revealVisible);
       if (observer) {
         observer.disconnect();
       }
     };
-  }, [dependency]);
+  }, [dependency, containerRef]);
 }
+
