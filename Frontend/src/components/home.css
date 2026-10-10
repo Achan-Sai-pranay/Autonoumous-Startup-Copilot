@@ -1092,6 +1092,12 @@ button.hp-user-btn,
   position: sticky;
   top: 120px;
 }
+.hp-pipe-intro .hp-h2 {
+  color: #0f172a;
+}
+.hp-pipe-intro .hp-lede {
+  color: #334155;
+}
 .hp-tl {
   position: relative;
   --prog: 0;
@@ -1103,22 +1109,25 @@ button.hp-user-btn,
   bottom: 60px;
   width: 2px;
   border-radius: 2px;
-  background: #dcdce2;
+  background: #cbd5e1;
 }
 .hp-tl-line i {
   display: block;
   width: 100%;
   height: calc(var(--prog) * 100%);
   border-radius: inherit;
-  background: var(--hp-orange);
+  background: linear-gradient(180deg, #ea6332 0%, #cb4113 100%);
 }
 .hp-step {
   position: relative;
   display: flex;
   gap: 24px;
   padding-bottom: 52px;
-  opacity: 0.45;
-  transition: opacity 0.6s var(--hp-ease);
+  opacity: 0.72;
+  transition: opacity 0.4s var(--hp-ease), transform 0.3s var(--hp-ease);
+}
+.hp-step:hover {
+  opacity: 0.95;
 }
 .hp-step:last-child {
   padding-bottom: 0;
@@ -1135,20 +1144,26 @@ button.hp-user-btn,
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  color: var(--hp-ink-3);
-  background: #fff;
-  border: 2px solid #dcdce2;
-  transition: all 0.5s var(--hp-ease);
+  color: #475569;
+  background: #ffffff;
+  border: 2px solid #cbd5e1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  transition: all 0.4s var(--hp-ease);
 }
 .hp-step.is-lit .hp-step-dot {
-  color: #fff;
-  background: var(--hp-orange);
-  border-color: var(--hp-orange);
-  box-shadow: 0 6px 18px rgba(249, 115, 22, 0.4);
+  color: #ffffff;
+  background: linear-gradient(180deg, #ea6332 0%, #db5020 50%, #cb4113 100%);
+  border-color: transparent;
+  box-shadow: 0 6px 18px rgba(224, 86, 38, 0.4);
 }
 .hp-step small {
   font-size: 13px;
-  color: var(--hp-ink-3);
+  font-weight: 600;
+  color: #64748b;
+  transition: color 0.3s;
+}
+.hp-step.is-lit small {
+  color: var(--hp-orange-ink);
 }
 .hp-step h3 {
   margin-top: 2px;
@@ -1156,13 +1171,22 @@ button.hp-user-btn,
   font-weight: 600;
   letter-spacing: -0.028em;
   line-height: 1.2;
+  color: #1e293b;
+  transition: color 0.3s;
+}
+.hp-step.is-lit h3 {
+  color: #0f172a;
 }
 .hp-step p {
   margin-top: 8px;
   max-width: 46ch;
   font-size: 15.5px;
   line-height: 1.55;
-  color: var(--hp-ink-2);
+  color: #475569;
+  transition: color 0.3s;
+}
+.hp-step.is-lit p {
+  color: #334155;
 }
 
 /* ------------------------------------------------------------------ */
