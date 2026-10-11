@@ -71,7 +71,14 @@ import {
   UpmetricsFinancialSimulator,
   ChatPrdDossierView,
 } from "./CompetitorUpgrades.jsx";
-import AiDebateWarRoomSection from "./AiDebateWarRoom.jsx";
+import AiDebateWarRoomSection from "./BlueprintPhase3.jsx";
+import {
+  SectionGatewayHeader,
+  ViabilitySpotlight,
+  ActionDeck,
+  StoryTrio,
+  ScrollProgress,
+} from "./BlueprintPhase2.jsx";
 import { VentureHero, AiDebateSummaryCard } from "./BlueprintPhase1.jsx";
 
 
@@ -530,101 +537,6 @@ function EditableList({
 }
 
 // ---------------------------------------------------------------------------
-// Section Gateway Header for Continuous Story Flow & AI Agent Telemetry
-// Elevated card layout with signature orange gradient top bar matching Section 1.
-// ---------------------------------------------------------------------------
-function SectionGatewayHeader({ numeral, title, subtitle, badge, agent, onJumpTop, isActive = false }) {
-  return (
-    <div
-      className={`rounded-3xl bg-white border p-6 sm:p-7 mb-7 shadow-xs relative overflow-hidden transition-all duration-300 ${
-        isActive
-          ? "border-orange-300 ring-2 ring-orange-500/20 shadow-md bg-gradient-to-b from-orange-50/20 via-white to-white"
-          : "border-slate-200/90 shadow-2xs hover:border-slate-300"
-      }`}
-    >
-      {/* Top Accent Line: Signature warm orange gradient */}
-      <div
-        className={`absolute top-0 left-0 right-0 transition-all duration-300 ${
-          isActive
-            ? "h-1.5 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 shadow-sm shadow-orange-500/30"
-            : "h-1 bg-gradient-to-r from-orange-400/80 via-amber-400/80 to-orange-500/80"
-        }`}
-      />
-
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 relative z-10">
-        <div className="space-y-3 max-w-3xl">
-          {/* Top metadata pills */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Stage Numeral Badge - Prominent, larger, and highlighted when Active */}
-            <span
-              className={`inline-flex items-center gap-2 rounded-full font-mono transition-all duration-200 uppercase tracking-wider ${
-                isActive
-                  ? "px-3.5 py-1.5 text-xs sm:text-sm font-black bg-orange-100 text-orange-900 border-2 border-orange-400 shadow-xs"
-                  : "px-2.5 py-1 text-[10px] sm:text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200"
-              }`}
-            >
-              {isActive && (
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
-                </span>
-              )}
-              <span>Stage {numeral} • {badge || title}</span>
-            </span>
-
-            {agent && (
-              <>
-                <span className="text-slate-300 text-xs font-mono">•</span>
-                <span
-                  className={`inline-flex items-center gap-1.5 text-xs font-mono transition-colors rounded-lg px-2 py-0.5 ${
-                    isActive
-                      ? "text-orange-950 font-semibold bg-orange-50/80 border border-orange-200"
-                      : "text-slate-500"
-                  }`}
-                >
-                  <Bot size={13} className={isActive ? "text-orange-600 animate-pulse" : "text-orange-500"} />
-                  Specialist: <strong className={isActive ? "text-slate-950 font-bold" : "text-slate-800"}>{agent}</strong>
-                </span>
-              </>
-            )}
-          </div>
-
-          {/* Heading - Bigger and Highlighted when Active */}
-          <h2
-            className={`font-black tracking-tight transition-all duration-200 ${
-              isActive
-                ? "text-2xl sm:text-3xl lg:text-[32px] text-slate-950"
-                : "text-xl sm:text-2xl text-slate-800"
-            }`}
-          >
-            <span>{title}</span>
-          </h2>
-
-          {subtitle && (
-            <p className={`text-xs sm:text-sm leading-relaxed font-sans transition-colors ${
-              isActive ? "text-slate-700 font-medium" : "text-slate-600"
-            }`}>
-              {subtitle}
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-center gap-3 shrink-0 self-start sm:self-center">
-          <button
-            type="button"
-            onClick={onJumpTop}
-            className="inline-flex items-center gap-1 text-[11px] font-mono font-semibold text-slate-400 hover:text-orange-600 px-3 py-1.5 rounded-xl border border-slate-200/80 hover:border-orange-200 hover:bg-orange-50 transition-colors cursor-pointer"
-            title="Scroll to top of blueprint"
-          >
-            Top ↑
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
 // Blueprint Completion Celebration Hero at end of all 7 sections
 // ---------------------------------------------------------------------------
 function BlueprintCompletionHero({ onExportPdf, onExportMarkdown, onScrollToTop }) {
@@ -1004,6 +916,7 @@ export default function BlueprintDashboard({
 
   return (
     <div className="w-full max-w-7xl mx-auto mt-8 px-4 pb-24 animate-fade-in text-slate-900">
+      <ScrollProgress scrollContainerRef={scrollContainerRef} />
       {/* Top Utility Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-200/80">
         <div className="flex items-center gap-2">
@@ -1660,139 +1573,23 @@ function OverviewSection({
 
   return (
     <div className="space-y-7 animate-fade-in text-slate-900">
-      {/* 1. Executive Viability Spotlight Header */}
-      <div
-        className={`rounded-3xl bg-white border p-6 sm:p-7 shadow-xs relative overflow-hidden transition-all duration-300 ${
-          isActive
-            ? "border-orange-300 ring-2 ring-orange-500/20 shadow-md bg-gradient-to-b from-orange-50/20 via-white to-white"
-            : "border-slate-200/90 shadow-2xs hover:border-slate-300"
-        }`}
-      >
-        {/* Top Accent Line: Signature warm orange gradient */}
-        <div
-          className={`absolute top-0 left-0 right-0 transition-all duration-300 ${
-            isActive
-              ? "h-1.5 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 shadow-sm shadow-orange-500/30"
-              : "h-1 bg-gradient-to-r from-orange-400/80 via-amber-400/80 to-orange-500/80"
-          }`}
-        />
+            {/* 1. Executive Viability Spotlight Header (Phase 2) */}
+      <ViabilitySpotlight
+        isActive={isActive}
+        ventureTitle={toSafeString(ventureTitle, "Startup Blueprint")}
+        domain={toSafeString(ideaAnalysis?.domain, "Digital Venture")}
+        pitch={toSafeString(pitch?.elevatorPitch || originalIdea, "A clear, focused solution designed to solve real user problems fast.")}
+        score={score}
+        verdict={verdict}
+      />
 
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-          <div className="space-y-3 max-w-3xl">
-            {/* Top metadata pills */}
-            <div className="flex flex-wrap items-center gap-2">
-              {/* Stage Numeral Badge - Prominent, larger, and highlighted when Active */}
-              <span
-                className={`inline-flex items-center gap-2 rounded-full font-mono transition-all duration-200 uppercase tracking-wider ${
-                  isActive
-                    ? "px-3.5 py-1.5 text-xs sm:text-sm font-black bg-orange-100 text-orange-900 border-2 border-orange-400 shadow-xs"
-                    : "px-2.5 py-1 text-[10px] sm:text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200"
-                }`}
-              >
-                {isActive && (
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500" />
-                  </span>
-                )}
-                <span>Stage 01 • Executive Overview & Viability</span>
-              </span>
-              <span className="text-slate-300 text-xs font-mono">•</span>
-              <span
-                className={`text-xs font-mono transition-colors rounded-lg px-2 py-0.5 ${
-                  isActive
-                    ? "text-orange-950 font-semibold bg-orange-50/80 border border-orange-200"
-                    : "text-slate-500"
-                }`}
-              >
-                Industry: <strong className={isActive ? "text-slate-950 font-bold" : "text-slate-800"}>{toSafeString(ideaAnalysis?.domain, "Digital Venture")}</strong>
-              </span>
-            </div>
-
-            {/* Heading - Bigger and Highlighted when Active */}
-            <h2
-              className={`font-black tracking-tight transition-all duration-200 ${
-                isActive
-                  ? "text-2xl sm:text-3xl lg:text-[32px] text-slate-950"
-                  : "text-xl sm:text-2xl text-slate-800"
-              }`}
-            >
-              <span>{toSafeString(ventureTitle, "Startup Blueprint")}</span>
-            </h2>
-
-            <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-100 text-slate-700 text-xs sm:text-sm leading-relaxed italic font-medium">
-              "{toSafeString(pitch?.elevatorPitch || originalIdea, "A clear, focused solution designed to solve real user problems fast.")}"
-            </div>
-          </div>
-
-          {/* Viability Score Badge */}
-          <div
-            className={`flex flex-col items-center justify-center border p-5 rounded-2xl text-center shrink-0 min-w-[170px] shadow-2xs transition-all ${
-              isActive
-                ? "bg-orange-50/40 border-orange-200 ring-1 ring-orange-500/20"
-                : "bg-slate-50 border border-slate-200/80"
-            }`}
-          >
-            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
-              Viability Score
-            </span>
-            <div className="text-4xl font-black font-mono text-orange-600 my-0.5">
-              {score}
-              <span className="text-xs font-normal text-slate-400">/100</span>
-            </div>
-            <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-mono font-bold bg-orange-100 text-orange-800 border border-orange-200">
-              {verdict}
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Executive Quick Action Deck (What to build & ship first) */}
-      <div className="bg-gradient-to-br from-orange-50/40 via-white to-slate-50/40 rounded-3xl p-5 sm:p-6 border border-orange-200/80 shadow-2xs">
-        <div className="flex items-center gap-2 mb-3.5">
-          <span className="flex items-center justify-center h-6 w-6 rounded-lg bg-orange-600 text-white shadow-xs">
-            <Zap size={13} />
-          </span>
-          <h3 className="text-xs font-mono font-bold uppercase tracking-wider text-slate-800">
-            Executive Action Deck • Key Pillars at a Glance
-          </h3>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
-            <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
-              🎯 Target Customer
-            </span>
-            <p className="font-semibold text-slate-800 leading-snug">
-              {targetCustomer}
-            </p>
-          </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
-            <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
-              🛠️ Core MVP Scope
-            </span>
-            <p className="font-semibold text-slate-800 leading-snug">
-              {coreMvpScope}
-            </p>
-          </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
-            <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
-              💰 Monetization Model
-            </span>
-            <p className="font-semibold text-slate-800 leading-snug">
-              {monetizationModel}
-            </p>
-          </div>
-          <div className="bg-white p-3.5 rounded-xl border border-slate-200/80 shadow-2xs">
-            <span className="text-[10px] font-mono text-slate-400 font-bold uppercase block mb-1">
-              🚀 Priority This Week
-            </span>
-            <p className="font-semibold text-orange-700 leading-snug">
-              {priorityThisWeek}
-            </p>
-          </div>
-        </div>
-      </div>
-
+      {/* 2. Executive Quick Action Deck (Phase 2) */}
+      <ActionDeck
+        targetCustomer={targetCustomer}
+        coreMvpScope={coreMvpScope}
+        monetizationModel={monetizationModel}
+        priorityThisWeek={priorityThisWeek}
+      />
 
       {/* 3. 3-AI Multi-Agent Investment Committee Consensus ("VC War Room") */}
       <AiDebateSummaryCard
@@ -1801,71 +1598,12 @@ function OverviewSection({
         onEnterWarRoom={() => onNavigate("vc-debate")}
       />
 
-      {/* 4. Core Value Proposition Breakdown (Problem / Solution / Advantage) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-        {/* Card 1: The Problem */}
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-rose-600 bg-rose-50 px-2.5 py-1 rounded-lg border border-rose-200">
-                🛑 The Problem
-              </span>
-              <AlertTriangle size={16} className="text-rose-500" />
-            </div>
-            <h4 className="text-sm font-bold text-slate-900 mb-2">
-              What Frustrates Users Today?
-            </h4>
-            <p className="text-xs text-slate-700 leading-relaxed font-medium">
-              {problemText}
-            </p>
-          </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
-            Pain point identified from target customer interviews.
-          </div>
-        </div>
-
-        {/* Card 2: The Solution */}
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
-                💡 The Solution
-              </span>
-              <Lightbulb size={16} className="text-emerald-500" />
-            </div>
-            <h4 className="text-sm font-bold text-slate-900 mb-2">
-              How Does Your Product Solve It?
-            </h4>
-            <p className="text-xs text-slate-700 leading-relaxed font-medium">
-              {solutionText}
-            </p>
-          </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
-            Directly removes the friction with a simple, focused tool.
-          </div>
-        </div>
-
-        {/* Card 3: Key Advantage */}
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-mono font-bold uppercase tracking-wider text-orange-600 bg-orange-50 px-2.5 py-1 rounded-lg border border-orange-200">
-                🏆 Why It Wins
-              </span>
-              <Rocket size={16} className="text-orange-500" />
-            </div>
-            <h4 className="text-sm font-bold text-slate-900 mb-2">
-              Why Customers Will Choose This
-            </h4>
-            <p className="text-xs text-slate-700 leading-relaxed font-medium">
-              {whyItWins}
-            </p>
-          </div>
-          <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500">
-            Your unique differentiator against alternatives.
-          </div>
-        </div>
-      </div>
+      {/* 4. Core Value Proposition Breakdown (Phase 2) */}
+      <StoryTrio
+        problem={problemText}
+        solution={solutionText}
+        whyItWins={whyItWins}
+      />
 
       {/* 5. Venture Viability & 3 Pillars Breakdown */}
       <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs">
