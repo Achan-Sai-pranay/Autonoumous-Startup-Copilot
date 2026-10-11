@@ -43,6 +43,7 @@ import {
   X,
 } from "lucide-react";
 import ResourcesModal from "./ResourcesModal.jsx";
+import { ScrollProgress } from "./BlueprintPhase2.jsx";
 import "./home.css";
 import "./workspace.css";
 
@@ -747,6 +748,9 @@ export default function WorkspacePage({
               </div>
             )}
           </div>
+          {activeView === "blueprint" && (
+            <ScrollProgress scrollContainerRef={mainScrollRef} />
+          )}
         </header>
 
         <main ref={mainScrollRef} className="wk-main">

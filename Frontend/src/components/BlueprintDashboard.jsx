@@ -77,7 +77,6 @@ import {
   ViabilitySpotlight,
   ActionDeck,
   StoryTrio,
-  ScrollProgress,
 } from "./BlueprintPhase2.jsx";
 import {
   StatCard,
@@ -601,7 +600,6 @@ export default function BlueprintDashboard({
 
   return (
     <div className="w-full max-w-7xl mx-auto mt-8 px-4 pb-24 animate-fade-in text-slate-900">
-      <ScrollProgress scrollContainerRef={scrollContainerRef} />
       <ReaderToolbar
         briefNo={(originalIdea.length % 900) + 100}
         isFounderMode={isFounderMode}

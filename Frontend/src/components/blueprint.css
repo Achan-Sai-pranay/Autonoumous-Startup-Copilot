@@ -411,13 +411,15 @@
 }
 .bp-rv.is-in { opacity: 1; transform: none; will-change: auto; }
 
-/* Reading progress */
+/* Reading progress: anchored cleanly along bottom border of top bar */
 .bp-progress {
-  position: sticky;
-  top: 0;
-  z-index: 15;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
   height: 3px;
-  margin: 0 0 -3px;
+  background: rgba(0, 0, 0, 0.05);
   pointer-events: none;
 }
 .bp-progress i {
