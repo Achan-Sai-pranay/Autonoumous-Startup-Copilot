@@ -7,12 +7,13 @@
 // now returning SwotView).
 // ---------------------------------------------------------------------------
 import { memo, useEffect, useMemo, useState } from "react";
-import { Check, Copy, Cpu, DollarSign, LayoutGrid, TrendingUp } from "lucide-react";
+import { Check, Copy, Cpu, Wallet, LayoutGrid, TrendingUp } from "lucide-react";
 import { Reveal } from "./BlueprintPhase2.jsx";
 import { ViabilityBreakdown } from "./BlueprintPhase7.jsx";
 import { UpmetricsFinancialSimulator } from "./BlueprintPhase5.jsx";
 import { MetricRow, MilestoneTimeline } from "./BlueprintPhase6.jsx";
 import { SwotAnalysisMatrix } from "./CompetitorUpgrades.jsx";
+import { convertCurrencyString } from "../lib/currency.js";
 import "./studio.css";
 
 const str = (v, fb = "") => {
@@ -87,7 +88,7 @@ export const SwipeFile = memo(function SwipeFile({ gtm, pitch, onToast }) {
         subject: `I spent 30 days building a tool to fix ${aud} [free beta]`,
         body:
           str(gtm?.redditLaunchPost) ||
-          `Hey r/startups,\n\nLike many of you, I was sick of losing 15+ hours a week on repetitive setup.\n\nSo I built a lightweight tool that does it in 60 seconds.\n\nWhat I learned building it:\n1. Keep cloud costs under $10/mo\n2. Automate the boring setup first\n3. Talk to 20 users before writing complex code\n\nTry it free: [Link]. Roast my landing page.`,
+          `Hey r/startups,\n\nLike many of you, I was sick of losing 15+ hours a week on repetitive setup.\n\nSo I built a lightweight tool that does it in 60 seconds.\n\nWhat I learned building it:\n1. Keep cloud costs under ₹800/mo\n2. Automate the boring setup first\n3. Talk to 20 users before writing complex code\n\nTry it free: [Link]. Roast my landing page.`,
         tip: "Post to r/SaaS, r/startups or r/SideProject with real founder-journey context.",
       },
       twitter: {
@@ -226,7 +227,7 @@ ${productPlan?.mvpFeatures?.map((f) => `- ${f}`).join("\n") || "Core features"}
 - Hosting: ${technicalArchitecture?.hosting || "Vercel"}
 
 ## 5. Financial and unit economics
-- Monthly burn: ${costEstimator?.estimatedMonthlyCost || "$0"}
+- Monthly burn: ${convertCurrencyString(costEstimator?.estimatedMonthlyCost || "$0", "INR")}
 - Pricing model: ${businessStrategy?.pricingIdea || "SaaS subscription"}`;
     navigator.clipboard?.writeText(text);
     onToast?.("Full PRD copied as Markdown");
@@ -322,7 +323,7 @@ ${productPlan?.mvpFeatures?.map((f) => `- ${f}`).join("\n") || "Core features"}
               </div>
               <div>
                 <dt>Estimated monthly burn</dt>
-                <dd className="is-accent">{str(costEstimator?.estimatedMonthlyCost, "$0")}</dd>
+                <dd className="is-accent">{convertCurrencyString(str(costEstimator?.estimatedMonthlyCost, "$0"), "INR")}</dd>
               </div>
             </dl>
           </Section>
@@ -336,7 +337,7 @@ ${productPlan?.mvpFeatures?.map((f) => `- ${f}`).join("\n") || "Core features"}
               pillars={[
                 { icon: TrendingUp, label: "Market demand", value: score(viabilityScorecard?.marketDemandScore, 88), text: "Organic pull and urgency of the target customer." },
                 { icon: Cpu, label: "Tech feasibility", value: score(viabilityScorecard?.technicalFeasibilityScore, 82), text: "API availability and development velocity." },
-                { icon: DollarSign, label: "Monetization", value: score(viabilityScorecard?.monetizationScore, 85), text: "Willingness to pay and gross margins." },
+                { icon: Wallet, label: "Monetization", value: score(viabilityScorecard?.monetizationScore, 85), text: "Willingness to pay and gross margins." },
               ]}
             />
             <SwotAnalysisMatrix

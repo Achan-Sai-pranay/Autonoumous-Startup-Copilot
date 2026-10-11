@@ -9,8 +9,19 @@
 // Needs BlueprintPhase2.jsx (Reveal) and ./blueprint.css
 // ---------------------------------------------------------------------------
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, Copy, Edit2, Plus, Trash2, X } from "lucide-react";
+import { Check, Copy, Edit2, Plus, Trash2, X, Info, Cloud, Database, Server } from "lucide-react";
 import { Reveal } from "./BlueprintPhase2.jsx";
+import {
+  formatCurrency,
+  parseCurrencyValue,
+  convertUsdToInr,
+  useExchangeRate,
+} from "../lib/currency.js";
+import {
+  calculateCloudCosts,
+  CLOUD_PROVIDERS,
+  STARTUP_GLOSSARY,
+} from "../lib/cloudPricing.js";
 import "./blueprint.css";
 
 const reduced = () =>
@@ -42,19 +53,109 @@ function Tween({ value, format = (v) => Math.round(v).toLocaleString() }) {
   return <>{format(shown)}</>;
 }
 
-const money = (v) => `$${Math.round(v).toLocaleString()}`;
 const pct = (v) => `${Math.round(v)}%`;
+
+/* ------------------------------------------------------------------ */
+/* Interactive Info Tooltip & Definition Popover                       */
+/* ------------------------------------------------------------------ */
+/* Interactive Info Tooltip & Definition Popover (Apple Glassmorphic) */
+/* ------------------------------------------------------------------ */
+export function InfoTooltip({ title, text, tip, align = "center" }) {
+  const [open, setOpen] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
+  const ref = useRef(null);
+  const leaveTimerRef = useRef(null);
+
+  const handleMouseEnter = () => {
+    if (leaveTimerRef.current) {
+      clearTimeout(leaveTimerRef.current);
+      leaveTimerRef.current = null;
+    }
+    setOpen(true);
+  };
+
+  const handleMouseLeave = () => {
+    leaveTimerRef.current = setTimeout(() => {
+      if (!isLocked) {
+        setOpen(false);
+      }
+    }, 220);
+  };
+
+  const handleClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isLocked) {
+      setIsLocked(false);
+      setOpen(false);
+    } else {
+      setIsLocked(true);
+      setOpen(true);
+    }
+  };
+
+  useEffect(() => {
+    const onDocClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) {
+        setIsLocked(false);
+        setOpen(false);
+      }
+    };
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        setIsLocked(false);
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("touchstart", onDocClick);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("touchstart", onDocClick);
+      document.removeEventListener("keydown", onKey);
+      if (leaveTimerRef.current) clearTimeout(leaveTimerRef.current);
+    };
+  }, []);
+
+  return (
+    <span
+      className={`bp-info-wrap ${isLocked ? "is-locked" : ""}`}
+      ref={ref}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <button
+        type="button"
+        className={`bp-info-btn ${open ? "is-active" : ""}`}
+        onClick={handleClick}
+        aria-label={`Learn more: ${title || text}`}
+        aria-expanded={open}
+      >
+        <Info size={11} strokeWidth={2.4} />
+      </button>
+      {open && (
+        <span className={`bp-info-popover align-${align}`} role="tooltip">
+          {title && <strong className="bp-info-title">{title}</strong>}
+          <p className="bp-info-desc">{text}</p>
+          {tip && <small className="bp-info-takeaway">💡 {tip}</small>}
+        </span>
+      )}
+    </span>
+  );
+}
 
 /* ================================================================== */
 /* Financial simulator                                                 */
 /* ================================================================== */
-const PRICE_PRESETS = [9, 19, 29, 49, 79, 99, 149, 299];
-const USER_PRESETS = [50, 100, 250, 500, 1000, 2500, 5000];
+const USD_PRICE_PRESETS = [9, 19, 49, 99, 149, 299];
+const INR_PRICE_PRESETS = [499, 999, 1999, 4999, 9999, 24999];
+const USER_PRESETS = [50, 100, 250, 500, 1000, 5000];
 const TIERS = [
-  { users: 100, label: "Initial traction" },
-  { users: 500, label: "Product-market fit" },
-  { users: 1000, label: "Scaling phase" },
-  { users: 5000, label: "Market leader" },
+  { users: 100, label: "Initial traction", key: "initialTraction" },
+  { users: 500, label: "Product-market fit", key: "pmf" },
+  { users: 1000, label: "Scaling phase", key: "scalingPhase" },
+  { users: 5000, label: "Market leader", key: "marketLeader" },
 ];
 
 function Control({ title, hint, prefix, suffix, value, setValue, min, max, step, presets, format }) {
@@ -101,43 +202,123 @@ function Control({ title, hint, prefix, suffix, value, setValue, min, max, step,
   );
 }
 
-export const UpmetricsFinancialSimulator = ({ costEstimator, revenueSimulator }) => {
-  const initialPrice = useMemo(() => {
-    const m = String(revenueSimulator?.pricingAssumption ?? "").match(/\$(\d+)/);
-    const p = m ? parseInt(m[1], 10) : NaN;
-    return p >= 5 && p <= 500 ? p : 29;
-  }, [revenueSimulator]);
+export const UpmetricsFinancialSimulator = ({ costEstimator, revenueSimulator, initialCurrency = "INR" }) => {
+  const [currency, setCurrency] = useState(initialCurrency);
+  const { rate: exchangeRate } = useExchangeRate();
+  const [providerId, setProviderId] = useState("SUPABASE_VERCEL");
 
-  const burn = useMemo(() => {
-    const m = String(costEstimator?.estimatedMonthlyCost ?? "").match(/\$(\d+)/);
-    return m ? parseInt(m[1], 10) : 15;
-  }, [costEstimator]);
+  // Safely parse initial price from AI output (uses real-time market exchange rate)
+  const initialPrice = useMemo(() => {
+    const raw = revenueSimulator?.pricingAssumption ?? "";
+    return parseCurrencyValue(raw, currency, 29, exchangeRate);
+  }, [revenueSimulator, currency, exchangeRate]);
 
   const [price, setPrice] = useState(initialPrice);
   const [customers, setCustomers] = useState(250);
 
+  // Keep price updated when initialPrice recalculated
+  useEffect(() => {
+    setPrice(initialPrice);
+  }, [initialPrice]);
+
+  const handleToggleCurrency = (newCurrency) => {
+    if (newCurrency === currency) return;
+    if (newCurrency === "INR") {
+      setPrice((prev) => Math.round(prev * exchangeRate));
+    } else {
+      setPrice((prev) => Math.max(5, Math.round(prev / exchangeRate)));
+    }
+    setCurrency(newCurrency);
+  };
+
   const safePrice = Math.max(1, Number(price) || 1);
   const safeCustomers = Math.max(1, Number(customers) || 1);
+
+  // Real-world dynamic cloud & database provider calculations:
+  const cloudCosts = useMemo(
+    () => calculateCloudCosts(safeCustomers, providerId, exchangeRate, currency),
+    [safeCustomers, providerId, exchangeRate, currency]
+  );
+  const burn = cloudCosts.total;
+
   const mrr = safeCustomers * safePrice;
   const arr = mrr * 12;
   const net = Math.max(0, mrr - burn);
   const margin = mrr > 0 ? Math.max(0, Math.min(100, Math.round((net / mrr) * 100))) : 0;
   const breakEven = Math.max(1, Math.ceil(burn / safePrice));
   const ltv = Math.round(safePrice / 0.05);
-  const to100k = Math.max(1, Math.ceil(100000 / (safePrice * 12)));
-  const to1m = Math.max(1, Math.ceil(1000000 / (safePrice * 12)));
+
+  // ARR Milestones scale dynamically preserving required customer volume:
+  const target1 = currency === "INR" ? Math.round(100000 * exchangeRate) : 100000;
+  const target2 = currency === "INR" ? Math.round(1000000 * exchangeRate) : 1000000;
+  const toTarget1 = Math.max(1, Math.ceil(target1 / (safePrice * 12)));
+  const toTarget2 = Math.max(1, Math.ceil(target2 / (safePrice * 12)));
+  const target1Lakhs = Math.round(target1 / 100000);
+  const target2Crores = (target2 / 10000000).toFixed(1);
+  const target1Label = currency === "INR" ? `₹${target1Lakhs} Lakhs ARR` : "$100,000 ARR";
+  const target2Label = currency === "INR" ? `₹${target2Crores} Crore ARR` : "$1,000,000 ARR";
+
+  const computePct = cloudCosts.total > 0 ? Math.round((cloudCosts.compute / cloudCosts.total) * 100) : 0;
+  const databasePct = cloudCosts.total > 0 ? Math.round((cloudCosts.database / cloudCosts.total) * 100) : 0;
+  const devopsPct = Math.max(0, 100 - computePct - databasePct);
+
+  const moneyFormat = (v) => formatCurrency(v, currency);
+  const pricePresets = currency === "INR" ? INR_PRICE_PRESETS : USD_PRICE_PRESETS;
 
   return (
     <section className="bp-sim">
       <Reveal className="bp-sim-head">
         <div>
-          <h3>Financial simulator</h3>
-          <p>Slide the price and customer volume. Revenue, margin and break-even recalculate as you move.</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-1">
+              <h3>Financial simulator</h3>
+              <InfoTooltip
+                title={STARTUP_GLOSSARY.unitEconomics.title}
+                text={STARTUP_GLOSSARY.unitEconomics.text}
+                tip={STARTUP_GLOSSARY.unitEconomics.tip}
+                align="left"
+              />
+            </div>
+            <div className="hp-seg bp-sim-currency-toggle" role="group" aria-label="Currency selection">
+              <button
+                type="button"
+                className={currency === "INR" ? "is-on" : ""}
+                onClick={() => handleToggleCurrency("INR")}
+              >
+                ₹ INR
+              </button>
+              <button
+                type="button"
+                className={currency === "USD" ? "is-on" : ""}
+                onClick={() => handleToggleCurrency("USD")}
+              >
+                $ USD
+              </button>
+            </div>
+            {currency === "INR" && (
+              <span
+                className="bp-sim-rate-badge"
+                title="Live real-time market exchange rate auto-synchronized from currency exchanges."
+              >
+                <i className="bp-sim-rate-dot" aria-hidden="true" />
+                Live FX: 1 USD ≈ ₹{(Math.round(exchangeRate * 10) / 10).toFixed(1)}
+              </span>
+            )}
+          </div>
+          <p>Slide the price and customer volume. Revenue, margin and break-even recalculate dynamically with real cloud rates.</p>
         </div>
         <div className="bp-sim-be">
-          <small>Break-even</small>
+          <small>
+            Break-even volume
+            <InfoTooltip
+              title={STARTUP_GLOSSARY.breakeven.title}
+              text={STARTUP_GLOSSARY.breakeven.text}
+              tip={STARTUP_GLOSSARY.breakeven.tip}
+              align="right"
+            />
+          </small>
           <p>
-            <b>{breakEven} customers</b> at ${safePrice}/mo cover your ${burn}/mo cloud burn.
+            <b>{breakEven} customers</b> at {formatCurrency(safePrice, currency)}/mo cover your {formatCurrency(burn, currency)}/mo cloud & DB burn.
           </p>
         </div>
       </Reveal>
@@ -146,15 +327,15 @@ export const UpmetricsFinancialSimulator = ({ costEstimator, revenueSimulator })
         <Control
           title="Monthly price"
           hint="Subscription price per customer"
-          prefix="$"
+          prefix={currency === "INR" ? "₹" : "$"}
           suffix="/mo"
           value={price}
           setValue={setPrice}
-          min={5}
-          max={300}
-          step={1}
-          presets={PRICE_PRESETS}
-          format={(v) => `$${v}`}
+          min={currency === "INR" ? 299 : 5}
+          max={currency === "INR" ? 35000 : 300}
+          step={currency === "INR" ? 50 : 1}
+          presets={pricePresets}
+          format={(v) => formatCurrency(v, currency)}
         />
         <Control
           title="Active customers"
@@ -171,45 +352,85 @@ export const UpmetricsFinancialSimulator = ({ costEstimator, revenueSimulator })
       </div>
 
       <div className="bp-sim-kpis">
-        <div>
-          <small>Monthly recurring revenue</small>
-          <strong>
-            <Tween value={mrr} format={money} />
+        <div className="bp-kpi-card">
+          <div className="bp-kpi-head">
+            <small>Monthly recurring revenue</small>
+            <InfoTooltip
+              title={STARTUP_GLOSSARY.mrr.title}
+              text={STARTUP_GLOSSARY.mrr.text}
+              tip={STARTUP_GLOSSARY.mrr.tip}
+              align="left"
+            />
+          </div>
+          <strong title={moneyFormat(mrr)}>
+            <Tween value={mrr} format={moneyFormat} />
           </strong>
           <span>
-            {safeCustomers.toLocaleString()} users × ${safePrice}/mo
+            {safeCustomers.toLocaleString()} users × {formatCurrency(safePrice, currency)}/mo
           </span>
         </div>
-        <div>
-          <small>Annual recurring revenue</small>
-          <strong className="is-accent">
-            <Tween value={arr} format={money} />
+        <div className="bp-kpi-card is-accent-card">
+          <div className="bp-kpi-head">
+            <small>Annual recurring revenue</small>
+            <InfoTooltip
+              title={STARTUP_GLOSSARY.arr.title}
+              text={STARTUP_GLOSSARY.arr.text}
+              tip={STARTUP_GLOSSARY.arr.tip}
+              align="left"
+            />
+          </div>
+          <strong className="is-accent" title={moneyFormat(arr)}>
+            <Tween value={arr} format={moneyFormat} />
           </strong>
           <span>12-month run rate</span>
         </div>
-        <div>
-          <small>Net monthly profit</small>
-          <strong>
-            <Tween value={net} format={money} />
+        <div className="bp-kpi-card">
+          <div className="bp-kpi-head">
+            <small>Net monthly profit</small>
+            <InfoTooltip
+              title={STARTUP_GLOSSARY.netProfit.title}
+              text={STARTUP_GLOSSARY.netProfit.text}
+              tip={STARTUP_GLOSSARY.netProfit.tip}
+              align="right"
+            />
+          </div>
+          <strong title={moneyFormat(net)}>
+            <Tween value={net} format={moneyFormat} />
           </strong>
           <span>
-            {margin}% margin after ${burn} burn
+            {margin}% margin after {formatCurrency(burn, currency)} cloud & DB
           </span>
         </div>
-        <div>
-          <small>Lifetime value</small>
-          <strong>
-            <Tween value={ltv} format={money} />
+        <div className="bp-kpi-card">
+          <div className="bp-kpi-head">
+            <small>Lifetime value</small>
+            <InfoTooltip
+              title={STARTUP_GLOSSARY.ltv.title}
+              text={STARTUP_GLOSSARY.ltv.text}
+              tip={STARTUP_GLOSSARY.ltv.tip}
+              align="right"
+            />
+          </div>
+          <strong title={moneyFormat(ltv)}>
+            <Tween value={ltv} format={moneyFormat} />
           </strong>
-          <span>Max target CAC ${(ltv / 3).toFixed(0)} at 5% churn</span>
+          <span>Max target CAC {formatCurrency(Math.round(ltv / 3), currency)} at 5% churn</span>
         </div>
       </div>
 
       <div className="bp-sim-split">
         <div className="bp-sim-split-top">
-          <span>Where each month’s revenue goes</span>
           <span>
-            <b className="is-green">Profit {margin}%</b> · Cloud {100 - margin}%
+            Where each month’s revenue goes
+            <InfoTooltip
+              title={STARTUP_GLOSSARY.cloudBurn.title}
+              text={STARTUP_GLOSSARY.cloudBurn.text}
+              tip={STARTUP_GLOSSARY.cloudBurn.tip}
+              align="left"
+            />
+          </span>
+          <span>
+            <b className="is-green">Profit {margin}%</b> · Cloud & DB {100 - margin}%
           </span>
         </div>
         <div className="bp-sim-bar">
@@ -217,17 +438,97 @@ export const UpmetricsFinancialSimulator = ({ costEstimator, revenueSimulator })
         </div>
       </div>
 
+      {/* Real Cloud & Database Provider Estimation System */}
+      <div className="bp-sim-providers-card">
+        <div className="bp-sim-providers-head">
+          <div className="bp-sim-providers-title">
+            <span className="bp-sim-cloud-icon" aria-hidden="true">
+              <Cloud size={16} />
+            </span>
+            <div className="bp-sim-cloud-meta">
+              <h4>Cloud Architecture & Database Scaling</h4>
+              <p>Calibrated for {safeCustomers.toLocaleString()} active users via official provider production tiers</p>
+            </div>
+            <InfoTooltip
+              title="Real Provider Pricing Model"
+              text={`Real-world dynamic charges calculated for ${safeCustomers.toLocaleString()} customers using official pricing tiers from ${cloudCosts.provider.name}. Includes compute, database storage, queries, and egress.`}
+              tip="Switch providers to compare server budgets between Supabase, AWS, and MongoDB."
+              align="left"
+            />
+          </div>
+          <div className="hp-seg bp-sim-provider-pills" role="radiogroup" aria-label="Select Cloud Provider">
+            {Object.values(CLOUD_PROVIDERS).map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className={providerId === p.id ? "is-on" : ""}
+                onClick={() => setProviderId(p.id)}
+              >
+                {p.id === "SUPABASE_VERCEL" && "⚡ "}
+                {p.id === "AWS_PRODUCTION" && "☁️ "}
+                {p.id === "MONGODB_RENDER" && "🍃 "}
+                <span>{p.name}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="bp-sim-infra-grid">
+          <div className="bp-sim-infra-item">
+            <div className="bp-sim-infra-item-top">
+              <span className="bp-sim-infra-cat">🖥️ Compute & Edge</span>
+              <span className="bp-sim-infra-pct">{computePct}% of infra</span>
+            </div>
+            <div className="bp-sim-infra-cost">
+              {formatCurrency(cloudCosts.compute, currency)}
+              <small>/mo</small>
+            </div>
+            <div className="bp-sim-infra-tier" title={cloudCosts.computeTier}>
+              {cloudCosts.computeTier}
+            </div>
+          </div>
+
+          <div className="bp-sim-infra-item">
+            <div className="bp-sim-infra-item-top">
+              <span className="bp-sim-infra-cat">🗄️ Database & Storage</span>
+              <span className="bp-sim-infra-pct">{databasePct}% of infra</span>
+            </div>
+            <div className="bp-sim-infra-cost">
+              {formatCurrency(cloudCosts.database, currency)}
+              <small>/mo</small>
+            </div>
+            <div className="bp-sim-infra-tier" title={cloudCosts.databaseTier}>
+              {cloudCosts.databaseTier}
+            </div>
+          </div>
+
+          <div className="bp-sim-infra-item">
+            <div className="bp-sim-infra-item-top">
+              <span className="bp-sim-infra-cat">🛡️ DevOps & Security</span>
+              <span className="bp-sim-infra-pct">{devopsPct}% of infra</span>
+            </div>
+            <div className="bp-sim-infra-cost">
+              {formatCurrency(cloudCosts.devops, currency)}
+              <small>/mo</small>
+            </div>
+            <div className="bp-sim-infra-tier" title="Auth, transactional email, asset storage, and SSL">
+              Auth, Email, Asset CDN & SSL
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="bp-sim-miles">
         <div>
-          <small>$100,000 ARR</small>
+          <small>{target1Label}</small>
           <p>
-            Needs <b>{to100k.toLocaleString()}</b> customers at ${safePrice}/mo
+            Needs <b>{toTarget1.toLocaleString()}</b> customers at {formatCurrency(safePrice, currency)}/mo
           </p>
         </div>
         <div>
-          <small>$1,000,000 ARR</small>
+          <small>{target2Label}</small>
           <p>
-            Needs <b>{to1m.toLocaleString()}</b> customers at ${safePrice}/mo
+            Needs <b>{toTarget2.toLocaleString()}</b> customers at {formatCurrency(safePrice, currency)}/mo
           </p>
         </div>
       </div>
@@ -235,28 +536,41 @@ export const UpmetricsFinancialSimulator = ({ costEstimator, revenueSimulator })
       <ul className="bp-sim-tiers">
         {TIERS.map((t) => {
           const tm = t.users * safePrice;
-          const tn = tm - burn;
+          const tierCloud = calculateCloudCosts(t.users, providerId, exchangeRate, currency);
+          const tn = tm - tierCloud.total;
+          const glossary = STARTUP_GLOSSARY[t.key];
+
           return (
             <li key={t.users}>
-              <small>{t.label}</small>
+              <small>
+                {t.label}
+                {glossary && (
+                  <InfoTooltip
+                    title={glossary.title}
+                    text={glossary.text}
+                    tip={glossary.tip}
+                    align={t.users >= 1000 ? "right" : "left"}
+                  />
+                )}
+              </small>
               <b>{t.users.toLocaleString()} subscribers</b>
               <dl>
                 <div>
                   <dt>MRR</dt>
-                  <dd>
-                    <Tween value={tm} format={money} />
+                  <dd title={moneyFormat(tm)}>
+                    <Tween value={tm} format={moneyFormat} />
                   </dd>
                 </div>
                 <div>
                   <dt>ARR</dt>
-                  <dd>
-                    <Tween value={tm * 12} format={money} />
+                  <dd title={moneyFormat(tm * 12)}>
+                    <Tween value={tm * 12} format={moneyFormat} />
                   </dd>
                 </div>
                 <div>
                   <dt>Net profit</dt>
-                  <dd>
-                    <Tween value={tn} format={(v) => `${money(v)}/mo`} />
+                  <dd title={`${moneyFormat(tn)}/mo`}>
+                    <Tween value={tn} format={(v) => `${moneyFormat(v)}/mo`} />
                   </dd>
                 </div>
               </dl>

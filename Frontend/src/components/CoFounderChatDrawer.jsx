@@ -20,7 +20,7 @@ import {
   Sparkles,
   Flame,
   TrendingUp,
-  DollarSign,
+  Wallet,
   Mail,
   Cpu,
   Bot,
@@ -60,9 +60,9 @@ const STRATEGIC_CHIPS = [
   },
   {
     label: "Alternative B2B pricing models",
-    icon: DollarSign,
+    icon: Wallet,
     prompt:
-      "Analyze our pricing model and suggest 3 high-margin alternative B2B pricing structures (e.g. usage-based, tiered seat + value metric, performance-fee). Include exact recommended dollar tiers.",
+      "Analyze our pricing model and suggest 3 high-margin alternative B2B pricing structures (e.g. usage-based, tiered seat + value metric, performance-fee). Include exact recommended pricing tiers.",
   },
   {
     label: "Draft 3-step cold outreach",

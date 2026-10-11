@@ -9,7 +9,7 @@ import {
   Swords,
   Target,
   Users,
-  DollarSign,
+  Wallet,
   FileText,
   TrendingUp,
   ShieldAlert,
@@ -92,7 +92,7 @@ const TABS = [
   { id: "debate", label: "VC debate", icon: Swords },
   { id: "tam", label: "Market size", icon: Target },
   { id: "momtest", label: "Customer interviews", icon: Users },
-  { id: "financials", label: "Unit economics", icon: DollarSign },
+  { id: "financials", label: "Unit economics", icon: Wallet },
   { id: "export", label: "Export", icon: FileText },
 ];
 
@@ -191,16 +191,16 @@ export function LiveProductSimulator({ onCtaClick }) {
 
   // Market size
   const [accounts, setAccounts] = useState(3500);
-  const [acv, setAcv] = useState(8000);
-  const som = Math.round((accounts * acv) / 1e6); // $M
-  const sam = Math.round(som * 8.2); // $M
-  const tam = (sam * 5.1) / 1000; // $B
+  const [acv, setAcv] = useState(800000); // ₹8 Lakhs yearly ACV
+  const som = Math.round((accounts * acv) / 1e7); // in ₹ Crore
+  const sam = Math.round(som * 8.2); // in ₹ Crore
+  const tam = Number(((sam * 5.1) / 100).toFixed(1)); // in ₹ Lakh Crore
 
   // Unit economics
   const [customers, setCustomers] = useState(500);
-  const [price, setPrice] = useState(89);
-  const aiCostPerCustomer = 11;
-  const fixedInfra = 800;
+  const [price, setPrice] = useState(6999);
+  const aiCostPerCustomer = 850;
+  const fixedInfra = 65000;
   const mrr = customers * price;
   const cost = customers * aiCostPerCustomer + fixedInfra;
   const profit = mrr - cost;
@@ -380,7 +380,7 @@ export function LiveProductSimulator({ onCtaClick }) {
                               {defense.verdict}
                             </h3>
                             <p className="lps-muted lps-verdict-copy">
-                              Buyers feel the pain right away: one audit can save $20k or more a year. The
+                              Buyers feel the pain right away: one audit can save ₹16 Lakhs or more a year. The
                               Bear’s main worry is real, though. Procurement can stretch a sale to 3–6 months.
                             </p>
                           </div>
@@ -401,7 +401,7 @@ export function LiveProductSimulator({ onCtaClick }) {
                             </header>
                             <h5>Painful, unmonitored auto-renewals</h5>
                             <blockquote>
-                              “Mid-market CFOs lose $40k–$150k a year to stealth renewals and unbenchmarked
+                              “Mid-market CFOs lose ₹35 Lakhs – ₹1.2 Crore a year to stealth renewals and unbenchmarked
                               seat tiers. A tool that parses PDFs, pulls out contract dates, and flags 25%
                               price gaps pays for itself in week one.”
                             </blockquote>
@@ -499,10 +499,10 @@ export function LiveProductSimulator({ onCtaClick }) {
                           />
                           <Slider
                             label="Average yearly contract"
-                            valueLabel={`$${acv.toLocaleString()} / year`}
-                            min={2000}
-                            max={25000}
-                            step={1000}
+                            valueLabel={`₹${(acv / 100000).toFixed(1)} Lakhs / year`}
+                            min={200000}
+                            max={2500000}
+                            step={50000}
                             value={acv}
                             onChange={setAcv}
                           />
@@ -513,7 +513,7 @@ export function LiveProductSimulator({ onCtaClick }) {
                             <div className="lps-tier-top">
                               <span>Total market</span>
                               <strong>
-                                $<Num value={tam} format={(v) => v.toFixed(1)} />B
+                                ₹<Num value={tam} format={(v) => v.toFixed(1)} /> Lakh Cr
                               </strong>
                             </div>
                             <div className="lps-bar">
@@ -525,26 +525,26 @@ export function LiveProductSimulator({ onCtaClick }) {
                             <div className="lps-tier-top">
                               <span>Reachable market</span>
                               <strong>
-                                $<Num value={sam} />M
+                                ₹<Num value={sam} /> Cr
                               </strong>
                             </div>
                             <div className="lps-bar">
                               <i style={{ width: "58%" }} />
                             </div>
-                            <p>Tech and professional-services firms with 50–500 people in the US, UK and EU.</p>
+                            <p>Tech and professional-services firms with 50–500 people in India and global hubs.</p>
                           </div>
                           <div className="lps-tier lps-tier--hero">
                             <div className="lps-tier-top">
                               <span>What you can win in 3 years</span>
                               <strong>
-                                $<Num value={som} />M
+                                ₹<Num value={som} /> Cr
                               </strong>
                             </div>
                             <div className="lps-bar">
                               <i style={{ width: "24%" }} />
                             </div>
                             <p>
-                              {accounts.toLocaleString()} companies at ${acv.toLocaleString()} a year, within 36
+                              {accounts.toLocaleString()} companies at ₹{(acv / 100000).toFixed(1)} Lakhs a year, within 36
                               months of launch.
                             </p>
                           </div>
@@ -568,7 +568,7 @@ export function LiveProductSimulator({ onCtaClick }) {
                               <X size={16} /> Questions people lie to
                             </h4>
                             <ul>
-                              <li>“Would you pay $99 a month for an AI tool that audits your contracts?”</li>
+                              <li>“Would you pay ₹6,999 a month for an AI tool that audits your contracts?”</li>
                               <li>“Do you think contract auto-renewals are a big problem?”</li>
                               <li>“If we built this, would you join the beta?”</li>
                               <li>“Isn’t software pricing getting out of hand?”</li>
@@ -628,7 +628,7 @@ export function LiveProductSimulator({ onCtaClick }) {
                             <p className="lps-muted">Revenue, AI and server costs, and margin at any scale.</p>
                           </div>
                           <div className="lps-seg" role="radiogroup" aria-label="Plan price">
-                            {[49, 89, 199].map((p) => (
+                            {[3999, 6999, 14999].map((p) => (
                               <button
                                 key={p}
                                 role="radio"
@@ -636,7 +636,7 @@ export function LiveProductSimulator({ onCtaClick }) {
                                 className={price === p ? "is-on" : ""}
                                 onClick={() => setPrice(p)}
                               >
-                                ${p}/mo
+                                ₹{p.toLocaleString()}/mo
                               </button>
                             ))}
                           </div>
@@ -658,23 +658,23 @@ export function LiveProductSimulator({ onCtaClick }) {
                           <div className="lps-metric">
                             <span>Monthly revenue</span>
                             <strong className="is-green">
-                              $<Num value={mrr} />
+                              ₹<Num value={mrr} />
                             </strong>
-                            <em>at ${price} a month</em>
+                            <em>at ₹{price.toLocaleString()} a month</em>
                           </div>
                           <div className="lps-metric">
                             <span>Yearly run rate</span>
                             <strong>
-                              $<Num value={mrr * 12} />
+                              ₹<Num value={mrr * 12} />
                             </strong>
                             <em>if you hold this scale</em>
                           </div>
                           <div className="lps-metric">
                             <span>Monthly costs</span>
                             <strong className="is-rose">
-                              $<Num value={cost} />
+                              ₹<Num value={cost} />
                             </strong>
-                            <em>${aiCostPerCustomer} per user + servers</em>
+                            <em>₹{aiCostPerCustomer} per user + cloud</em>
                           </div>
                           <div className="lps-metric lps-metric--hero">
                             <span>Gross margin</span>
@@ -682,7 +682,7 @@ export function LiveProductSimulator({ onCtaClick }) {
                               <Num value={margin} />%
                             </strong>
                             <em>
-                              $<Num value={profit} /> a month profit
+                              ₹<Num value={profit} /> a month profit
                             </em>
                           </div>
                         </div>

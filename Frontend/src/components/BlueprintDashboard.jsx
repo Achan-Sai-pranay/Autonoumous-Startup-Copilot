@@ -42,7 +42,6 @@ import {
   Loader2,
   LayoutGrid,
   ShieldCheck,
-  DollarSign,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -88,7 +87,9 @@ import {
   CopyBlock,
   ChannelList,
   LaunchChecklist,
+  InfoTooltip,
 } from "./BlueprintPhase5.jsx";
+import { STARTUP_GLOSSARY } from "../lib/cloudPricing.js";
 import { AiDebateSummaryCard } from "./BlueprintPhase1.jsx";
 import {
   ViabilityBreakdown,
@@ -108,6 +109,7 @@ import {
   Toast,
   useScrollSpy,
 } from "./BlueprintPhase6.jsx";
+import { formatCurrency, convertCurrencyString, useExchangeRate } from "../lib/currency.js";
 
 
 // ---------------------------------------------------------------------------
@@ -1108,10 +1110,13 @@ function OverviewSection({
     ];
   }, [roadmap]);
 
-  const estimatedMonthlyCost = toSafeString(costEstimator?.estimatedMonthlyCost, "$20 - $50 / month");
-  const estimatedRevenue = toSafeString(
-    revenueSimulator?.year1Revenue || revenueSimulator?.estimatedYear1Revenue,
-    "$50,000 - $120,000 / year"
+  const estimatedMonthlyCost = convertCurrencyString(toSafeString(costEstimator?.estimatedMonthlyCost, "₹1,500 - ₹4,900 / month"), "INR");
+  const estimatedRevenue = convertCurrencyString(
+    toSafeString(
+      revenueSimulator?.year1Revenue || revenueSimulator?.estimatedYear1Revenue,
+      "₹48,00,000 - ₹1,16,00,000 / year"
+    ),
+    "INR"
   );
 
   return (
@@ -1158,7 +1163,7 @@ function OverviewSection({
         pillars={[
           { icon: TrendingUp, label: "Market demand", value: marketDemandScore, text: "Measures whether real target users have an urgent, everyday need." },
           { icon: Cpu, label: "Ease of building", value: technicalFeasibilityScore, text: "Measures how fast it is to build and deploy version 1." },
-          { icon: DollarSign, label: "Profit and monetization", value: monetizationScore, text: "Measures whether customers will pay enough to sustain profit." },
+          { icon: Wallet, label: "Profit and monetization", value: monetizationScore, text: "Measures whether customers will pay enough to sustain profit." },
         ]}
       />
 
@@ -1320,7 +1325,7 @@ function CustomerDiscoverySection({
       {/* Card 5: Willingness-to-Pay Signals (Editable) */}
       <StatCard
         title="Willingness-to-Pay Signals"
-        icon={DollarSign}
+        icon={Wallet}
         iconColor="text-emerald-500"
         stat={`${wtpSignals.length} Commitment Tests`}
         subtitle="Prove Buyer Intent Before Code"
@@ -1333,7 +1338,7 @@ function CustomerDiscoverySection({
           placeholder="e.g. Founder introduces you to their finance lead to approve PO"
           addButtonLabel="Add Commitment Signal"
           accentColor="emerald"
-          icon={DollarSign}
+          icon={Wallet}
         />
       </StatCard>
     </ResponsiveCardGrid>
@@ -1631,22 +1636,25 @@ function FinancesSection({
   };
 
   const activeArch = ARCHETYPES[selectedArchetype] || ARCHETYPES.saas;
+  const { rate: exchangeRate } = useExchangeRate();
 
-  const arpu = useMemo(() => {
+  const arpuUsd = useMemo(() => {
     if (revenueSimulator?.pricingAssumption) {
       const match = String(revenueSimulator.pricingAssumption).match(/\$(\d+)/);
       if (match && match[1]) return parseInt(match[1], 10);
     }
     return 29;
   }, [revenueSimulator]);
+  const arpu = Math.round(arpuUsd * exchangeRate);
 
-  const monthlyBurn = useMemo(() => {
+  const monthlyBurnUsd = useMemo(() => {
     if (costEstimator?.estimatedMonthlyCost) {
       const match = String(costEstimator.estimatedMonthlyCost).match(/\$(\d+)/);
       if (match && match[1]) return parseInt(match[1], 10);
     }
     return 35;
   }, [costEstimator]);
+  const monthlyBurn = Math.round(monthlyBurnUsd * exchangeRate);
 
   const breakevenSubscribers = Math.max(1, Math.ceil(monthlyBurn / arpu));
   const estimatedLtv = Math.round(arpu * activeArch.ltvMultiplier);
@@ -1665,12 +1673,22 @@ function FinancesSection({
       <ResponsiveCardGrid>
         {/* Card 1: Infrastructure & Cloud Costs */}
         <StatCard
-          title="Infrastructure Costs"
-          icon={DollarSign}
-          stat={toSafeString(costEstimator?.estimatedMonthlyCost, "$16-51")}
+          title={
+            <span className="inline-flex items-center gap-1.5">
+              <span>Infrastructure Costs</span>
+              <InfoTooltip
+                title={STARTUP_GLOSSARY.infraCosts.title}
+                text={STARTUP_GLOSSARY.infraCosts.text}
+                tip={STARTUP_GLOSSARY.infraCosts.tip}
+                align="left"
+              />
+            </span>
+          }
+          icon={Wallet}
+          stat={convertCurrencyString(toSafeString(costEstimator?.estimatedMonthlyCost, "₹1,500 - ₹4,900"), "INR")}
           subtitle="Estimated Monthly Burn"
           detailsTitle="Annual Projection"
-          detailsText={`Estimated yearly cloud burn: ${toSafeString(costEstimator?.estimatedYearlyCost, "$192-612")}. Highly cost-efficient serverless foundation with free tiers.`}
+          detailsText={`Estimated yearly cloud burn: ${convertCurrencyString(toSafeString(costEstimator?.estimatedYearlyCost, "₹18,000 - ₹58,000"), "INR")}. Highly cost-efficient serverless foundation with free tiers.`}
         >
           <div className="space-y-1">
             {COST_KEYS.map((key) => {
@@ -1680,7 +1698,7 @@ function FinancesSection({
                 <MetricRow
                   key={key}
                   label={COST_LABELS[key] || key}
-                  value={toSafeString(item.monthlyCost, "$0")}
+                  value={convertCurrencyString(toSafeString(item.monthlyCost, "₹0"), "INR")}
                   tag={item.freeTierSufficient ? "Free tier" : null}
                 />
               );
@@ -1690,25 +1708,35 @@ function FinancesSection({
 
         {/* Card 2: User-Tier Revenue Projections */}
         <StatCard
-          title="Revenue Projections"
+          title={
+            <span className="inline-flex items-center gap-1.5">
+              <span>Revenue Projections</span>
+              <InfoTooltip
+                title={STARTUP_GLOSSARY.revProjections.title}
+                text={STARTUP_GLOSSARY.revProjections.text}
+                tip={STARTUP_GLOSSARY.revProjections.tip}
+                align="left"
+              />
+            </span>
+          }
           icon={TrendingUp}
-          stat={toSafeString(revenueSimulator?.projections?.[2]?.annualRevenue, "$588,000")}
-          subtitle={toSafeString(revenueSimulator?.pricingAssumption, "Based on subscription model")}
+          stat={convertCurrencyString(toSafeString(revenueSimulator?.projections?.[2]?.annualRevenue, "₹5.7 Crore"), "INR")}
+          subtitle={convertCurrencyString(toSafeString(revenueSimulator?.pricingAssumption, "Based on subscription model"), "INR")}
           detailsTitle="Pricing Assumption"
-          detailsText={revenueSimulator?.pricingAssumption || businessStrategy?.pricingIdea || "Tiered B2B SaaS pricing model with self-serve starter and high-ticket growth plans."}
+          detailsText={convertCurrencyString(revenueSimulator?.pricingAssumption || businessStrategy?.pricingIdea || "Tiered B2B SaaS pricing model with self-serve starter and high-ticket growth plans.", "INR")}
         >
           <div className="space-y-1">
             {(revenueSimulator?.projections || [
-              { users: 100, monthlyRevenue: "$4,900", annualRevenue: "$58,800" },
-              { users: 500, monthlyRevenue: "$24,500", annualRevenue: "$294,000" },
-              { users: 1000, monthlyRevenue: "$49,000", annualRevenue: "$588,000" },
-              { users: 5000, monthlyRevenue: "$245,000", annualRevenue: "$2,940,000" },
+              { users: 100, monthlyRevenue: "₹4.7 Lakhs", annualRevenue: "₹56.4 Lakhs" },
+              { users: 500, monthlyRevenue: "₹23.5 Lakhs", annualRevenue: "₹2.8 Crore" },
+              { users: 1000, monthlyRevenue: "₹47 Lakhs", annualRevenue: "₹5.7 Crore" },
+              { users: 5000, monthlyRevenue: "₹2.3 Crore", annualRevenue: "₹28 Crore" },
             ]).map((proj, i) => (
               <MetricRow
                 key={i}
                 label={`${proj.users?.toLocaleString()} users (${i === 0 ? "Traction" : i === 1 ? "PMF" : i === 2 ? "Scale" : "Leader"})`}
-                value={`${proj.monthlyRevenue}/mo`}
-                tag={`${proj.annualRevenue}/yr`}
+                value={`${convertCurrencyString(proj.monthlyRevenue, "INR")}/mo`}
+                tag={`${convertCurrencyString(proj.annualRevenue, "INR")}/yr`}
                 tone="orange"
               />
             ))}
@@ -1717,10 +1745,20 @@ function FinancesSection({
 
         {/* Card 3: Unit Economics & Multi-Archetype Health Ratios */}
         <StatCard
-          title="Unit Economics & Ratios"
+          title={
+            <span className="inline-flex items-center gap-1.5">
+              <span>Unit Economics & Ratios</span>
+              <InfoTooltip
+                title={STARTUP_GLOSSARY.unitEconomics.title}
+                text={STARTUP_GLOSSARY.unitEconomics.text}
+                tip={STARTUP_GLOSSARY.unitEconomics.tip}
+                align="right"
+              />
+            </span>
+          }
           icon={BarChart3}
-          stat={`$${estimatedLtv} LTV`}
-          subtitle={`ARPU: $${arpu}/mo | Target CAC: <$${targetCac}`}
+          stat={`${formatCurrency(estimatedLtv, "INR")} LTV`}
+          subtitle={`ARPU: ${formatCurrency(arpu, "INR")}/mo | Target CAC: <${formatCurrency(targetCac, "INR")}`}
           detailsTitle="Industry Benchmark"
           detailsText={`Configured for ${activeArch.typeLabel}. ${activeArch.churnNote}. Maintaining a healthy LTV:CAC ensures sustainable unit margins.`}
         >
@@ -1753,9 +1791,9 @@ function FinancesSection({
             </TileGrid>
 
             <div>
-              <MetricRow label="Average Revenue / Order (ARPU)" value={`$${arpu}/mo`} />
-              <MetricRow label="Expected Customer Lifetime Value" value={`$${estimatedLtv}`} tone="green" />
-              <MetricRow label="Max Allowable Target CAC" value={`< $${targetCac}`} tone="orange" />
+              <MetricRow label="Average Revenue / Order (ARPU)" value={`${formatCurrency(arpu, "INR")}/mo`} />
+              <MetricRow label="Expected Customer Lifetime Value" value={formatCurrency(estimatedLtv, "INR")} tone="green" />
+              <MetricRow label="Max Allowable Target CAC" value={`< ${formatCurrency(targetCac, "INR")}`} tone="orange" />
             </div>
           </div>
         </StatCard>
@@ -1767,12 +1805,12 @@ function FinancesSection({
           stat={`${breakevenSubscribers} subscribers`}
           subtitle="Monthly Cash Flow Breakeven"
           detailsTitle="Capital Efficiency"
-          detailsText={`With monthly infrastructure burn estimated at ~$${monthlyBurn} and ARPU at ~$${arpu}/mo, cash flow breakeven is reached at just ${breakevenSubscribers} customers.`}
+          detailsText={`With monthly infrastructure burn estimated at ~${formatCurrency(monthlyBurn, "INR")} and ARPU at ~${formatCurrency(arpu, "INR")}/mo, cash flow breakeven is reached at just ${breakevenSubscribers} customers.`}
         >
           <div className="space-y-3">
             <TileGrid cols={2}>
-              <Tile label="Monthly Burn" value={`$${monthlyBurn}/mo`} />
-              <Tile label="ARPU" value={`$${arpu}/mo`} />
+              <Tile label="Monthly Burn" value={`${formatCurrency(monthlyBurn, "INR")}/mo`} />
+              <Tile label="ARPU" value={`${formatCurrency(arpu, "INR")}/mo`} />
             </TileGrid>
 
             <div className="p-3 rounded-2xl bg-orange-50/70 border border-orange-100">
@@ -1802,9 +1840,9 @@ function FinancesSection({
         >
           <div className="space-y-3">
             <TileGrid cols={3}>
-              <Tile label="Starter" value={`$${Math.max(9, Math.round(arpu * 0.6))}/mo`} />
-              <Tile label="Pro (Core)" value={`$${arpu}/mo`} tone="orange" />
-              <Tile label="Scale" value={`$${Math.round(arpu * 3)}/mo`} />
+              <Tile label="Starter" value={`${formatCurrency(Math.max(499, Math.round(arpu * 0.6)), "INR")}/mo`} />
+              <Tile label="Pro (Core)" value={`${formatCurrency(arpu, "INR")}/mo`} tone="orange" />
+              <Tile label="Scale" value={`${formatCurrency(Math.round(arpu * 3), "INR")}/mo`} />
             </TileGrid>
 
             {businessStrategy?.marketingChannels?.length > 0 && (

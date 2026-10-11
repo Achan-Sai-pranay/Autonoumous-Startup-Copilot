@@ -9,6 +9,7 @@
 
 import { useState, useMemo, memo, useCallback, useRef, useEffect } from "react";
 import { LeanCanvasView } from "./BlueprintPhase7.jsx";
+import { convertCurrencyString } from "../lib/currency.js";
 import {
   ShieldCheck,
   TrendingUp,
@@ -17,7 +18,7 @@ import {
   Check,
   Copy,
   Sliders,
-  DollarSign,
+  Coins,
   Calculator,
   ArrowRight,
   ArrowDown,
@@ -299,7 +300,7 @@ export const LeanCustomerDiscoverySection = memo(function LeanCustomerDiscoveryS
   ];
 
   const wtpSignals = customerDiscovery?.willingnessToPaySignals || [
-    "Signed Letter of Intent (LOI) or paid pilot deposit ($100-$500 commitment) prior to build.",
+    "Signed Letter of Intent (LOI) or paid pilot deposit (₹8,000–₹40,000 commitment) prior to build.",
     "Customer offers immediate access to internal data/APIs for manual concierge onboarding.",
   ];
 
@@ -584,17 +585,17 @@ export const MarketSizingSection = memo(function MarketSizingSection({
   viabilityScorecard,
   ideaTitle,
 }) {
-  const tam = marketSizing?.tam || "$14.2B";
-  const sam = marketSizing?.sam || "$2.1B";
-  const som = marketSizing?.som || "$48M";
+  const tam = marketSizing?.tam || "₹1.15 Lakh Cr";
+  const sam = marketSizing?.sam || "₹34,000 Cr";
+  const som = marketSizing?.som || "₹560 Cr";
 
-  const tamVal = typeof tam === "string" ? tam : toSafeString(tam?.value, "$14.2B");
+  const tamVal = convertCurrencyString(typeof tam === "string" ? tam : toSafeString(tam?.value, "₹1.15 Lakh Cr"), "INR");
   const tamDesc = typeof tam === "object" ? toSafeString(tam?.description, "TAM (Total Addressable Market): Global sector market opportunity.") : "TAM (Total Addressable Market): Global sector market opportunity.";
 
-  const samVal = typeof sam === "string" ? sam : toSafeString(sam?.value, "$2.1B");
+  const samVal = convertCurrencyString(typeof sam === "string" ? sam : toSafeString(sam?.value, "₹34,000 Cr"), "INR");
   const samDesc = typeof sam === "object" ? toSafeString(sam?.description, "SAM (Serviceable Available Market): Addressable beachhead segment.") : "SAM (Serviceable Available Market): Addressable beachhead segment.";
 
-  const somVal = typeof som === "string" ? som : toSafeString(som?.value, "$48M");
+  const somVal = convertCurrencyString(typeof som === "string" ? som : toSafeString(som?.value, "₹560 Cr"), "INR");
   const somDesc = typeof som === "object" ? toSafeString(som?.description, "SOM (Serviceable Obtainable Market): Realistic 1–3 year capture target.") : "SOM (Serviceable Obtainable Market): Realistic 1–3 year capture target.";
 
   return (
@@ -602,7 +603,7 @@ export const MarketSizingSection = memo(function MarketSizingSection({
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <div className="h-10 w-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-2xs">
-            <DollarSign size={18} />
+            <Coins size={18} />
           </div>
           <div>
             <h3 className="text-base font-bold text-slate-900 tracking-tight">
@@ -909,9 +910,9 @@ export const LeanCanvasMatrix = memo(function LeanCanvasMatrix({
 
   const costStructure = useMemo(() => {
     if (costEstimator?.estimatedMonthlyCost) {
-      return `Estimated Cloud Burn: ${costEstimator.estimatedMonthlyCost}/mo (Yearly: ${costEstimator.estimatedYearlyCost || "N/A"})`;
+      return `Estimated Cloud Burn: ${convertCurrencyString(costEstimator.estimatedMonthlyCost, "INR")}/mo (Yearly: ${convertCurrencyString(costEstimator.estimatedYearlyCost, "INR") || "N/A"})`;
     }
-    return "Serverless lean architecture (~$15-50/mo during initial pilot phase).";
+    return `Serverless lean architecture (~${convertCurrencyString("₹1,500 - ₹4,800", "INR")}/mo during initial pilot phase).`;
   }, [costEstimator]);
 
   const revenueStreams = useMemo(() => {
@@ -991,7 +992,7 @@ export const FounderPalSwipeFile = memo(function FounderPalSwipeFile({ gtm, pitc
         subject: `I spent 30 days building a tool to fix ${gtm?.targetAudience || "a huge founder headache"} [Open Source / Free Beta]`,
         body:
           gtm?.redditLaunchPost ||
-          `Hey r/startups,\n\nLike many of you, I got sick of wasting 15+ hours every week on repetitive workflow setup.\n\nSo I built this lightweight tool that does it in 60 seconds.\n\nHere is what I learned building it:\n1. Keep cloud costs under $10/mo\n2. Automate boring setup first\n3. Talk to 20 users before writing complex code\n\nTry it free here: [Link] — roast my landing page!`,
+          `Hey r/startups,\n\nLike many of you, I got sick of wasting 15+ hours every week on repetitive workflow setup.\n\nSo I built this lightweight tool that does it in 60 seconds.\n\nHere is what I learned building it:\n1. Keep cloud costs under ₹800/mo\n2. Automate boring setup first\n3. Talk to 20 users before writing complex code\n\nTry it free here: [Link] — roast my landing page!`,
         tip: "Post to r/SaaS, r/startups, or r/SideProject with high-effort founder journey context.",
       },
       twitter: {
@@ -1184,7 +1185,7 @@ ${productPlan?.mvpFeatures?.map((f) => `- ${f}`).join("\n") || "Core features"}
 - Hosting: ${technicalArchitecture?.hosting || "Vercel"}
 
 ## 5. Financial & Unit Economics
-- Monthly Burn: ${costEstimator?.estimatedMonthlyCost || "$0"}
+- Monthly Burn: ${convertCurrencyString(costEstimator?.estimatedMonthlyCost || "$0", "INR")}
 - Pricing Model: ${businessStrategy?.pricingIdea || "SaaS subscription"}`;
 
     navigator.clipboard?.writeText(text);
@@ -1307,7 +1308,7 @@ ${productPlan?.mvpFeatures?.map((f) => `- ${f}`).join("\n") || "Core features"}
               </div>
               <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
                 <span className="text-[10px] font-mono text-slate-400 uppercase">Estimated Monthly Burn</span>
-                <p className="text-xs font-bold text-indigo-600">{costEstimator?.estimatedMonthlyCost || "$0"}</p>
+                <p className="text-xs font-bold text-indigo-600">{convertCurrencyString(costEstimator?.estimatedMonthlyCost || "$0", "INR")}</p>
               </div>
             </div>
           </section>

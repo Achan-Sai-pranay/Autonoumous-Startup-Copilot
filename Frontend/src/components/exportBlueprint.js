@@ -163,9 +163,9 @@ export function buildMarkdown(blueprint, idea) {
 
   push(`## Market Sizing Architecture (TAM / SAM / SOM)`);
   if (ok(marketSizing)) {
-    push(`- **TAM (Total Addressable Market):** ${marketSizing.tam?.value || "$14B"} — ${marketSizing.tam?.description || ""}`);
-    push(`- **SAM (Serviceable Available Market):** ${marketSizing.sam?.value || "$2B"} — ${marketSizing.sam?.description || ""}`);
-    push(`- **SOM (Serviceable Obtainable Market):** ${marketSizing.som?.value || "$40M"} — ${marketSizing.som?.description || ""}`);
+    push(`- **TAM (Total Addressable Market):** ${marketSizing.tam?.value || "₹1.15 Lakh Cr"} — ${marketSizing.tam?.description || ""}`);
+    push(`- **SAM (Serviceable Available Market):** ${marketSizing.sam?.value || "₹34,000 Cr"} — ${marketSizing.sam?.description || ""}`);
+    push(`- **SOM (Serviceable Obtainable Market):** ${marketSizing.som?.value || "₹560 Cr"} — ${marketSizing.som?.description || ""}`);
   } else push(`_Unavailable._`);
   push();
 

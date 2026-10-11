@@ -21,7 +21,7 @@ import {
   Swords,
   Users,
   Search,
-  DollarSign,
+  Wallet,
   TrendingUp,
   ShieldAlert,
   Scale,
@@ -292,7 +292,7 @@ const DEBATES = {
     rounds: [
       {
         label: "Customer pain and wedge",
-        bull: "Every mid-market company with 50+ staff bleeds $40k–$150k a year on zombie SaaS renewals and unbenchmarked seats. A five-minute Slack or Google Drive scan with zero setup friction gets us onto corporate credit cards fast.",
+        bull: "Every mid-market company with 50+ staff bleeds ₹35 Lakhs – ₹1.2 Crore a year on zombie SaaS renewals and unbenchmarked seats. A five-minute Slack or Google Drive scan with zero setup friction gets us onto corporate credit cards fast.",
         bear: "Incumbent contract vendors like Ironclad and ContractPodAI already hold the customer contracts. You can’t win on a generic OCR parser without enterprise certifications like SOC 2 Type II.",
         judge: "Bypass enterprise procurement entirely. Target Series A and B tech startups where the head of ops or the founder buys tools on a corporate card.",
         conviction: "86%",
@@ -300,8 +300,8 @@ const DEBATES = {
       },
       {
         label: "Acquisition cost vs churn",
-        bull: "The audit report is a viral Trojan horse. When an ops manager exports a PDF showing $35k in savings, they forward it to investors and finance Slack groups, which drives referrals at negative acquisition cost.",
-        bear: "Contract audits have a 360-day churn loop. Once a founder renegotiates their top three contracts, why keep paying $89 a month for the other eleven?",
+        bull: "The audit report is a viral Trojan horse. When an ops manager exports a PDF showing ₹28 Lakhs in savings, they forward it to investors and finance Slack groups, which drives referrals at negative acquisition cost.",
+        bear: "Contract audits have a 360-day churn loop. Once a founder renegotiates their top three contracts, why keep paying ₹7,500 a month for the other eleven?",
         judge: "Fatal trap. Move pricing from one-off audits to continuous renewal monitoring with 90-day cancellation alerts.",
         conviction: "78%",
         ruling: "Rework into continuous monitoring",
@@ -323,7 +323,7 @@ const DEBATES = {
     rounds: [
       {
         label: "Loss aversion vs acquisition",
-        bull: "Loss aversion is about 2.5x stronger than reward. People hate losing a $20 deposit to a friend far more than they want gym points, and buddy invites are built into the core loop.",
+        bull: "Loss aversion is about 2.5x stronger than reward. People hate losing a ₹1,500 deposit to a friend far more than they want gym points, and buddy invites are built into the core loop.",
         bear: "Chargebacks and gambling-style regulation around forfeits will crush your margins, and churn spikes once a user forfeits money twice in a row.",
         judge: "Frame forfeits as escrowed charity donations or buddy dinner gift cards, not house rake. Test retention with 20 college students before building native apps.",
         conviction: "72%",
@@ -354,7 +354,7 @@ const DEBATES = {
     rounds: [
       {
         label: "Latency wedge vs token savings",
-        bull: "Enterprises spend $50k a month on OpenAI with 60% redundant queries. A drop-in semantic cache cuts the bill overnight and pays for itself within 48 hours.",
+        bull: "Enterprises spend ₹42 Lakhs a month on OpenAI with 60% redundant queries. A drop-in semantic cache cuts the bill overnight and pays for itself within 48 hours.",
         bear: "Embedding latency plus cosine similarity in Python will hurt p99. Unless you build in C++ or Rust at the edge, developers will write their own Redis cache in an afternoon.",
         judge: "Strong technical wedge. Build an open-source Rust proxy and win the latency benchmarks on Hacker News before charging for enterprise tiers.",
         conviction: "89%",
@@ -370,7 +370,7 @@ const DEBATES = {
       },
       {
         label: "Commercial moat",
-        bull: "A SOC 2-compliant, self-hosted Helm chart for banks spending $200k a month on internal LLM agent workflows.",
+        bull: "A SOC 2-compliant, self-hosted Helm chart for banks spending ₹1.6 Crore a month on internal LLM agent workflows.",
         bear: "Enterprise sales means a nine-month procurement cycle unless you offer a one-line drop-in proxy.",
         judge: "Ship a one-line Python and TypeScript SDK proxy: client = CacheProxy(openai). Immediate traction.",
         conviction: "94%",
@@ -385,7 +385,7 @@ const DEBATES = {
     rounds: [
       {
         label: "Labor shortage vs patient trust",
-        bull: "Dental clinics miss 35% of inbound calls at lunch and after 5 PM. A sub-400ms voice agent booking straight into Dentrix recovers about $8,000 a month per clinic.",
+        bull: "Dental clinics miss 35% of inbound calls at lunch and after 5 PM. A sub-400ms voice agent booking straight into Dentrix recovers about ₹6.5 Lakhs a month per clinic.",
         bear: "Patients hang up on robotic voices past 600ms, or if the agent misreads emergency symptoms like an abscess.",
         judge: "High urgency and clear ROI. Deploy a sub-400ms WebRTC voice stack with a strict human escalation fail-safe.",
         conviction: "88%",
@@ -393,7 +393,7 @@ const DEBATES = {
       },
       {
         label: "Practice-software integration",
-        bull: "At $399 a month per clinic, one root-canal booking worth $1,200 makes this a no-brainer.",
+        bull: "At ₹32,000 a month per clinic, one root-canal booking worth ₹95,000 makes this a no-brainer.",
         bear: "Legacy dental software like Dentrix and Eaglesoft runs closed, on-premise Windows databases with no modern REST APIs.",
         judge: "Partner with dental EHR sync providers such as NexHealth or Curve Dental instead of reverse-engineering databases.",
         conviction: "84%",
@@ -402,7 +402,7 @@ const DEBATES = {
       {
         label: "HIPAA and expansion",
         bull: "Once installed in 50 clinics, expand into orthodontics, chiropractic and veterinary practices.",
-        bear: "One leak of patient records carries up to $50,000 in statutory penalties.",
+        bear: "One leak of patient records carries up to ₹40 Lakhs in statutory penalties.",
         judge: "Sign a BAA with HIPAA-compliant voice inference hosts. High venture upside.",
         conviction: "92%",
         ruling: "Approved for clinic pilot",
@@ -585,7 +585,7 @@ const STAGES = [
   {
     title: "Unit economics and financial model",
     desc: "Models server and AI token costs, projects revenue at 100, 500 and 5,000 customers, and finds break-even.",
-    icon: DollarSign,
+    icon: Wallet,
   },
   {
     title: "Go-to-market kit and PDF export",
@@ -733,8 +733,8 @@ export function BentoFeatureGrid() {
 
           <Reveal className="hp-tile" delay={80}>
             <div className="hp-chat" aria-hidden="true">
-              <span>Should I price at $49 or $89?</span>
-              <span className="is-ai">At $89 your margin holds up with AI costs. Test $49 for a startup tier.</span>
+              <span>Should I price at ₹3,999 or ₹6,999?</span>
+              <span className="is-ai">At ₹6,999 your margin holds up with AI costs. Test ₹3,999 for a startup tier.</span>
             </div>
             <h3>Ask your co-founder.</h3>
             <p>Follow up on your blueprint: pivots, pricing, tech stack. It knows the whole report.</p>
@@ -773,7 +773,7 @@ export function ComparisonSection({ onCtaClick }) {
     ["Customer discovery", "Leading questions", "Generic survey questions", "Mom Test interview scripts"],
     ["Financial model", "Spreadsheets you build yourself", "Advice with no real cost numbers", "Interactive costs, MRR and break-even"],
     ["Export", "Scattered notes and docs", "Copied chat logs", "16-part PDF, pitch deck, Markdown"],
-    ["Cost", "$10,000–$25,000 in consulting", "$20 a month, no structure", "Free beta, 3 ideas a week"],
+    ["Cost", "₹8–20 Lakhs in consulting", "₹1,600 a month, no structure", "Free beta, 3 ideas a week"],
   ];
   return (
     <section id="compare" className="hp hp-sec hp-soft">
@@ -835,7 +835,7 @@ const SAMPLES = {
     title: "AI contract and vendor audit platform",
     prompt:
       "An AI-powered B2B platform that audits enterprise vendor contracts, flags compliance risks, and benchmarks pricing automatically.",
-    tam: "$14.2B",
+    tam: "₹1.15 Lakh Cr",
     tamNote: "Global enterprise contract management",
     verdict: "Proceed. High enterprise urgency.",
     score: 89,
@@ -847,7 +847,7 @@ const SAMPLES = {
     title: "Social accountability gym partner app",
     prompt:
       "A micro-community app that pairs solo lifters with matched gym accountability buddies with deposit-forfeit stakes.",
-    tam: "$4.1B",
+    tam: "₹34,000 Cr",
     tamNote: "Boutique fitness and accountability",
     verdict: "Proceed with caution. Focus on retention.",
     score: 78,
@@ -859,7 +859,7 @@ const SAMPLES = {
     title: "Sub-millisecond semantic vector cache",
     prompt:
       "A high-performance in-memory semantic cache for LLMs that cuts OpenAI and Anthropic token bills by 70% with sub-ms p99 latency.",
-    tam: "$6.8B",
+    tam: "₹56,000 Cr",
     tamNote: "AI infrastructure and middleware",
     verdict: "Strong proceed. Clear ROI wedge.",
     score: 92,
@@ -961,7 +961,7 @@ export function TestimonialsSection() {
         "Architecture, cost estimates and launch copy in 30 seconds makes testing a weekend project actually viable.",
       name: "Marcus K.",
       role: "Full-stack dev and indie hacker",
-      badge: "$4k MRR, bootstrapped",
+      badge: "₹3.5L MRR, bootstrapped",
     },
   ];
   return (
@@ -1097,7 +1097,7 @@ export function FaqSection({ onCtaClick }) {
     },
     {
       q: "How does the 3-AI VC War Room work?",
-      a: "The Bull argues why your idea could reach $100M ARR. The Bear attacks acquisition costs, retention and incumbent retaliation. The Chief Judge returns a ruling and names the one experiment you should run first.",
+      a: "The Bull argues why your idea could reach ₹800 Crore ARR. The Bear attacks acquisition costs, retention and incumbent retaliation. The Chief Judge returns a ruling and names the one experiment you should run first.",
     },
     {
       q: "How does the weekly quota work?",

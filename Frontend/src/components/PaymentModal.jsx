@@ -210,7 +210,7 @@ export default function PaymentModal({
                 </span>
                 <div className="flex items-baseline gap-1.5 mt-0.5">
                   <span className="text-3xl font-black text-slate-900">₹149</span>
-                  <span className="text-xs text-slate-500 font-medium">/ month ($4.99 USD)</span>
+                  <span className="text-xs text-slate-500 font-medium">/ month (Billed in INR)</span>
                 </div>
                 <span className="text-[11px] text-slate-500 block">Cancel anytime • No lock-in</span>
               </div>

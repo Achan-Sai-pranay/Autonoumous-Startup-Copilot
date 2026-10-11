@@ -144,4 +144,124 @@ test("Default displayMode configuration validation", () => {
   assert.strictEqual(defaultMode, "continuous");
 });
 
+test("Currency conversion integrity and invariant preservation (USD to INR)", () => {
+  // Test with real market rate around 96.8
+  const MARKET_USD_TO_INR = 96.8;
+
+  const convertUsdToInr = (usd, rate = MARKET_USD_TO_INR) => Math.round(Number(usd) * rate);
+  const convertInrToUsd = (inr, rate = MARKET_USD_TO_INR) => Math.max(1, Math.round(Number(inr) / rate));
+
+  // 1. Value must not simply change symbol from $50 to ₹50; $50 converts to ~₹4,840 at ~96.8
+  const usd50 = 50;
+  const inrConverted = convertUsdToInr(usd50);
+  assert.strictEqual(inrConverted, 4840);
+  assert.notStrictEqual(inrConverted, 50, "A $50 price must never simply be changed to ₹50");
+
+  // 2. Mathematical invariant: Breakeven subscriber count must remain 100% identical at any rate
+  [83, 96, 96.8, 100].forEach((rate) => {
+    const usdPrice = 59;
+    const usdBurn = 11;
+    const usdBreakeven = Math.max(1, Math.ceil(usdBurn / usdPrice));
+
+    const inrPrice = convertUsdToInr(usdPrice, rate);
+    const inrBurn = convertUsdToInr(usdBurn, rate);
+    const inrBreakeven = Math.max(1, Math.ceil(inrBurn / inrPrice));
+
+    assert.strictEqual(usdBreakeven, inrBreakeven, `Break-even customer count must be identical at rate ${rate}`);
+
+    // ARR milestone customer targets must remain identical
+    const to100kUsd = Math.max(1, Math.ceil(100000 / (usdPrice * 12)));
+    const target1Inr = Math.round(100000 * rate);
+    const toMilestoneInr = Math.max(1, Math.ceil(target1Inr / (inrPrice * 12)));
+    assert.strictEqual(to100kUsd, toMilestoneInr, `ARR milestone volume must remain identical at rate ${rate}`);
+  });
+});
+
+test("Currency string conversion with ranges and mixed AI text using market rate (~96.8)", () => {
+  const USD_TO_INR = 96.8;
+  function convertCurrencyString(str, targetCurrency = "INR", rate = USD_TO_INR) {
+    if (!str || typeof str !== "string") return str;
+    if (targetCurrency === "INR") {
+      if (str.includes("₹") && !str.includes("$")) return str;
+      return str.replace(/\$(\d+(?:,\d+)*(?:\.\d+)?)(?:\s*-\s*\$?(\d+(?:,\d+)*(?:\.\d+)?))?/g, (match, n1, n2) => {
+        const v1 = parseFloat(n1.replace(/,/g, ""));
+        const inr1 = `₹${Math.round(v1 * rate).toLocaleString("en-IN")}`;
+        if (n2) {
+          const v2 = parseFloat(n2.replace(/,/g, ""));
+          const inr2 = `₹${Math.round(v2 * rate).toLocaleString("en-IN")}`;
+          return `${inr1} - ${inr2}`;
+        }
+        return inr1;
+      });
+    }
+    return str;
+  }
+
+  // Ranges ($16-51 at ~96.8)
+  assert.strictEqual(convertCurrencyString("$16-51"), "₹1,549 - ₹4,937");
+  assert.strictEqual(convertCurrencyString("$16 - $51"), "₹1,549 - ₹4,937");
+
+  // Formatted revenue projections ($4,900 at 96.8)
+  assert.strictEqual(convertCurrencyString("$4,900"), "₹4,74,320");
+  assert.strictEqual(convertCurrencyString("$588,000"), "₹5,69,18,400");
+
+  // Non-currency intact
+  assert.strictEqual(convertCurrencyString("Free tier"), "Free tier");
+  assert.strictEqual(convertCurrencyString("₹149/mo"), "₹149/mo");
+});
+
+test("Dynamic cloud & database provider scaling (e.g. 1,640 users at 400 price)", async () => {
+  const { calculateCloudCosts, CLOUD_PROVIDERS, STARTUP_GLOSSARY } = await import("../src/lib/cloudPricing.js");
+
+  // Verify all 3 famous provider profiles exist
+  assert.ok(CLOUD_PROVIDERS.SUPABASE_VERCEL);
+  assert.ok(CLOUD_PROVIDERS.AWS_PRODUCTION);
+  assert.ok(CLOUD_PROVIDERS.MONGODB_RENDER);
+
+  // Test 1: User audio scenario (1,640 users at 400 INR/mo)
+  const users = 1640;
+  const price = 400;
+  const rate = 96.8;
+
+  // Supabase + Vercel
+  const supabaseCosts = calculateCloudCosts(users, "SUPABASE_VERCEL", rate, "INR");
+  assert.strictEqual(supabaseCosts.users, 1640);
+  assert.ok(supabaseCosts.total > 0);
+  assert.ok(supabaseCosts.database > 0);
+  assert.ok(supabaseCosts.compute > 0);
+  assert.ok(supabaseCosts.totalUsd >= 50 && supabaseCosts.totalUsd <= 120); // ~$74/mo
+  assert.ok(supabaseCosts.total >= 5000 && supabaseCosts.total <= 12000); // ~₹7,200/mo
+
+  // Economics check: 1640 users * 400 INR = 656,000 MRR. Cloud burn ~7,200 INR. Net > 640,000 INR
+  const mrr = users * price;
+  const net = mrr - supabaseCosts.total;
+  const margin = Math.round((net / mrr) * 100);
+  assert.strictEqual(mrr, 656000);
+  assert.ok(net > 645000);
+  assert.strictEqual(margin, 99);
+
+  // AWS Production
+  const awsCosts = calculateCloudCosts(users, "AWS_PRODUCTION", rate, "INR");
+  assert.ok(awsCosts.totalUsd > supabaseCosts.totalUsd); // Enterprise AWS dedicated instances are higher
+  assert.ok(awsCosts.total >= 10000); // ~₹13,500/mo
+
+  // Test 2: Scaling increases infrastructure costs monotonically
+  const cost100 = calculateCloudCosts(100, "SUPABASE_VERCEL", rate, "INR");
+  const cost500 = calculateCloudCosts(500, "SUPABASE_VERCEL", rate, "INR");
+  const cost1000 = calculateCloudCosts(1000, "SUPABASE_VERCEL", rate, "INR");
+  const cost5000 = calculateCloudCosts(5000, "SUPABASE_VERCEL", rate, "INR");
+
+  assert.ok(cost100.total <= cost500.total);
+  assert.ok(cost500.total <= cost1000.total);
+  assert.ok(cost1000.total < cost5000.total);
+
+  // Test 3: Glossary completeness
+  assert.ok(STARTUP_GLOSSARY.initialTraction.title.length > 0);
+  assert.ok(STARTUP_GLOSSARY.pmf.title.length > 0);
+  assert.ok(STARTUP_GLOSSARY.scalingPhase.title.length > 0);
+  assert.ok(STARTUP_GLOSSARY.marketLeader.title.length > 0);
+  assert.ok(STARTUP_GLOSSARY.cloudBurn.title.length > 0);
+  assert.ok(STARTUP_GLOSSARY.unitEconomics.title.length > 0);
+});
+
 

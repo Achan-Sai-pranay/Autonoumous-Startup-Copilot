@@ -68,6 +68,7 @@ const formattedDate = () =>
 const clean = (v) => {
   if (v === null || v === undefined) return "";
   return String(v)
+    .replace(/₹/g, "INR ")
     .replace(/[\u2192\u21D2\u27F6]/g, "->")
     .replace(/\u2265/g, ">=")
     .replace(/\u2264/g, "<=")
