@@ -307,49 +307,123 @@ export function Toast({ message }) {
 /* ------------------------------------------------------------------ */
 /* Scroll-spy                                                          */
 /* A thin band near the top of the scroll container decides which      */
-/* section is active. IntersectionObserver does the work off the main  */
-/* thread, so there are no per-frame getBoundingClientRect reads.      */
+/* ------------------------------------------------------------------ */
+/* Smooth, accurate scroll-spy that keeps sidebar in sync with stages */
 /* ------------------------------------------------------------------ */
 export function useScrollSpy({ containerRef, enabled = true, lockedRef, activeRef, onChange }) {
   useEffect(() => {
-    const root = containerRef?.current;
-    if (!enabled || !root || typeof IntersectionObserver === "undefined") return;
+    if (!enabled || typeof window === "undefined") return;
 
-    const sections = Array.from(document.querySelectorAll("section.blueprint-section[data-section-id]"));
-    if (!sections.length) return;
+    const getRoot = () =>
+      containerRef?.current ||
+      document.querySelector(".wk-main") ||
+      document.querySelector("main.overflow-y-auto") ||
+      document.querySelector("main");
 
-    const visible = new Set();
-    const pick = () => {
+    const root = getRoot();
+    if (!root) return;
+
+    let rafId = 0;
+
+    const updateActiveSection = () => {
+      rafId = 0;
       if (lockedRef?.current) return;
-      // near the bottom: last stage wins, like the old behaviour
-      const atBottom = root.scrollHeight - root.scrollTop - root.clientHeight < 80;
-      const id = atBottom
-        ? sections[sections.length - 1].dataset.sectionId
-        : sections.find((s) => visible.has(s.dataset.sectionId))?.dataset.sectionId;
-      if (id && id !== activeRef?.current) {
-        if (activeRef) activeRef.current = id;
-        onChange(id);
+
+      const currentRoot = getRoot();
+      if (!currentRoot) return;
+
+      const sections = Array.from(
+        currentRoot.querySelectorAll("section[data-section-id], .blueprint-section[data-section-id]")
+      );
+      if (!sections.length) return;
+
+      // 1. Check if user is near the bottom: last section wins
+      const scrollDistFromBottom =
+        currentRoot.scrollHeight - currentRoot.scrollTop - currentRoot.clientHeight;
+      if (scrollDistFromBottom < 70) {
+        const lastId = sections[sections.length - 1].dataset.sectionId;
+        if (lastId && lastId !== activeRef?.current) {
+          if (activeRef) activeRef.current = lastId;
+          onChange?.(lastId);
+        }
+        return;
+      }
+
+      // 2. Check if user is near the top: first section wins
+      if (currentRoot.scrollTop < 80) {
+        const firstId = sections[0].dataset.sectionId;
+        if (firstId && firstId !== activeRef?.current) {
+          if (activeRef) activeRef.current = firstId;
+          onChange?.(firstId);
+        }
+        return;
+      }
+
+      // 3. Find the section that encloses the reading trigger line (160px from top of container)
+      const rootRect = currentRoot.getBoundingClientRect();
+      const triggerY = rootRect.top + 160;
+
+      let currentId = null;
+
+      // Primary check: section whose top <= triggerY and bottom > triggerY
+      for (let i = 0; i < sections.length; i++) {
+        const sec = sections[i];
+        const rect = sec.getBoundingClientRect();
+        if (rect.top <= triggerY && rect.bottom > triggerY) {
+          currentId = sec.dataset.sectionId;
+          break;
+        }
+      }
+
+      // Fallback check: last section whose top is <= triggerY
+      if (!currentId) {
+        for (let i = sections.length - 1; i >= 0; i--) {
+          const sec = sections[i];
+          const rect = sec.getBoundingClientRect();
+          if (rect.top <= triggerY) {
+            currentId = sec.dataset.sectionId;
+            break;
+          }
+        }
+      }
+
+      // Fallback check: first section
+      if (!currentId && sections.length > 0) {
+        currentId = sections[0].dataset.sectionId;
+      }
+
+      if (currentId && currentId !== activeRef?.current) {
+        if (activeRef) activeRef.current = currentId;
+        onChange?.(currentId);
       }
     };
 
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((e) => {
-          const id = e.target.dataset.sectionId;
-          if (e.isIntersecting) visible.add(id);
-          else visible.delete(id);
-        });
-        pick();
-      },
-      // band: from 120px below the top to 35% down the viewport
-      { root, rootMargin: "-120px 0px -65% 0px", threshold: 0 }
-    );
-    sections.forEach((s) => io.observe(s));
+    const onScroll = () => {
+      if (!rafId) {
+        rafId = requestAnimationFrame(updateActiveSection);
+      }
+    };
 
-    root.addEventListener("scroll", pick, { passive: true });
+    const onUserScrollStart = () => {
+      if (lockedRef?.current) {
+        lockedRef.current = false;
+      }
+    };
+
+    root.addEventListener("scroll", onScroll, { passive: true });
+    root.addEventListener("wheel", onUserScrollStart, { passive: true });
+    root.addEventListener("touchmove", onUserScrollStart, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+
+    // Initial evaluation
+    rafId = requestAnimationFrame(updateActiveSection);
+
     return () => {
-      io.disconnect();
-      root.removeEventListener("scroll", pick);
+      if (rafId) cancelAnimationFrame(rafId);
+      root.removeEventListener("scroll", onScroll);
+      root.removeEventListener("wheel", onUserScrollStart);
+      root.removeEventListener("touchmove", onUserScrollStart);
+      window.removeEventListener("resize", onScroll);
     };
   }, [containerRef, enabled, lockedRef, activeRef, onChange]);
 }

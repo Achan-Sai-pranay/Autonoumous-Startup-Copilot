@@ -8,6 +8,7 @@
 // ---------------------------------------------------------------------------
 
 import { useState, useMemo, memo, useCallback, useRef, useEffect } from "react";
+import { LeanCanvasView } from "./BlueprintPhase7.jsx";
 import {
   ShieldCheck,
   TrendingUp,
@@ -924,185 +925,17 @@ export const LeanCanvasMatrix = memo(function LeanCanvasMatrix({
     return "Self-serve starter tier + custom enterprise plan with SLA guarantees.";
   }, [businessStrategy]);
 
-  return (
-    <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-sm mb-6">
-      <div className="flex items-center justify-between mb-5 pb-4 border-b border-slate-100">
-        <div className="flex items-center gap-2.5">
-          <div className="h-8 w-8 rounded-lg bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
-            <Layers size={16} />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h3 className="text-base font-bold text-slate-900 tracking-tight">
-                9-Box Strategic Lean Canvas
-              </h3>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                VENTURE ARCHITECTURE
-              </span>
-            </div>
-            <p className="text-xs text-slate-500">
-              Complete business model on a single page, synthesized for rapid founder iteration and investor diligence.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-        {/* Box 1: Problem */}
-        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">01. Problem</span>
-              <span className="text-[9px] font-mono font-bold text-slate-500 bg-slate-200/60 px-1.5 py-0.5 rounded">CORE PAIN</span>
-            </div>
-            <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              {problem}
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-slate-200/60">
-            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Existing Alternatives:</span>
-            <p className="text-[11px] text-slate-600">{existingAlternatives}</p>
-          </div>
-        </div>
-
-        {/* Box 2: Solution */}
-        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">02. Solution</span>
-              <span className="text-[9px] font-mono font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">MVP WEDGE</span>
-            </div>
-            <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              {solution}
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-slate-200/60">
-            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Key MVP Capabilities:</span>
-            <p className="text-[11px] text-slate-600">{topFeatures}</p>
-          </div>
-        </div>
-
-        {/* Box 3: Unique Value Proposition (Highlighted) */}
-        <div className="p-3.5 rounded-xl bg-orange-50/40 border border-orange-200/80 flex flex-col justify-between min-h-[170px]">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono font-bold uppercase text-orange-600">03. Unique Value Prop</span>
-              <span className="text-[9px] font-mono font-bold text-orange-700 bg-orange-100/80 px-1.5 py-0.5 rounded">PRIMARY HOOK</span>
-            </div>
-            <p className="text-xs text-slate-900 font-bold leading-relaxed">
-              {uvp}
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-orange-200/60">
-            <span className="text-[10px] font-mono text-orange-600 block mb-0.5">High-Level Pitch:</span>
-            <p className="text-[11px] text-slate-700 italic">"{highLevelConcept}"</p>
-          </div>
-        </div>
-
-        {/* Box 4: Unfair Advantage (Moat) */}
-        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">04. Unfair Moat</span>
-              <span className="text-[9px] font-mono font-bold text-purple-600 bg-purple-50 px-1.5 py-0.5 rounded">DEFENSIBILITY</span>
-            </div>
-            <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              {unfairMoat}
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-slate-200/60">
-            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Defensive Wedge:</span>
-            <p className="text-[11px] text-slate-600">{moatSecondary}</p>
-          </div>
-        </div>
-
-        {/* Box 5: Customer Segments */}
-        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">05. Customer Segments</span>
-              <span className="text-[9px] font-mono font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">TARGET ICP</span>
-            </div>
-            <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              {customerSegments}
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-slate-200/60">
-            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Early Adopter Beachhead:</span>
-            <p className="text-[11px] text-slate-600">{earlyAdopters}</p>
-          </div>
-        </div>
-
-        {/* Box 6: Channels */}
-        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">06. Channels</span>
-              <span className="text-[9px] font-mono font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">DISTRIBUTION</span>
-            </div>
-            <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              {channels}
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-slate-200/60">
-            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Acquisition Focus:</span>
-            <p className="text-[11px] text-slate-600">{channelAudience}</p>
-          </div>
-        </div>
-
-        {/* Box 7: Key Metrics */}
-        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">07. Key Metrics</span>
-              <span className="text-[9px] font-mono font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">NORTH STAR</span>
-            </div>
-            <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              {keyMetrics}
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-slate-200/60">
-            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Target Benchmark:</span>
-            <p className="text-[11px] text-slate-600">LTV:CAC &gt; 3.0x, Payback &lt; 6 months, Low Monthly Churn.</p>
-          </div>
-        </div>
-
-        {/* Box 8: Cost Structure */}
-        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">08. Cost Structure</span>
-              <span className="text-[9px] font-mono font-bold text-rose-600 bg-rose-50 px-1.5 py-0.5 rounded">BURN &amp; CAPEX</span>
-            </div>
-            <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              {costStructure}
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-slate-200/60">
-            <span className="text-[10px] font-mono text-slate-400 block mb-0.5">Primary Cost Drivers:</span>
-            <p className="text-[11px] text-slate-600">Model inference, data storage, auth, domain, paid outbound.</p>
-          </div>
-        </div>
-
-        {/* Box 9: Revenue Streams */}
-        <div className="p-3.5 rounded-xl bg-slate-50/80 border border-slate-200 flex flex-col justify-between min-h-[170px]">
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-mono font-bold uppercase text-slate-400">09. Revenue Streams</span>
-              <span className="text-[9px] font-mono font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">MONETIZATION</span>
-            </div>
-            <p className="text-xs text-slate-800 font-medium leading-relaxed">
-              {revenueStreams}
-            </p>
-          </div>
-          <div className="mt-3 pt-2 border-t border-slate-200/60">
-            <span className="text-[10px] font-mono text-emerald-600 font-bold block mb-0.5">Pricing Model:</span>
-            <p className="text-[11px] text-slate-600">{pricingDetails}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  return <LeanCanvasView boxes={[
+    { n: "01", label: "Problem", tag: "Core pain", main: problem, subLabel: "Existing alternatives", sub: existingAlternatives },
+    { n: "02", label: "Solution", tag: "MVP wedge", main: solution, subLabel: "Key MVP capabilities", sub: topFeatures },
+    { n: "03", label: "Unique value prop", tag: "Primary hook", main: uvp, subLabel: "High-level pitch", sub: `"${highLevelConcept}"`, hot: true },
+    { n: "04", label: "Unfair moat", tag: "Defensibility", main: unfairMoat, subLabel: "Defensive wedge", sub: moatSecondary },
+    { n: "05", label: "Customer segments", tag: "Target ICP", main: customerSegments, subLabel: "Early adopter beachhead", sub: earlyAdopters },
+    { n: "06", label: "Channels", tag: "Distribution", main: channels, subLabel: "Acquisition focus", sub: channelAudience },
+    { n: "07", label: "Key metrics", tag: "North star", main: keyMetrics, subLabel: "Target benchmark", sub: "LTV:CAC > 3.0x, payback < 6 months, low monthly churn." },
+    { n: "08", label: "Cost structure", tag: "Burn and capex", main: costStructure, subLabel: "Primary cost drivers", sub: "Model inference, data storage, auth, domain, paid outbound." },
+    { n: "09", label: "Revenue streams", tag: "Monetization", main: revenueStreams, subLabel: "Pricing model", sub: pricingDetails },
+  ]} />;
 });
 
 // ---------------------------------------------------------------------------

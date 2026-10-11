@@ -11,6 +11,9 @@
 // ---------------------------------------------------------------------------
 import { useEffect, useRef, useState } from "react";
 import {
+  Check,
+  Edit2,
+  X,
   AlertTriangle,
   Lightbulb,
   Rocket,
@@ -163,7 +166,7 @@ export function SectionGatewayHeader({ numeral, title, subtitle, badge, agent, o
 /* ------------------------------------------------------------------ */
 /* 1. Viability spotlight                                              */
 /* ------------------------------------------------------------------ */
-export function ViabilitySpotlight({ isActive, ventureTitle, domain, pitch, score, verdict }) {
+export function ViabilitySpotlight({ isActive, ventureTitle, domain, pitch, score, verdict, edit }) {
   const [ref, shown] = useReveal(0.25);
   const R = 62;
   const C = 2 * Math.PI * R;
@@ -181,7 +184,36 @@ export function ViabilitySpotlight({ isActive, ventureTitle, domain, pitch, scor
             Industry <b>{domain}</b>
           </span>
         </div>
-        <h2>{ventureTitle}</h2>
+        {edit?.isEditing ? (
+          <div className="bp-edit-row bp-spot-edit">
+            <input
+              ref={edit.inputRef}
+              type="text"
+              value={edit.editedTitle}
+              onChange={(e) => edit.setEditedTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") edit.onSave();
+                if (e.key === "Escape") edit.onCancel();
+              }}
+              aria-label="Venture title"
+            />
+            <button type="button" className="bp-edit" onClick={edit.onSave} title="Save title" aria-label="Save title">
+              <Check size={15} />
+            </button>
+            <button type="button" className="bp-edit" onClick={edit.onCancel} title="Cancel" aria-label="Cancel">
+              <X size={15} />
+            </button>
+          </div>
+        ) : (
+          <div className="bp-spot-title">
+            <h2>{ventureTitle}</h2>
+            {edit && (
+              <button type="button" className="bp-edit" onClick={edit.onStart} title="Edit title" aria-label="Edit venture title">
+                <Edit2 size={14} />
+              </button>
+            )}
+          </div>
+        )}
         <p>{pitch}</p>
       </div>
 

@@ -295,17 +295,28 @@ export function CopyBlock({ label, text, onCopy }) {
 }
 
 export function ChannelList({ channels = [] }) {
+  const safeList = Array.isArray(channels) ? channels : [];
   return (
     <ul className="bp-channels">
-      {channels.map((c, i) => (
-        <li key={i}>
-          <span>{String(i + 1).padStart(2, "0")}</span>
-          <div>
-            <b>{c.name}</b>
-            <p>{c.why}</p>
-          </div>
-        </li>
-      ))}
+      {safeList.map((c, i) => {
+        let name = "";
+        let why = "";
+        if (typeof c === "string") {
+          name = c;
+        } else if (c && typeof c === "object") {
+          name = c.name || c.platform || c.channel || c.title || "";
+          why = c.why || c.strategy || c.tactic || c.description || c.details || "";
+        }
+        return (
+          <li key={i}>
+            <span>{String(i + 1).padStart(2, "0")}</span>
+            <div>
+              <b>{name || `Channel ${i + 1}`}</b>
+              {why && <p>{why}</p>}
+            </div>
+          </li>
+        );
+      })}
     </ul>
   );
 }

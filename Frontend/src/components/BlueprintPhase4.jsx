@@ -183,24 +183,32 @@ export function DemandSignals({ domain, demand, opportunities = [], competitors 
 }
 
 /* ------------------------------------------------------------------ */
-/* Competitor vulnerabilities                                          */
+/* Competitor vulnerabilities & incumbent intelligence                 */
 /* ------------------------------------------------------------------ */
 const joined = (v) => (Array.isArray(v) ? v.join("; ") : v);
 
-export function VulnerabilityGrid({ items = [] }) {
+export function VulnerabilityGrid({ items = [], vulnerabilities = [] }) {
+  const list = items?.length > 0 ? items : vulnerabilities || [];
   return (
     <section className="bp-vuln" aria-label="Competitor vulnerabilities">
       <Reveal className="bp-vuln-head">
         <h3>Where incumbents are weak</h3>
-        <p>Structural weaknesses of competitors and the wedge you can use to win share.</p>
+        <p>Structural weaknesses of competitors, what they provide, and the winning wedge you can use to win share.</p>
       </Reveal>
       <div className="bp-vuln-grid">
-        {items.map((c, i) => (
+        {list.map((c, i) => (
           <Reveal as="article" key={i} delay={(i % 3) * 90} className="bp-vuln-card">
-            <h4>{c.competitor}</h4>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px" }}>
+              <h4>{c.competitor}</h4>
+              <span className="bp-chip"><i />Incumbent</span>
+            </div>
             <dl>
-              <dt>Structural weakness</dt>
-              <dd>{joined(c.weaknesses || c.weakness)}</dd>
+              <dt>What it provides</dt>
+              <dd>{c.offering || c.description || c.provides || `${c.competitor} offers established domain features but relies on complex, legacy manual processes.`}</dd>
+
+              <dt>Disadvantages & weaknesses</dt>
+              <dd>{joined(c.weaknesses || c.weakness || "Clunky, slow, and expensive for modern automated workflows.")}</dd>
+
               {c.missedOpportunities && (
                 <>
                   <dt>Missed opportunity</dt>
@@ -209,8 +217,8 @@ export function VulnerabilityGrid({ items = [] }) {
               )}
             </dl>
             <div className="bp-wedge">
-              <small>Your wedge</small>
-              <p>{c.suggestedDifferentiation}</p>
+              <small>Your winning wedge</small>
+              <p>{c.suggestedDifferentiation || "Deliver a fast, frictionless solution tailored specifically to user pain points at higher velocity."}</p>
             </div>
           </Reveal>
         ))}

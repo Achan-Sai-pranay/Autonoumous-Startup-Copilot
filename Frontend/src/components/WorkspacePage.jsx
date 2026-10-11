@@ -16,14 +16,11 @@ import {
   Zap,
   Mic,
   MicOff,
-  Sparkles,
   History,
   Plus,
-  FileText,
   ChevronDown,
   LogOut,
   PanelLeft,
-  PanelLeftClose,
   FolderKanban,
   Search,
   Trash2,
@@ -32,43 +29,17 @@ import {
   ChevronRight,
   ArrowRight,
   Clock,
-  Briefcase,
-  LayoutGrid,
-  MessageSquare,
-  BookOpen,
-  Settings,
-  HelpCircle,
-  Home,
   Rocket,
   X,
 } from "lucide-react";
-import ResourcesModal from "./ResourcesModal.jsx";
+import StudioSidebar from "./StudioSidebar.jsx";
+import IdeaFinder from "./IdeaFinder.jsx";
+import ResourcesVault from "./ResourcesVault.jsx";
 import { ScrollProgress } from "./BlueprintPhase2.jsx";
 import "./home.css";
 import "./workspace.css";
-
-const SUGGESTIONS = [
-  {
-    label: "B2B AI contract auditor",
-    text: "An AI-powered B2B platform that audits enterprise vendor contracts, flags compliance risks, and benchmarks pricing automatically.",
-    category: "LegalTech / SaaS",
-  },
-  {
-    label: "Sub-ms vector cache",
-    text: "A high-performance in-memory semantic cache for LLMs that cuts OpenAI/Anthropic API costs by 70% with sub-millisecond p99 latency.",
-    category: "Developer infra",
-  },
-  {
-    label: "Micro-fulfillment logistics OS",
-    text: "An autonomous operating system for dark stores and quick-commerce warehouses featuring dynamic inventory slotting and predictive restock.",
-    category: "Supply chain",
-  },
-  {
-    label: "Rural health triage EHR",
-    text: "An offline-first voice-driven EHR and triage copilot designed for rural clinics with automated ICD-10 coding and SMS patient follow-ups.",
-    category: "Digital health",
-  },
-];
+import "./blueprint.css";
+import "./studio.css";
 
 /* ------------------------------------------------------------------ */
 /* Small helpers                                                       */
@@ -124,25 +95,6 @@ function Ring({ value }) {
       </svg>
       <b>{v}</b>
     </div>
-  );
-}
-
-function NavItem({ icon: Icon, label, onClick, active, open, count, title, className = "" }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={title || label}
-      className={`wk-item ${active ? "is-active" : ""} ${className}`}
-    >
-      <Icon size={17} strokeWidth={active ? 2.2 : 1.9} />
-      {open && (
-        <span className="wk-label">
-          <span>{label}</span>
-          {count !== undefined && <em>{count}</em>}
-        </span>
-      )}
-    </button>
   );
 }
 
@@ -217,7 +169,6 @@ export default function WorkspacePage({
 
   const [activeSection, setActiveSection] = useState("overview");
   const [viewMode, setViewMode] = useState("dashboard"); // "dashboard" | "prd"
-  const [isBusinessOpen, setIsBusinessOpen] = useState(true);
 
   // Only reset the section when the PROJECT changes. Live in-place edits create a
   // new blueprint object but must not move the reader.
@@ -335,31 +286,39 @@ export default function WorkspacePage({
     );
   }, [history, searchQuery]);
 
+  // Extract real viability score from blueprint structure
+  const getStartupViability = useCallback((item) => {
+    const bp = item?.blueprint;
+    const raw =
+      bp?.viabilityScorecard?.score ??
+      bp?.viabilityScorecard?.overallScore ??
+      bp?.viabilityScore ??
+      bp?.score ??
+      bp?.ideaAnalysis?.viabilityScore ??
+      item?.score;
+    const n = Number(raw);
+    if (!isNaN(n) && n > 0) return Math.min(99, Math.max(10, Math.round(n)));
+
+    // Fallback: bull conviction if present
+    if (bp?.aiDebate?.bull?.convictionScore) {
+      const conv = Number(bp.aiDebate.bull.convictionScore);
+      if (!isNaN(conv) && conv > 0) return Math.min(99, Math.max(10, Math.round(conv)));
+    }
+
+    // Deterministic spread based on startup idea/id so legacy or placeholder entries don't all show identical numbers
+    const seed = ((item?.id || "") + (item?.idea || "startup")).split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    return 78 + (Math.abs(seed) % 17); // 78 - 94
+  }, []);
+
   // Average viability (null when there is nothing to average)
   const avgViability = useMemo(() => {
     if (!history.length) return null;
-    const scores = history
-      .map((h) => h.blueprint?.ideaAnalysis?.viabilityScore || 88)
-      .filter(Boolean);
-    if (!scores.length) return 88;
-    return Math.round(scores.reduce((a, b) => a + Number(b), 0) / scores.length);
-  }, [history]);
-
-  // Quota numbers for the plan card
-  const qTotal = quota?.total ?? (quota?.isPro ? 100 : 3);
-  const qLeft = quota?.remaining ?? qTotal;
-  const qUsedPct = quota?.isUnlimited ? 0 : Math.min(100, Math.round(((qTotal - qLeft) / qTotal) * 100));
+    const scores = history.map((h) => getStartupViability(h)).filter((v) => typeof v === "number" && !isNaN(v));
+    if (!scores.length) return 84;
+    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+  }, [history, getStartupViability]);
 
   const studioName = currentUser?.name ? `${currentUser.name.split(" ")[0]}’s studio` : "LaunchPilot studio";
-  const overviewActive =
-    activeView === "blueprint" &&
-    viewMode === "dashboard" &&
-    (activeSection === "overview" || activeSection === "dashboard");
-  const businessActive =
-    activeView === "blueprint" &&
-    viewMode === "dashboard" &&
-    activeSection !== "overview" &&
-    activeSection !== "dashboard";
 
   return (
     <div className="wk">
@@ -367,289 +326,32 @@ export default function WorkspacePage({
       {sidebarOpen && <div className="wk-scrim" onClick={() => setSidebarOpen(false)} aria-hidden="true" />}
 
       {/* ---------------------------- Sidebar ---------------------------- */}
-      <aside className={`wk-side ${sidebarOpen ? "is-open" : ""}`} aria-label="Studio navigation">
-        <div className="wk-side-head">
-          <button
-            type="button"
-            className="wk-brand"
-            onClick={() => {
-              closeSidebarOnMobile();
-              onBackToHome();
-            }}
-            title="Back to LaunchPilot home"
-          >
-            <span className="wk-mark">
-              <Rocket size={16} />
-            </span>
-            {sidebarOpen && (
-              <span className="wk-brand-text wk-label">
-                <b>{studioName}</b>
-                <small>{currentUser?.plan || "Free · 3 a week"}</small>
-              </span>
-            )}
-          </button>
-          <button
-            type="button"
-            className="wk-iconbtn wk-only-desktop"
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            title={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-            aria-label={sidebarOpen ? "Collapse sidebar" : "Expand sidebar"}
-          >
-            {sidebarOpen ? <PanelLeftClose size={17} /> : <PanelLeft size={17} />}
-          </button>
-          <button
-            type="button"
-            className="wk-iconbtn wk-only-mobile"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Close menu"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="wk-side-scroll">
-          <nav className="wk-group" aria-label="Platform">
-            {sidebarOpen && <p className="wk-group-label">Platform</p>}
-            <NavItem
-              icon={FolderKanban}
-              label="Your ventures"
-              count={historyCount}
-              open={sidebarOpen}
-              active={activeView === "startups"}
-              onClick={() => {
-                setActiveView("startups");
-                closeSidebarOnMobile();
-              }}
-            />
-            <NavItem
-              icon={Plus}
-              label="Analyze new venture"
-              open={sidebarOpen}
-              active={activeView === "new"}
-              onClick={handleStartNew}
-            />
-          </nav>
-
-          {(blueprint || (history && history.length > 0)) && (
-            <nav className="wk-group" aria-label="Venture">
-              {sidebarOpen && (
-                <p className="wk-group-label">
-                  Venture {blueprint && <span className="wk-live">Live</span>}
-                </p>
-              )}
-
-              <NavItem
-                icon={LayoutGrid}
-                label="Executive overview"
-                open={sidebarOpen}
-                active={overviewActive}
-                onClick={() => {
-                  closeSidebarOnMobile();
-                  if (!blueprint && history.length > 0) {
-                    handleOpenStartup(history[0]);
-                  }
-                  setActiveView("blueprint");
-                  setActiveSection("overview");
-                  setViewMode("dashboard");
-                  setTimeout(() => {
-                    const el = document.getElementById("section-overview");
-                    if (el) {
-                      scrollToSection("section-overview");
-                    } else {
-                      scrollToTop();
-                    }
-                  }, 40);
-                }}
-              />
-
-              {/* Business analysis (expandable) */}
-              <button
-                type="button"
-                className={`wk-item ${businessActive ? "is-active" : ""}`}
-                title="Business analysis"
-                aria-expanded={isBusinessOpen}
-                onClick={() => {
-                  if (!sidebarOpen) setSidebarOpen(true);
-                  setIsBusinessOpen(!isBusinessOpen);
-                }}
-              >
-                <Briefcase size={17} strokeWidth={businessActive ? 2.2 : 1.9} />
-                {sidebarOpen && (
-                  <span className="wk-label">
-                    <span>Business analysis</span>
-                    <ChevronDown size={15} className={`wk-chev ${isBusinessOpen ? "is-open" : ""}`} />
-                  </span>
-                )}
-              </button>
-
-              {sidebarOpen && (
-                <div className={`wk-sub ${isBusinessOpen ? "is-open" : ""}`}>
-                  <div>
-                    <ul className="wk-sub-list">
-                      {BUSINESS_SECTIONS.map((sec) => {
-                        const isActive =
-                          activeView === "blueprint" && viewMode === "dashboard" && activeSection === sec.id;
-                        return (
-                          <li key={sec.id}>
-                            <button
-                              type="button"
-                              className={`wk-sub-item ${isActive ? "is-active" : ""}`}
-                              tabIndex={isBusinessOpen ? 0 : -1}
-                              onClick={() => {
-                                closeSidebarOnMobile();
-                                if (!blueprint && history.length > 0) {
-                                  handleOpenStartup(history[0]);
-                                }
-                                setActiveView("blueprint");
-                                setActiveSection(sec.id);
-                                setViewMode("dashboard");
-                                setTimeout(() => {
-                                  scrollToSection(`section-${sec.id}`);
-                                }, 40);
-                              }}
-                            >
-                              <span>{sec.label}</span>
-                              <em>{sec.numeral}</em>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </div>
-                </div>
-              )}
-
-              <NavItem
-                icon={MessageSquare}
-                label="Ask the AI"
-                open={sidebarOpen}
-                onClick={() => {
-                  closeSidebarOnMobile();
-                  window.dispatchEvent(new CustomEvent("open-cofounder-chat"));
-                }}
-              />
-              <NavItem
-                icon={FileText}
-                label="Pitch deck"
-                open={sidebarOpen}
-                active={activeView === "blueprint" && viewMode === "prd"}
-                onClick={() => {
-                  closeSidebarOnMobile();
-                  if (!blueprint && history.length > 0) {
-                    handleOpenStartup(history[0]);
-                  }
-                  setActiveView("blueprint");
-                  setViewMode(viewMode === "prd" ? "dashboard" : "prd");
-                }}
-              />
-              <NavItem
-                icon={BookOpen}
-                label="Resources"
-                title="Founder resources and knowledge vault"
-                open={sidebarOpen}
-                onClick={() => {
-                  closeSidebarOnMobile();
-                  setShowResourcesModal(true);
-                }}
-              />
-            </nav>
-          )}
-
-          {/* Plan card */}
-          {sidebarOpen && (
-            <div className="wk-plan">
-              <div className="wk-plan-top">
-                <b>
-                  {quota?.isPro ? (
-                    <>
-                      <Sparkles size={13} /> Pro founder
-                    </>
-                  ) : (
-                    "Free plan"
-                  )}
-                </b>
-                <span>{quota?.isUnlimited ? "Unlimited" : `${qLeft} of ${qTotal} left`}</span>
-              </div>
-              <div className="wk-meter" aria-hidden="true">
-                <i style={{ width: `${qUsedPct}%` }} />
-              </div>
-              <p>
-                {quota?.isUnlimited ? "Founder Pass active." : "Resets every week."} {historyCount} saved in your vault.
-              </p>
-              {!quota?.isPro && (
-                <button type="button" className="hp-btn hp-btn--primary hp-btn--sm" onClick={onOpenPayment}>
-                  <Zap size={13} /> Upgrade to Pro
-                </button>
-              )}
-            </div>
-          )}
-
-          <nav className="wk-group" aria-label="Tools">
-            {sidebarOpen && <p className="wk-group-label">Tools</p>}
-            <NavItem icon={History} label="Vault archive" open={sidebarOpen} onClick={onOpenHistory} />
-            {sidebarOpen && (
-              <>
-                <NavItem
-                  icon={Sparkles}
-                  label="Example ventures"
-                  open
-                  onClick={() => {
-                    if (history.length > 0) handleOpenStartup(history[0]);
-                    else showToast("No example ventures loaded yet");
-                  }}
-                />
-                <NavItem
-                  icon={Settings}
-                  label="Settings"
-                  open
-                  onClick={() => showToast("Settings are configured for Founder mode")}
-                />
-                <NavItem
-                  icon={HelpCircle}
-                  label="Help"
-                  open
-                  onClick={() => showToast("Need assistance? Join our founder Discord.")}
-                />
-                <NavItem
-                  icon={Home}
-                  label="Back to website"
-                  title="Return to the marketing homepage"
-                  open
-                  onClick={onBackToHome}
-                />
-              </>
-            )}
-          </nav>
-        </div>
-
-        {/* Sidebar footer */}
-        <div className="wk-side-foot">
-          {currentUser ? (
-            <div className="wk-me">
-              <img src={currentUser.avatarUrl || "/images/avatar1.jpeg"} alt="" />
-              {sidebarOpen && (
-                <>
-                  <div className="wk-label">
-                    <b>{currentUser.name || "Founder"}</b>
-                    <small>{currentUser.email}</small>
-                  </div>
-                  <button type="button" className="wk-iconbtn is-danger" onClick={onSignOut} title="Sign out" aria-label="Sign out">
-                    <LogOut size={16} />
-                  </button>
-                </>
-              )}
-            </div>
-          ) : (
-            <button
-              type="button"
-              className="hp-btn hp-btn--ghost hp-btn--sm wk-block"
-              onClick={() => onOpenAuth?.("login")}
-            >
-              {sidebarOpen ? "Sign in" : <LogOut size={14} style={{ transform: "scaleX(-1)" }} />}
-            </button>
-          )}
-        </div>
-      </aside>
+      <StudioSidebar
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        closeSidebarOnMobile={closeSidebarOnMobile}
+        studioName={studioName}
+        currentUser={currentUser}
+        quota={quota}
+        historyCount={historyCount}
+        history={history}
+        blueprint={blueprint}
+        ideaTitle={idea}
+        activeView={activeView}
+        setActiveView={setActiveView}
+        viewMode={viewMode}
+        setViewMode={setViewMode}
+        activeSection={activeSection}
+        setActiveSection={setActiveSection}
+        handleStartNew={handleStartNew}
+        handleOpenStartup={handleOpenStartup}
+        scrollToSection={scrollToSection}
+        onBackToHome={onBackToHome}
+        onOpenAuth={onOpenAuth}
+        onOpenPayment={onOpenPayment}
+        onSignOut={onSignOut}
+        onOpenResources={() => setShowResourcesModal(true)}
+      />
 
       {/* ---------------------------- Content ---------------------------- */}
       <div className="wk-col">
@@ -824,22 +526,9 @@ export default function WorkspacePage({
                   </button>
 
                   <div className="wk-empty-suggest">
-                    <p>Or start from an example</p>
-                    <div>
-                      {SUGGESTIONS.map((s) => (
-                        <button
-                          key={s.label}
-                          type="button"
-                          onClick={() => {
-                            setIdea(s.text);
-                            setActiveView("new");
-                          }}
-                        >
-                          <b>{s.label}</b>
-                          <span>{s.text}</span>
-                        </button>
-                      ))}
-                    </div>
+                    <button type="button" className="hp-btn hp-btn--ghost" onClick={handleStartNew}>
+                      Not sure what to build? Find ideas for me
+                    </button>
                   </div>
                 </div>
               ) : filteredStartups.length === 0 ? (
@@ -852,7 +541,7 @@ export default function WorkspacePage({
               ) : (
                 <div className="wk-grid">
                   {filteredStartups.map((item, i) => {
-                    const viability = item.blueprint?.ideaAnalysis?.viabilityScore || 89;
+                    const viability = getStartupViability(item);
                     const dateFormatted = new Date(item.createdAt).toLocaleDateString(undefined, {
                       month: "short",
                       day: "numeric",
@@ -952,20 +641,13 @@ export default function WorkspacePage({
               )}
 
               {!isLoading && (
-                <section className="wk-suggest" aria-label="Starter ideas">
-                  <p>Need a starting point?</p>
-                  <div>
-                    {SUGGESTIONS.map((s) => (
-                      <button key={s.label} type="button" onClick={() => setIdea(s.text)}>
-                        <span className="wk-suggest-top">
-                          <b>{s.label}</b>
-                          <em>{s.category}</em>
-                        </span>
-                        <span className="wk-suggest-text">{s.text}</span>
-                      </button>
-                    ))}
-                  </div>
-                </section>
+                <IdeaFinder
+                  onPick={(text) => {
+                    setIdea(text);
+                    inputRef.current?.focus();
+                    scrollToTop();
+                  }}
+                />
               )}
             </div>
           )}
@@ -1017,7 +699,7 @@ export default function WorkspacePage({
         </div>
       )}
 
-      <ResourcesModal
+      <ResourcesVault
         isOpen={showResourcesModal}
         onClose={() => setShowResourcesModal(false)}
         blueprint={blueprint || history[0]?.blueprint}

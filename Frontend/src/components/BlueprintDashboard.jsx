@@ -69,8 +69,8 @@ import {
   SwotAnalysisMatrix,
   LeanCanvasMatrix,
   UpmetricsFinancialSimulator,
-  ChatPrdDossierView,
 } from "./CompetitorUpgrades.jsx";
+import PrdDossier from "./PrdDossier.jsx";
 import AiDebateWarRoomSection from "./BlueprintPhase3.jsx";
 import {
   SectionGatewayHeader,
@@ -89,7 +89,13 @@ import {
   ChannelList,
   LaunchChecklist,
 } from "./BlueprintPhase5.jsx";
-import { VentureHero, AiDebateSummaryCard } from "./BlueprintPhase1.jsx";
+import { AiDebateSummaryCard } from "./BlueprintPhase1.jsx";
+import {
+  ViabilityBreakdown,
+  RoadmapStrip,
+  EconomicsSnapshot,
+  ExploreGrid,
+} from "./BlueprintPhase7.jsx";
 import {
   ReaderToolbar,
   EditableList,
@@ -612,32 +618,16 @@ export default function BlueprintDashboard({
       />
 
       {viewMode === "prd" ? (
-        <ChatPrdDossierView
+        <PrdDossier
           blueprint={blueprint}
           originalIdea={originalIdea}
           onSwitchToDashboard={() => setViewMode("dashboard")}
-          onExportPdf={handleExportPdf}
-          onExportMarkdown={handleExportMarkdown}
           onToast={showToast}
         />
       ) : (
         <div className="w-full">
           {/* MAIN CONTENT AREA */}
           <div className="w-full min-w-0">
-            {/* Top Venture Banner Card (Phase 1 VentureHero) */}
-            <VentureHero
-              title={ventureTitle}
-              industry={industryDomain}
-              description={ventureDescription}
-              isEditing={isEditingTitle}
-              editedTitle={editedTitle}
-              setEditedTitle={setEditedTitle}
-              onStartEdit={handleStartEditTitle}
-              onSave={handleSaveTitle}
-              onCancel={handleCancelEditTitle}
-              inputRef={titleInputRef}
-            />
-
             {/* Continuous vs Focused Section Rendering */}
             {displayMode === "continuous" ? (
               <div className="space-y-16">
@@ -649,6 +639,15 @@ export default function BlueprintDashboard({
                 >
                   <SectionErrorBoundary key="overview">
                     <OverviewSection
+                      titleEdit={{
+                        isEditing: isEditingTitle,
+                        editedTitle,
+                        setEditedTitle,
+                        onStart: handleStartEditTitle,
+                        onSave: handleSaveTitle,
+                        onCancel: handleCancelEditTitle,
+                        inputRef: titleInputRef,
+                      }}
                       viabilityScorecard={viabilityScorecard}
                       ideaAnalysis={ideaAnalysis}
                       marketSizing={marketSizing}
@@ -884,6 +883,15 @@ export default function BlueprintDashboard({
                   <SectionErrorBoundary key={activeSection}>
                     {(activeSection === "overview" || activeSection === "dashboard") && (
                       <OverviewSection
+                        titleEdit={{
+                          isEditing: isEditingTitle,
+                          editedTitle,
+                          setEditedTitle,
+                          onStart: handleStartEditTitle,
+                          onSave: handleSaveTitle,
+                          onCancel: handleCancelEditTitle,
+                          inputRef: titleInputRef,
+                        }}
                         viabilityScorecard={viabilityScorecard}
                         ideaAnalysis={ideaAnalysis}
                         marketSizing={marketSizing}
@@ -991,6 +999,7 @@ export default function BlueprintDashboard({
 // SECTION 1: EXECUTIVE OVERVIEW & VIABILITY
 // ============================================================================
 function OverviewSection({
+  titleEdit,
   viabilityScorecard,
   ideaAnalysis,
   marketSizing,
@@ -1112,9 +1121,10 @@ function OverviewSection({
         isActive={isActive}
         ventureTitle={toSafeString(ventureTitle, "Startup Blueprint")}
         domain={toSafeString(ideaAnalysis?.domain, "Digital Venture")}
-        pitch={toSafeString(pitch?.elevatorPitch || originalIdea, "A clear, focused solution designed to solve real user problems fast.")}
+        pitch={toSafeString(pitch?.executiveSummary || ideaAnalysis?.problem || originalIdea)}
         score={score}
         verdict={verdict}
+        edit={titleEdit}
       />
 
       {/* 2. Executive Quick Action Deck (Phase 2) */}
@@ -1139,120 +1149,18 @@ function OverviewSection({
         whyItWins={whyItWins}
       />
 
-      {/* 5. Venture Viability & 3 Pillars Breakdown */}
-      <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
-          <div>
-            <h3 className="text-base font-bold text-slate-900 tracking-tight flex items-center gap-2">
-              <ShieldCheck size={18} className="text-orange-500" />
-              <span>Startup Viability & Survival Analysis</span>
-            </h3>
-            <p className="text-xs text-slate-500 mt-1">
-              Independent scoring based on market demand, ease of building, and monetization potential.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-slate-400">Ruling:</span>
-            <span className="px-3 py-1 rounded-xl text-xs font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200">
-              {score}/100 • {verdict}
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Pillar 1: Market Demand */}
-          <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70">
-            <div className="flex justify-between items-center text-xs mb-2">
-              <span className="text-slate-800 font-bold flex items-center gap-1.5">
-                <TrendingUp size={14} className="text-orange-500" />
-                1. Market Demand
-              </span>
-              <span className="font-bold font-mono text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
-                {marketDemandScore}%
-              </span>
-            </div>
-            <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden mb-2">
-              <div
-                className="h-full bg-orange-500 rounded-full transition-all"
-                style={{ width: `${marketDemandScore}%` }}
-              />
-            </div>
-            <p className="text-[11px] text-slate-600 leading-relaxed">
-              Measures whether real target users have an urgent, everyday need for this solution.
-            </p>
-          </div>
-
-          {/* Pillar 2: Technical Feasibility */}
-          <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70">
-            <div className="flex justify-between items-center text-xs mb-2">
-              <span className="text-slate-800 font-bold flex items-center gap-1.5">
-                <Cpu size={14} className="text-orange-500" />
-                2. Ease of Building
-              </span>
-              <span className="font-bold font-mono text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
-                {technicalFeasibilityScore}%
-              </span>
-            </div>
-            <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden mb-2">
-              <div
-                className="h-full bg-orange-500 rounded-full transition-all"
-                style={{ width: `${technicalFeasibilityScore}%` }}
-              />
-            </div>
-            <p className="text-[11px] text-slate-600 leading-relaxed">
-              Measures how fast and straightforward it is to build and deploy version 1 without unnecessary complexity.
-            </p>
-          </div>
-
-          {/* Pillar 3: Monetization Engine */}
-          <div className="bg-slate-50/70 p-4 rounded-2xl border border-slate-200/70">
-            <div className="flex justify-between items-center text-xs mb-2">
-              <span className="text-slate-800 font-bold flex items-center gap-1.5">
-                <DollarSign size={14} className="text-amber-500" />
-                3. Profit & Monetization
-              </span>
-              <span className="font-bold font-mono text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
-                {monetizationScore}%
-              </span>
-            </div>
-            <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden mb-2">
-              <div
-                className="h-full bg-amber-500 rounded-full transition-all"
-                style={{ width: `${monetizationScore}%` }}
-              />
-            </div>
-            <p className="text-[11px] text-slate-600 leading-relaxed">
-              Measures whether customers will readily pay enough to cover costs and generate sustainable profit.
-            </p>
-          </div>
-        </div>
-
-        {/* Verdict Reasoning & Traps */}
-        <div className="mt-6 pt-5 border-t border-slate-100 grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div className="bg-orange-50/40 p-4 rounded-2xl border border-orange-100">
-            <span className="text-[10px] font-mono uppercase text-orange-800 font-bold block mb-1">
-              Executive Investment Thesis:
-            </span>
-            <p className="text-xs text-slate-800 leading-relaxed font-medium">
-              {verdictReasoning}
-            </p>
-          </div>
-
-          <div className="bg-rose-50/40 p-4 rounded-2xl border border-rose-100">
-            <span className="text-[10px] font-mono uppercase text-rose-700 font-bold block mb-1">
-              Top Risks to Avoid:
-            </span>
-            <div className="space-y-1.5 text-xs text-rose-900 font-medium">
-              {safeRiskTraps.map((risk, idx) => (
-                <div key={idx} className="flex items-start gap-1.5 leading-snug">
-                  <span className="text-rose-500 mt-0.5">•</span>
-                  <span>{risk}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* 5. Venture Viability & Survival Breakdown (Phase 7) */}
+      <ViabilityBreakdown
+        score={score}
+        verdict={verdict}
+        thesis={verdictReasoning}
+        risks={safeRiskTraps}
+        pillars={[
+          { icon: TrendingUp, label: "Market demand", value: marketDemandScore, text: "Measures whether real target users have an urgent, everyday need." },
+          { icon: Cpu, label: "Ease of building", value: technicalFeasibilityScore, text: "Measures how fast it is to build and deploy version 1." },
+          { icon: DollarSign, label: "Profit and monetization", value: monetizationScore, text: "Measures whether customers will pay enough to sustain profit." },
+        ]}
+      />
 
       {/* 6. Visual Charts: Viability Gauge + Market Sizing Bubbles */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1264,124 +1172,14 @@ function OverviewSection({
         </SafeChartWrapper>
       </div>
 
-      {/* 7. 4-Week Milestone Execution Roadmap */}
-      <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs">
-        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-          <div className="flex items-center gap-2">
-            <div className="h-7 w-7 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
-              <Clock size={15} />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 tracking-tight">
-                4-Week Founder Execution Roadmap
-              </h3>
-              <p className="text-xs text-slate-500">
-                Disciplined weekly shipping sprint from initial customer interviews to first launch.
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => onNavigate("product-mvp")}
-            className="text-xs font-mono text-orange-600 font-bold hover:underline cursor-pointer"
-          >
-            View full roadmap →
-          </button>
-        </div>
+      {/* 7. 4-Week Milestone Execution Roadmap (Phase 7) */}
+      <RoadmapStrip milestones={milestonesList} onViewAll={() => onNavigate("product-mvp")} />
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {milestonesList.map((m, idx) => (
-            <div
-              key={idx}
-              className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 flex flex-col justify-between"
-            >
-              <div>
-                <span className="text-[10px] font-mono uppercase font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded border border-orange-200 inline-block mb-2">
-                  {m.week}
-                </span>
-                <h4 className="text-xs font-bold text-slate-900 mb-1.5">
-                  {m.title}
-                </h4>
-                <p className="text-xs text-slate-600 leading-relaxed">
-                  {m.task}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* 8. Financial Runway & Economics Snapshot (Phase 7) */}
+      <EconomicsSnapshot cost={estimatedMonthlyCost} revenue={estimatedRevenue} model={monetizationModel} />
 
-      {/* 8. Financial Runway & Economics Snapshot */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs text-center">
-          <span className="text-xs font-mono uppercase text-slate-400 block mb-1">
-            Monthly Operating Cost
-          </span>
-          <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900 my-1">
-            {estimatedMonthlyCost}
-          </div>
-          <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-slate-100 text-slate-700 border border-slate-200">
-            Lean Operations
-          </span>
-        </div>
-
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs text-center">
-          <span className="text-xs font-mono uppercase text-slate-400 block mb-1">
-            Estimated Year 1 Revenue
-          </span>
-          <div className="text-2xl sm:text-3xl font-black font-mono text-orange-600 my-1">
-            {estimatedRevenue}
-          </div>
-          <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200">
-            High Growth Potential
-          </span>
-        </div>
-
-        <div className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-xs text-center">
-          <span className="text-xs font-mono uppercase text-slate-400 block mb-1">
-            Monetization Model
-          </span>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 my-1 truncate">
-            {monetizationModel}
-          </div>
-          <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-mono font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-            Proven Business Model
-          </span>
-        </div>
-      </div>
-
-      {/* 9. Business Analysis Navigation Jump-Pad */}
-      <div className="p-6 sm:p-7 rounded-3xl bg-white border border-slate-200/90 shadow-xs">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 tracking-tight">
-              Explore Detailed Business Analysis Agents
-            </h3>
-            <p className="text-xs text-slate-500">
-              Deep dive into every dimension of this startup with specialized AI agents.
-            </p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {BUSINESS_SECTIONS.filter((s) => s.id !== "overview").map((sec) => (
-            <button
-              key={sec.id}
-              onClick={() => onNavigate(sec.id)}
-              className="p-4 rounded-xl bg-slate-50 hover:bg-slate-100 hover:border-orange-200 border border-slate-200/70 transition-all text-left group cursor-pointer flex items-center justify-between"
-            >
-              <div>
-                <span className="text-xs font-bold text-slate-900 group-hover:text-orange-600 block">
-                  {sec.title}
-                </span>
-                <span className="text-[11px] text-slate-500 mt-0.5 block font-mono">
-                  View breakdown →
-                </span>
-              </div>
-              <ChevronRight size={16} className="text-slate-400 group-hover:text-orange-500 transition-transform group-hover:translate-x-0.5" />
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* 9. Business Analysis Navigation Jump-Pad (Phase 7) */}
+      <ExploreGrid sections={BUSINESS_SECTIONS.filter((s) => s.id !== "overview")} onNavigate={onNavigate} />
     </div>
   );
 }
@@ -1452,30 +1250,11 @@ function CustomerDiscoverySection({
         iconColor="text-orange-500"
         stat={`${users.length} ICP Segments`}
         subtitle="Primary Economic Buyer"
-        detailsTitle="Ideal Customer Profile (ICP)"
+        detailsTitle="Behavioral archetype"
         detailsText={profile}
       >
-        <div className="space-y-3 text-xs">
-          <div>
-            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1.5">
-              Target Demographic / Cohorts
-            </span>
-            <div className="flex flex-wrap gap-1.5">
-              {users.map((u, i) => (
-                <span
-                  key={i}
-                  className="px-2.5 py-1 rounded-lg bg-orange-50/70 border border-orange-100 text-orange-800 font-medium text-[11px]"
-                >
-                  {u}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-600 leading-relaxed text-[11px]">
-            <span className="font-bold text-slate-800 block mb-0.5">Behavioral Archetype:</span>
-            {profile}
-          </div>
-        </div>
+        <h5 className="bp-label">Target demographic / cohorts</h5>
+        <div className="bp-tags is-orange">{users.map((u, i) => <span key={i}>{u}</span>)}</div>
       </StatCard>
 
       {/* Card 2: Critical Pain Points (Editable) */}
@@ -1635,6 +1414,10 @@ function MarketCompetitorsSection({
     if (rawList.length > 0) {
       return rawList.map((c) => ({
         competitor: toSafeString(c?.competitor || c?.name, "Market Alternative"),
+        offering: toSafeString(
+          c?.offering || c?.description || c?.provides || c?.product,
+          `Established general-purpose market alternative.`
+        ),
         weaknesses: toSafeArray(c?.weaknesses || c?.weakness, [
           "Clunky, hard to use, and often too expensive for everyday users.",
         ]).join("; "),
@@ -1650,8 +1433,9 @@ function MarketCompetitorsSection({
       const name = toSafeString(comp, "Market Alternative");
       return {
         competitor: name,
+        offering: `Legacy incumbent providing manual software and complex workflows in this space.`,
         weaknesses: "Clunky interface, slow customer support, and expensive pricing plans.",
-        missedOpportunities: "Overlooked simple self-serve onboarding and affordable pricing for everyday users.",
+        missedOpportunities: "Overlooked simple self-serve onboarding, autonomous AI speed, and affordable pricing.",
         suggestedDifferentiation: `Deliver a fast, intuitive solution that gets the job done in seconds at a fraction of ${name}'s cost.`,
       };
     });
@@ -1697,7 +1481,7 @@ function MarketCompetitorsSection({
       </div>
 
       {/* 3. Competitor Vulnerability & Exploit Strategies */}
-      <VulnerabilityGrid vulnerabilities={vulnerabilities} />
+      <VulnerabilityGrid items={vulnerabilities} vulnerabilities={vulnerabilities} />
     </div>
   );
 }
@@ -2115,16 +1899,32 @@ function GoToMarketSection({
   const platformsList = useMemo(() => {
     const raw = goToMarket?.platforms || [];
     if (Array.isArray(raw) && raw.length > 0) {
-      return raw.map((p) => ({
-        platform: toSafeString(p?.platform || p?.name, "Channel"),
-        strategy: toSafeString(p?.strategy || p?.tactic || p?.why, "Direct outbound & high-intent organic distribution."),
-        urgency: toSafeString(p?.urgency || p?.timing || p?.timeline, "Immediate"),
-      }));
+      return raw.map((p) => {
+        if (typeof p === "string") {
+          return {
+            name: p,
+            why: "Direct outbound & high-intent organic distribution.",
+            platform: p,
+            strategy: "Direct outbound & high-intent organic distribution.",
+            urgency: "Immediate",
+          };
+        }
+        const name = toSafeString(p?.name || p?.platform || p?.channel || p?.title, "Channel");
+        const why = toSafeString(p?.why || p?.strategy || p?.tactic || p?.description || p?.details, "Direct outbound & high-intent organic distribution.");
+        const urgency = toSafeString(p?.urgency || p?.timing || p?.timeline, "Immediate");
+        return {
+          name,
+          why,
+          platform: name,
+          strategy: why,
+          urgency,
+        };
+      });
     }
     return [
-      { platform: "Founder-Led Outbound", strategy: "Direct personal outreach to 50 targeted prospects.", urgency: "Week 1" },
-      { platform: "Niche Communities", strategy: "Participate in subreddits & Discord servers answering relevant questions.", urgency: "Week 2" },
-      { platform: "Organic Social / Build in Public", strategy: "Share transparent lessons and milestones to build trust.", urgency: "Ongoing" },
+      { name: "Founder-Led Outbound", why: "Direct personal outreach to 50 targeted prospects.", platform: "Founder-Led Outbound", strategy: "Direct personal outreach to 50 targeted prospects.", urgency: "Week 1" },
+      { name: "Niche Communities", why: "Participate in subreddits & Discord servers answering relevant questions.", platform: "Niche Communities", strategy: "Participate in subreddits & Discord servers answering relevant questions.", urgency: "Week 2" },
+      { name: "Organic Social / Build in Public", why: "Share transparent lessons and milestones to build trust.", platform: "Organic Social / Build in Public", strategy: "Share transparent lessons and milestones to build trust.", urgency: "Ongoing" },
     ];
   }, [goToMarket?.platforms]);
 
