@@ -71,9 +71,8 @@ import {
   UpmetricsFinancialSimulator,
   ChatPrdDossierView,
 } from "./CompetitorUpgrades.jsx";
-import AiDebateWarRoomSection, {
-  AiDebateSummaryCard,
-} from "./AiDebateWarRoom.jsx";
+import AiDebateWarRoomSection from "./AiDebateWarRoom.jsx";
+import { VentureHero, AiDebateSummaryCard } from "./BlueprintPhase1.jsx";
 
 
 // ---------------------------------------------------------------------------
@@ -1087,69 +1086,19 @@ export default function BlueprintDashboard({
         <div className="w-full">
           {/* MAIN CONTENT AREA */}
           <div className="w-full min-w-0">
-            {/* Top Venture Banner Card */}
-            <div className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white rounded-3xl p-6 sm:p-7 mb-7 shadow-md relative overflow-hidden">
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start sm:items-center gap-3">
-                    {isEditingTitle ? (
-                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                        <input
-                          ref={titleInputRef}
-                          type="text"
-                          value={editedTitle}
-                          onChange={(e) => setEditedTitle(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") handleSaveTitle();
-                            if (e.key === "Escape") handleCancelEditTitle();
-                          }}
-                          className="flex-1 min-w-0 text-xl sm:text-2xl font-black tracking-tight text-white leading-tight bg-white/10 border border-white/20 rounded-xl px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                        />
-                        <button
-                          onClick={handleSaveTitle}
-                          className="h-7 w-7 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-xs"
-                          title="Save title"
-                        >
-                          <Check size={13} />
-                        </button>
-                        <button
-                          onClick={handleCancelEditTitle}
-                          className="h-7 w-7 rounded-lg bg-slate-600 hover:bg-slate-500 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-xs"
-                          title="Cancel"
-                        >
-                          <X size={13} />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white leading-tight break-words">
-                          {ventureTitle}
-                        </h1>
-                        <button
-                          onClick={handleStartEditTitle}
-                          className="h-7 w-7 rounded-lg bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition-colors cursor-pointer shrink-0 shadow-xs mt-1 sm:mt-0"
-                          title="Edit venture title"
-                        >
-                          <Edit2 size={13} />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                  <div className="mt-3 flex items-center gap-2">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-slate-200 border border-white/10 backdrop-blur-sm">
-                      <Info size={13} className="text-orange-400" />
-                      <span>
-                        Industry: <strong className="text-white">{industryDomain}</strong>
-                      </span>
-                    </span>
-                  </div>
-                </div>
-
-                <div className="lg:max-w-md bg-white/5 border border-white/10 rounded-2xl p-4 text-xs text-slate-300 leading-relaxed backdrop-blur-sm shrink-0">
-                  <p>{ventureDescription}</p>
-                </div>
-              </div>
-            </div>
+            {/* Top Venture Banner Card (Phase 1 VentureHero) */}
+            <VentureHero
+              title={ventureTitle}
+              industry={industryDomain}
+              description={ventureDescription}
+              isEditing={isEditingTitle}
+              editedTitle={editedTitle}
+              setEditedTitle={setEditedTitle}
+              onStartEdit={handleStartEditTitle}
+              onSave={handleSaveTitle}
+              onCancel={handleCancelEditTitle}
+              inputRef={titleInputRef}
+            />
 
             {/* Continuous vs Focused Section Rendering */}
             {displayMode === "continuous" ? (

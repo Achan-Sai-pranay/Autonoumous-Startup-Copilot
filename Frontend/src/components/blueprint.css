@@ -1,0 +1,390 @@
+/* ------------------------------------------------------------------ */
+/* Blueprint reader, Phase 1: venture hero + committee verdict         */
+/* Tokens come from home.css (--hp-*). Import after workspace.css.     */
+/* ------------------------------------------------------------------ */
+
+.bp-hero,
+.bp-committee {
+  font-family: var(--hp-font);
+  color: var(--hp-ink);
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 32px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03), 0 30px 70px -40px rgba(29, 29, 31, 0.22);
+}
+.bp-hero *,
+.bp-committee * {
+  box-sizing: border-box;
+}
+.bp-hero :is(h1, h2, h3, p, blockquote, figure),
+.bp-committee :is(h1, h2, h3, p, blockquote, figure) {
+  margin: 0;
+}
+
+/* ---------------------------- Venture hero ---------------------------- */
+.bp-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(28px, 5vw, 72px);
+  align-items: end;
+  margin-bottom: 28px;
+  padding: clamp(28px, 4.5vw, 56px);
+}
+.bp-hero-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+.bp-hero h1 {
+  font-size: clamp(1.9rem, 3.8vw, 3.1rem);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.045em;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+}
+.bp-edit {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 34px;
+  height: 34px;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--hp-ink-3);
+  background: var(--hp-soft);
+  transition: color 0.2s, background 0.2s, transform 0.3s var(--hp-ease);
+}
+.bp-edit:hover {
+  color: var(--hp-orange-ink);
+  background: var(--hp-orange-tint);
+}
+.bp-edit:active {
+  transform: scale(0.92);
+}
+.bp-edit-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.bp-edit-row input {
+  flex: 1;
+  min-width: 0;
+  height: 56px;
+  padding: 0 22px;
+  border: 1px solid var(--hp-orange);
+  border-radius: 999px;
+  outline: 0;
+  font: inherit;
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  color: var(--hp-ink);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(224, 86, 38, 0.14);
+}
+.bp-hero-side {
+  display: grid;
+  gap: 20px;
+  padding-bottom: 6px;
+}
+.bp-hero-side p {
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: -0.011em;
+  color: var(--hp-ink-2);
+  text-wrap: pretty;
+}
+.bp-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-self: start;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  color: var(--hp-ink-2);
+  background: var(--hp-soft);
+}
+.bp-chip b {
+  font-weight: 600;
+  color: var(--hp-ink);
+}
+.bp-chip i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--hp-orange);
+}
+
+/* ------------------------- Committee verdict -------------------------- */
+.bp-committee {
+  margin-bottom: 28px;
+  padding: clamp(24px, 4vw, 48px);
+}
+.bp-c-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.bp-c-head h3 {
+  font-size: clamp(1.4rem, 2.6vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+.bp-c-head p {
+  max-width: 52ch;
+  margin-top: 8px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--hp-ink-2);
+}
+.bp-verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--hp-orange-ink);
+  background: var(--hp-orange-tint);
+}
+.bp-verdict.is-bull {
+  color: #15803d;
+  background: #f0fdf4;
+}
+.bp-verdict.is-bear {
+  color: #be123c;
+  background: #fff1f2;
+}
+
+/* Bull vs bear balance bar: the one visual that carries the argument */
+.bp-balance {
+  margin: 36px 0 8px;
+}
+.bp-balance-nums {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.bp-balance-nums div {
+  display: grid;
+  gap: 2px;
+}
+.bp-balance-nums div:last-child {
+  text-align: right;
+}
+.bp-balance-nums strong {
+  font-size: clamp(2.2rem, 5vw, 3.4rem);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.055em;
+  font-variant-numeric: tabular-nums;
+}
+.bp-balance-nums span {
+  font-size: 13.5px;
+  color: var(--hp-ink-2);
+}
+.bp-balance-nums .is-bull strong {
+  color: #16a34a;
+}
+.bp-balance-nums .is-bear strong {
+  color: #e11d48;
+}
+.bp-bar {
+  display: flex;
+  gap: 4px;
+  height: 10px;
+}
+.bp-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transform-origin: left;
+  animation: bp-grow 1.1s var(--hp-ease) both;
+}
+.bp-bar i:first-child {
+  background: #16a34a;
+}
+.bp-bar i:last-child {
+  background: #e11d48;
+  transform-origin: right;
+}
+@keyframes bp-grow {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+/* Two arguments as open columns, divided by a hairline, no boxes */
+.bp-args {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  margin-top: 36px;
+}
+.bp-arg {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 0 clamp(0px, 3vw, 40px) 0 0;
+}
+.bp-arg + .bp-arg {
+  padding: 0 0 0 clamp(0px, 3vw, 40px);
+  border-left: 1px solid var(--hp-line);
+}
+.bp-arg h4 {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.bp-arg h4 svg {
+  flex: none;
+}
+.bp-arg.is-bull h4 {
+  color: #15803d;
+}
+.bp-arg.is-bear h4 {
+  color: #be123c;
+}
+.bp-arg h4 small {
+  margin-left: auto;
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--hp-ink-3);
+}
+.bp-arg blockquote {
+  margin: 0;
+  font-size: clamp(1.05rem, 1.5vw, 1.2rem);
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+}
+.bp-arg dl {
+  margin: 0;
+  display: grid;
+  gap: 4px;
+  padding-top: 14px;
+  border-top: 1px solid var(--hp-line);
+}
+.bp-arg dt {
+  font-size: 13px;
+  color: var(--hp-ink-3);
+}
+.bp-arg dd {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--hp-ink-2);
+}
+
+/* The judge gets the only tinted surface */
+.bp-ruling {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: clamp(20px, 4vw, 48px);
+  margin-top: 36px;
+  padding: clamp(20px, 3vw, 32px);
+  border-radius: 24px;
+  background: var(--hp-orange-tint);
+}
+.bp-ruling h4 {
+  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hp-orange-ink);
+}
+.bp-ruling p {
+  font-size: 16px;
+  line-height: 1.6;
+  letter-spacing: -0.011em;
+  color: var(--hp-ink);
+  text-wrap: pretty;
+}
+.bp-ruling dl {
+  margin: 0;
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+.bp-ruling dt {
+  font-size: 13px;
+  color: var(--hp-orange-ink);
+}
+.bp-ruling dd {
+  margin: 2px 0 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+}
+
+.bp-c-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 28px;
+}
+.bp-c-foot p {
+  max-width: 60ch;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--hp-ink-2);
+}
+.bp-c-foot p b {
+  display: block;
+  margin-bottom: 2px;
+  font-weight: 600;
+  color: var(--hp-ink);
+}
+
+@media (max-width: 860px) {
+  .bp-hero {
+    grid-template-columns: 1fr;
+    align-items: start;
+    border-radius: 26px;
+  }
+  .bp-committee {
+    border-radius: 26px;
+  }
+  .bp-args,
+  .bp-ruling {
+    grid-template-columns: 1fr;
+  }
+  .bp-arg,
+  .bp-arg + .bp-arg {
+    padding: 0;
+    border-left: 0;
+  }
+  .bp-arg + .bp-arg {
+    margin-top: 28px;
+    padding-top: 28px;
+    border-top: 1px solid var(--hp-line);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bp-bar i {
+    animation: none;
+  }
+}
