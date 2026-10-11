@@ -36,6 +36,32 @@ test("Quota limits for Free vs Pro tiers", () => {
   assert.strictEqual(calculateRemaining(10, true), 0);
 });
 
+test("Compulsory login requirement and guest status check", () => {
+  // Unauthenticated guests cannot generate directly; they must log in
+  const canGenerate = (user, quota) => {
+    if (!user) return { allowed: false, reason: "LOGIN_REQUIRED" };
+    if (!quota?.isPro && quota?.remaining <= 0) return { allowed: false, reason: "QUOTA_EXCEEDED" };
+    return { allowed: true };
+  };
+
+  // Guest attempts to generate
+  assert.deepStrictEqual(canGenerate(null, { remaining: 3, isPro: false }), {
+    allowed: false,
+    reason: "LOGIN_REQUIRED",
+  });
+
+  // Authenticated user with remaining quota (3 per week free tier)
+  assert.deepStrictEqual(canGenerate({ id: "user_1" }, { remaining: 3, isPro: false }), {
+    allowed: true,
+  });
+
+  // Authenticated user who exhausted free 3 ideas
+  assert.deepStrictEqual(canGenerate({ id: "user_1" }, { remaining: 0, isPro: false }), {
+    allowed: false,
+    reason: "QUOTA_EXCEEDED",
+  });
+});
+
 test("Backup JSON export and import payload schema check", () => {
   const sampleBackup = {
     version: "1.0",

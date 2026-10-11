@@ -155,7 +155,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialMode
             <p className="text-xs text-slate-500 mt-1">
               {mode === "login"
                 ? "Sign in to access your saved blueprints and analysis reports"
-                : "Free forever starter plan • No credit card required"}
+                : "Free starter plan • 3 blueprints per week • No credit card required"}
             </p>
           </div>
 

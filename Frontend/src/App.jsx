@@ -180,12 +180,20 @@ export default function App() {
   }, [currentUser, history.length]);
 
   function handleProtectedStart() {
+    if (!currentUser) {
+      handleOpenAuth("signup");
+      return;
+    }
     navigateTo("workspace");
   }
 
   function handleStartWithIdea(customIdea) {
     if (customIdea && typeof customIdea === "string") {
       setIdea(customIdea);
+    }
+    if (!currentUser) {
+      handleOpenAuth("signup");
+      return;
     }
     navigateTo("workspace");
   }
@@ -247,7 +255,7 @@ export default function App() {
     setCurrentUser(null);
     setBlueprint(null);
     setIdea("");
-    setHistory(getHistory(null));
+    setHistory([]);
     setQuota(getWeeklyUsage(null));
     navigateTo("home", true, true);
   }
@@ -267,7 +275,7 @@ export default function App() {
         }
       });
     } else {
-      setHistory(getHistory(null));
+      setHistory([]);
       setQuota(getWeeklyUsage(null));
     }
     navigateTo("workspace", true, true);
@@ -279,15 +287,16 @@ export default function App() {
       return;
     }
 
-    const currentQuota = getWeeklyUsage(currentUser?.id, history);
+    if (!currentUser) {
+      setError("Please sign in or create a free account to generate your startup blueprint (3 free ideas per week).");
+      handleOpenAuth("signup");
+      return;
+    }
+
+    const currentQuota = getWeeklyUsage(currentUser.id, history);
     if (!currentQuota.isPro && currentQuota.remaining <= 0) {
-      if (!currentUser) {
-        setError("You've tested your free guest idea! Create a free account to unlock 3 blueprints per week, or enter FOUNDER_PASS for unlimited access.");
-        handleOpenAuth("signup");
-      } else {
-        setError("You have reached your free weekly limit. Enter voucher FOUNDER_PASS in Pro upgrade for unlimited testing.");
-        setShowPaymentModal(true);
-      }
+      setError("You have reached your free weekly limit of 3 blueprints. Enter voucher FOUNDER_PASS in Pro upgrade for unlimited testing.");
+      setShowPaymentModal(true);
       return;
     }
 

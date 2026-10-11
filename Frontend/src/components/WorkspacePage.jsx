@@ -738,6 +738,10 @@ function WorkspaceInput({
   const handleKeyDown = (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && !isLoading) {
       e.preventDefault();
+      if (!currentUser) {
+        onOpenAuth?.("signup");
+        return;
+      }
       onGenerate();
     }
   };
@@ -763,7 +767,7 @@ function WorkspaceInput({
     inputRef.current?.focus();
   };
 
-  const outOfQuota = !quota?.isPro && (quota?.remaining ?? 3) <= 0;
+  const outOfQuota = currentUser && !quota?.isPro && (quota?.remaining ?? 3) <= 0;
 
   return (
     <div className="wk-prompt">
@@ -818,14 +822,24 @@ function WorkspaceInput({
             </button>
           )}
 
-          {outOfQuota ? (
+          {!currentUser ? (
+            <button
+              type="button"
+              className="hp-btn hp-btn--primary wk-generate"
+              onClick={() => onOpenAuth?.("signup")}
+              title="Sign in or create a free account to test this idea (3 free ideas per week)"
+            >
+              <Zap size={15} />
+              Sign in to generate
+            </button>
+          ) : outOfQuota ? (
             <button
               type="button"
               className="hp-btn hp-btn--primary"
-              onClick={() => (!currentUser ? onOpenAuth?.("signup") : onOpenPayment?.())}
+              onClick={() => onOpenPayment?.()}
             >
               <Zap size={15} />
-              {currentUser ? "Upgrade to Pro" : "Sign up for 3 free ideas"}
+              Upgrade to Pro
             </button>
           ) : (
             <button

@@ -131,6 +131,20 @@ export function resetUserQuota(userId) {
 }
 
 export function getWeeklyUsage(userId, historyList = null) {
+  // Unauthenticated guests do not have an active session quota.
+  // Account creation/login is required to unlock the 3 weekly blueprints.
+  if (!userId) {
+    return {
+      used: 0,
+      total: FREE_WEEKLY_LIMIT,
+      remaining: FREE_WEEKLY_LIMIT,
+      isPro: false,
+      isGuest: true,
+      planName: "Sign in required",
+      resetsAt: new Date(Date.now() + WEEK_MS),
+    };
+  }
+
   const sub = getProSubscription(userId);
   const isFounder = Boolean(
     sub?.isUnlimited ||
@@ -154,7 +168,7 @@ export function getWeeklyUsage(userId, historyList = null) {
     };
   }
 
-  const key = `ideapulse_quota_${userId || "guest"}`;
+  const key = `ideapulse_quota_${userId}`;
   const now = Date.now();
 
   let storedUsed = 0;
@@ -216,7 +230,10 @@ export function getWeeklyUsage(userId, historyList = null) {
 }
 
 export function incrementWeeklyUsage(userId, historyList = null) {
-  const key = `ideapulse_quota_${userId || "guest"}`;
+  if (!userId) {
+    return getWeeklyUsage(null);
+  }
+  const key = `ideapulse_quota_${userId}`;
   const now = Date.now();
   let currentUsage = getWeeklyUsage(userId, historyList);
   

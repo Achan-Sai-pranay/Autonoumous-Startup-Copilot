@@ -141,7 +141,7 @@ export default function StudioSidebar({
           {open && (
             <span className="wk-brand-text wk-label">
               <b>{studioName}</b>
-              <small>{currentUser?.plan || "Free · 3 a week"}</small>
+              <small>{currentUser ? (currentUser.plan || (quota?.isPro ? "Pro founder" : "Free · 3 a week")) : "3 free ideas/wk with account"}</small>
             </span>
           )}
         </button>
@@ -248,25 +248,42 @@ export default function StudioSidebar({
       {/* Usage */}
       {open && (
         <div className="ss-plan">
-          <div>
-            <b>
-              {quota?.isPro ? (
-                <>
-                  <Sparkles size={13} /> Pro founder
-                </>
-              ) : (
-                "Free plan"
+          {currentUser ? (
+            <>
+              <div>
+                <b>
+                  {quota?.isPro ? (
+                    <>
+                      <Sparkles size={13} /> Pro founder
+                    </>
+                  ) : (
+                    "Free plan"
+                  )}
+                </b>
+                <span>{quota?.isUnlimited ? "Unlimited" : `${qLeft} of ${qTotal} left`}</span>
+              </div>
+              <i aria-hidden="true">
+                <u style={{ width: `${qUsed}%` }} />
+              </i>
+              {!quota?.isPro && (
+                <button type="button" className="hp-btn hp-btn--primary hp-btn--sm" onClick={onOpenPayment}>
+                  <Zap size={13} /> Upgrade to Pro
+                </button>
               )}
-            </b>
-            <span>{quota?.isUnlimited ? "Unlimited" : `${qLeft} of ${qTotal} left`}</span>
-          </div>
-          <i aria-hidden="true">
-            <u style={{ width: `${qUsed}%` }} />
-          </i>
-          {!quota?.isPro && (
-            <button type="button" className="hp-btn hp-btn--primary hp-btn--sm" onClick={onOpenPayment}>
-              <Zap size={13} /> Upgrade to Pro
-            </button>
+            </>
+          ) : (
+            <>
+              <div>
+                <b>Free Starter</b>
+                <span>3 ideas / week</span>
+              </div>
+              <p style={{ margin: "2px 0 6px 0", fontSize: "11px", color: "var(--hp-text-muted, #64748b)", lineHeight: 1.3 }}>
+                Sign in to activate your 3 free weekly blueprints.
+              </p>
+              <button type="button" className="hp-btn hp-btn--primary hp-btn--sm" onClick={() => onOpenAuth?.("signup")}>
+                <Zap size={13} /> Create free account
+              </button>
+            </>
           )}
         </div>
       )}
