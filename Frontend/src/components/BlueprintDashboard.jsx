@@ -91,6 +91,18 @@ import {
   LaunchChecklist,
 } from "./BlueprintPhase5.jsx";
 import { VentureHero, AiDebateSummaryCard } from "./BlueprintPhase1.jsx";
+import {
+  ReaderToolbar,
+  EditableList,
+  ResponsiveCardGrid,
+  TileGrid,
+  Tile,
+  MetricRow,
+  MilestoneTimeline,
+  CompletionHero,
+  Toast,
+  useScrollSpy,
+} from "./BlueprintPhase6.jsx";
 
 
 // ---------------------------------------------------------------------------
@@ -342,258 +354,6 @@ class SectionErrorBoundary extends Component {
 
 // ---------------------------------------------------------------------------
 // Inline Editable List Component for Interactive Card Customization
-// ---------------------------------------------------------------------------
-function EditableList({
-  items = [],
-  onUpdate,
-  placeholder = "Add new item...",
-  addButtonLabel = "Add Item",
-  accentColor = "sky",
-  icon: ItemIcon = Check,
-}) {
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [editText, setEditText] = useState("");
-  const [isAdding, setIsAdding] = useState(false);
-  const [newItemText, setNewItemText] = useState("");
-
-  const safeItems = useMemo(() => {
-    let arr = [];
-    if (Array.isArray(items)) {
-      arr = items;
-    } else if (items && typeof items === "object") {
-      arr = Object.values(items);
-    } else if (typeof items === "string") {
-      arr = [items];
-    }
-    return arr.map((it) => {
-      if (typeof it === "string") return it;
-      if (it && typeof it === "object") {
-        return it.text || it.title || it.task || it.item || it.name || it.description || JSON.stringify(it);
-      }
-      return String(it ?? "");
-    });
-  }, [items]);
-
-  const handleStartEdit = (idx, text) => {
-    setEditingIndex(idx);
-    setEditText(text);
-  };
-
-  const handleSaveEdit = (idx) => {
-    if (editText.trim()) {
-      const updated = [...safeItems];
-      updated[idx] = editText.trim();
-      onUpdate?.(updated);
-    }
-    setEditingIndex(null);
-  };
-
-  const handleDelete = (idx) => {
-    const updated = safeItems.filter((_, i) => i !== idx);
-    onUpdate?.(updated);
-  };
-
-  const handleAddItem = () => {
-    if (newItemText.trim()) {
-      const updated = [...safeItems, newItemText.trim()];
-      onUpdate?.(updated);
-      setNewItemText("");
-      setIsAdding(false);
-    }
-  };
-
-  const colorStyles = {
-    sky: {
-      icon: "text-sky-500",
-      addBtn: "text-sky-600 hover:text-sky-700 bg-sky-50/70 hover:bg-sky-100 border-sky-200",
-      editInput: "focus:border-sky-500 focus:ring-sky-500/20",
-    },
-    orange: {
-      icon: "text-orange-500",
-      addBtn: "text-orange-600 hover:text-orange-700 bg-orange-50/70 hover:bg-orange-100 border-orange-200",
-      editInput: "focus:border-orange-500 focus:ring-orange-500/20",
-    },
-    emerald: {
-      icon: "text-emerald-500",
-      addBtn: "text-emerald-600 hover:text-emerald-700 bg-emerald-50/70 hover:bg-emerald-100 border-emerald-200",
-      editInput: "focus:border-emerald-500 focus:ring-emerald-500/20",
-    },
-    amber: {
-      icon: "text-amber-500",
-      addBtn: "text-amber-600 hover:text-amber-700 bg-amber-50/70 hover:bg-amber-100 border-amber-200",
-      editInput: "focus:border-amber-500 focus:ring-amber-500/20",
-    },
-  }[accentColor] || {
-    icon: "text-orange-500",
-    addBtn: "text-orange-600 hover:text-orange-700 bg-orange-50/70 hover:bg-orange-100 border-orange-200",
-    editInput: "focus:border-orange-500 focus:ring-orange-500/20",
-  };
-
-  return (
-    <div className="space-y-2">
-      <ul className="space-y-1.5">
-        {safeItems.map((item, idx) => (
-          <li
-            key={idx}
-            className="group relative flex items-start justify-between gap-2 text-xs text-slate-700 leading-relaxed bg-slate-50 hover:bg-white p-2.5 rounded-xl border border-slate-100 hover:border-slate-200 transition-all shadow-2xs"
-          >
-            {editingIndex === idx ? (
-              <div className="flex items-center gap-1.5 w-full">
-                <input
-                  type="text"
-                  value={editText}
-                  onChange={(e) => setEditText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSaveEdit(idx);
-                    if (e.key === "Escape") setEditingIndex(null);
-                  }}
-                  autoFocus
-                  className={`flex-1 text-xs px-2 py-1 bg-white rounded-lg border border-slate-300 outline-none transition-all ${colorStyles.editInput}`}
-                />
-                <button
-                  type="button"
-                  onClick={() => handleSaveEdit(idx)}
-                  className="p-1 rounded bg-emerald-50 hover:bg-emerald-100 text-emerald-600 cursor-pointer"
-                  title="Save"
-                >
-                  <Check size={13} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setEditingIndex(null)}
-                  className="p-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-500 cursor-pointer"
-                  title="Cancel"
-                >
-                  <X size={13} />
-                </button>
-              </div>
-            ) : (
-              <>
-                <div className="flex items-start gap-2 flex-1 min-w-0">
-                  <ItemIcon size={14} className={`${colorStyles.icon} shrink-0 mt-0.5`} />
-                  <span className="break-words select-text">{item}</span>
-                </div>
-                <div className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center gap-1 shrink-0 ml-1">
-                  <button
-                    type="button"
-                    onClick={() => handleStartEdit(idx, item)}
-                    className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 cursor-pointer transition-colors"
-                    title="Edit item"
-                  >
-                    <Edit2 size={12} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(idx)}
-                    className="p-1 rounded text-slate-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer transition-colors"
-                    title="Delete item"
-                  >
-                    <Trash2 size={12} />
-                  </button>
-                </div>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      {/* Add New Item */}
-      {isAdding ? (
-        <div className="flex items-center gap-1.5 pt-1">
-          <input
-            type="text"
-            value={newItemText}
-            placeholder={placeholder}
-            onChange={(e) => setNewItemText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") handleAddItem();
-              if (e.key === "Escape") {
-                setIsAdding(false);
-                setNewItemText("");
-              }
-            }}
-            autoFocus
-            className={`flex-1 text-xs px-2.5 py-1.5 bg-white rounded-xl border border-slate-300 outline-none transition-all ${colorStyles.editInput}`}
-          />
-          <button
-            type="button"
-            onClick={handleAddItem}
-            className="px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold cursor-pointer transition-colors"
-          >
-            Add
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setIsAdding(false);
-              setNewItemText("");
-            }}
-            className="p-1.5 rounded-xl hover:bg-slate-100 text-slate-500 cursor-pointer"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={() => setIsAdding(true)}
-          className={`w-full py-1.5 px-3 rounded-xl border border-dashed text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${colorStyles.addBtn}`}
-        >
-          <Plus size={13} />
-          <span>{addButtonLabel}</span>
-        </button>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Blueprint Completion Celebration Hero at end of all 7 sections
-// ---------------------------------------------------------------------------
-function BlueprintCompletionHero({ onExportPdf, onExportMarkdown, onScrollToTop }) {
-  return (
-    <div className="mt-12 p-8 sm:p-10 rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white text-center shadow-xl border border-slate-800 relative overflow-hidden animate-section-in">
-      <div className="absolute top-0 right-0 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="relative z-10 max-w-xl mx-auto space-y-4">
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-mono font-bold uppercase tracking-wider bg-orange-500/20 text-orange-400 border border-orange-500/30">
-          <Sparkles size={13} /> Complete 7-Stage Analysis
-        </span>
-        <h3 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-          You've Reviewed Your Entire Startup Thesis!
-        </h3>
-        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-          All 12 autonomous AI specialists have stress-tested your viability, ICPs, SWOT, MVP build scope, unit economics, and go-to-market engine.
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-          <button
-            type="button"
-            onClick={onExportPdf}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs sm:text-sm shadow-lg shadow-orange-500/25 transition-all cursor-pointer active:scale-95"
-          >
-            <FileDown size={15} />
-            <span>Export Executive PDF</span>
-          </button>
-          <button
-            type="button"
-            onClick={onExportMarkdown}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-semibold text-xs sm:text-sm border border-white/20 transition-all cursor-pointer active:scale-95"
-          >
-            <FileText size={15} />
-            <span>Download Markdown</span>
-          </button>
-          <button
-            type="button"
-            onClick={onScrollToTop}
-            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs sm:text-sm transition-all cursor-pointer"
-          >
-            <span>Back to Top ↑</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function BlueprintDashboard({
   blueprint,
   setBlueprint,
@@ -731,99 +491,13 @@ export default function BlueprintDashboard({
     }
   }, [blueprint, displayMode, scrollContainerRef]); // Removed activeSection dependency
 
-  // Real-time focal reading-line scroll synchronization across 7 blueprint stages
-  useEffect(() => {
-    if (displayMode !== "continuous" || typeof window === "undefined") return;
-
-    const container = scrollContainerRef?.current || null;
-    let rafId = null;
-
-    const checkActiveSection = () => {
-      // Guard: don't update activeSection during programmatic scrolls
-      if (isProgrammaticScrollRef.current) return;
-
-      const sectionElements = Array.from(
-        document.querySelectorAll("section.blueprint-section[data-section-id]")
-      );
-      if (sectionElements.length === 0) return;
-
-      const containerEl = scrollContainerRef?.current;
-      const containerRect = containerEl
-        ? containerEl.getBoundingClientRect()
-        : { top: 0, height: window.innerHeight };
-
-      // Check if user is scrolled near the bottom of container (activate last stage)
-      if (
-        containerEl &&
-        containerEl.scrollHeight - containerEl.scrollTop - containerEl.clientHeight < 80
-      ) {
-        const lastSec = sectionElements[sectionElements.length - 1]?.getAttribute("data-section-id");
-        if (lastSec && lastSec !== activeSectionRef.current) {
-          activeSectionRef.current = lastSec;
-          setActiveSection(lastSec);
-        }
-        return;
-      }
-
-      // Reading focal line: 120px below top of container viewport
-      const readingLine = containerRect.top + 120;
-
-      let foundSec = null;
-      for (const el of sectionElements) {
-        const rect = el.getBoundingClientRect();
-        if (rect.top <= readingLine && rect.bottom > readingLine) {
-          foundSec = el.getAttribute("data-section-id");
-          break;
-        }
-      }
-
-      // If above first section or at top
-      if (!foundSec && sectionElements[0]) {
-        const firstRect = sectionElements[0].getBoundingClientRect();
-        if (firstRect.top > readingLine) {
-          foundSec = sectionElements[0].getAttribute("data-section-id");
-        }
-      }
-
-      // Fallback: pick section closest to reading line
-      if (!foundSec && sectionElements.length > 0) {
-        let closestSec = null;
-        let minDistance = Infinity;
-        sectionElements.forEach((el) => {
-          const rect = el.getBoundingClientRect();
-          const dist = Math.abs(rect.top - readingLine);
-          if (dist < minDistance) {
-            minDistance = dist;
-            closestSec = el.getAttribute("data-section-id");
-          }
-        });
-        foundSec = closestSec;
-      }
-
-      if (foundSec && foundSec !== activeSectionRef.current) {
-        activeSectionRef.current = foundSec;
-        setActiveSection(foundSec);
-      }
-    };
-
-    const handleScroll = () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(checkActiveSection);
-    };
-
-    const target = container || window;
-    target.addEventListener("scroll", handleScroll, { passive: true });
-
-    // Initial check after elements render
-    const timer = setTimeout(checkActiveSection, 100);
-
-    return () => {
-      target.removeEventListener("scroll", handleScroll);
-      if (rafId) cancelAnimationFrame(rafId);
-      clearTimeout(timer);
-    };
-  }, [displayMode, scrollContainerRef, setActiveSection]);
-
+    useScrollSpy({
+    containerRef: scrollContainerRef,
+    enabled: displayMode === "continuous",
+    lockedRef: isProgrammaticScrollRef,
+    activeRef: activeSectionRef,
+    onChange: setActiveSection,
+  });
 
   const handleExportPdf = useCallback(async () => {
     setExporting("pdf");
@@ -928,74 +602,16 @@ export default function BlueprintDashboard({
   return (
     <div className="w-full max-w-7xl mx-auto mt-8 px-4 pb-24 animate-fade-in text-slate-900">
       <ScrollProgress scrollContainerRef={scrollContainerRef} />
-      {/* Top Utility Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-200/80">
-        <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 rounded-full text-[11px] font-mono uppercase tracking-wider bg-orange-50 text-orange-600 border border-orange-200 font-bold">
-            Startup Brief #{(originalIdea.length % 900) + 100}
-          </span>
-          <span className="text-slate-300 text-xs font-mono">•</span>
-          <span className="text-xs font-mono text-slate-500 font-medium hidden sm:inline">
-            Synthesized via 12 Autonomous Co-Founders
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {/* Founder vs Investor Mode Toggle */}
-          <div className="inline-flex p-0.5 bg-slate-100 rounded-xl border border-slate-200 text-xs shadow-2xs">
-            <button
-              type="button"
-              onClick={() => {
-                setIsFounderMode(true);
-                showToast("Switched to Plain-English Founder Mode");
-              }}
-              className={`px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-all cursor-pointer ${
-                isFounderMode
-                  ? "bg-white text-orange-600 shadow-2xs"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-              title="Plain-English terms without MBA jargon"
-            >
-              💡 Founder Mode
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setIsFounderMode(false);
-                showToast("Switched to VC & Investor Mode");
-              }}
-              className={`px-2.5 py-1 rounded-lg font-semibold text-[11px] transition-all cursor-pointer ${
-                !isFounderMode
-                  ? "bg-white text-orange-600 shadow-2xs"
-                  : "text-slate-500 hover:text-slate-800"
-              }`}
-              title="Standard institutional & VC terms (TAM/SAM/SOM, Porter's, etc.)"
-            >
-              📊 Investor Mode
-            </button>
-          </div>
-
-          <button
-            onClick={handleCopySummary}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:text-orange-600 hover:border-orange-300 transition-colors cursor-pointer shadow-2xs"
-          >
-            <Copy size={13} />
-            <span className="hidden sm:inline">Copy Brief</span>
-          </button>
-          <ExportButton
-            icon={FileText}
-            label="Markdown"
-            busy={exporting === "md"}
-            onClick={handleExportMarkdown}
-          />
-          <ExportButton
-            icon={FileDown}
-            label="Executive PDF"
-            busy={exporting === "pdf"}
-            onClick={handleExportPdf}
-          />
-        </div>
-      </div>
+      <ReaderToolbar
+        briefNo={(originalIdea.length % 900) + 100}
+        isFounderMode={isFounderMode}
+        setIsFounderMode={setIsFounderMode}
+        onCopy={handleCopySummary}
+        onMarkdown={handleExportMarkdown}
+        onPdf={handleExportPdf}
+        exporting={exporting}
+        onToast={showToast}
+      />
 
       {viewMode === "prd" ? (
         <ChatPrdDossierView
@@ -1221,7 +837,7 @@ export default function BlueprintDashboard({
                   </SectionErrorBoundary>
 
                   {/* Blueprint Completion & Export Hero */}
-                  <BlueprintCompletionHero
+                  <CompletionHero
                     onExportPdf={handleExportPdf}
                     onExportMarkdown={handleExportMarkdown}
                     onScrollToTop={handleScrollToTop}
@@ -1366,48 +982,13 @@ export default function BlueprintDashboard({
       )}
 
 
-      {/* Success Toast */}
-      {toast && (
-        <div className="fixed bottom-6 right-6 z-50 animate-toast-in">
-          <div className="flex items-center gap-2.5 bg-slate-900 text-white text-xs px-4 py-3 rounded-2xl shadow-xl border border-slate-800">
-            <Check size={14} className="text-orange-400" />
-            <span className="font-medium">{toast}</span>
-          </div>
-        </div>
-      )}
+      {/* Toast */}
+      <Toast message={toast} />
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Export bar button
-// ---------------------------------------------------------------------------
-function ExportButton({ icon: Icon, label, busy, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={busy}
-      className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-700 hover:text-orange-600 hover:border-orange-300 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200 shadow-2xs cursor-pointer"
-    >
-      {busy ? <Loader2 size={13} className="animate-spin text-orange-500" /> : <Icon size={13} />}
-      <span className="whitespace-nowrap">{busy ? "Synthesizing…" : label}</span>
-    </button>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Responsive Card Grid — Replaces horizontal-only scroll on desktop
-// Cards flow naturally in a responsive grid. On mobile, they still allow
-// horizontal scrolling for touch UX.
-// ---------------------------------------------------------------------------
-function ResponsiveCardGrid({ children }) {
-  return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-      {children}
-    </div>
-  );
-}
-
+// ============================================================================
 // ============================================================================
 // SECTION 1: EXECUTIVE OVERVIEW & VIABILITY
 // ============================================================================
@@ -1996,7 +1577,6 @@ function MarketCompetitorsSection({
   customerPersona,
   blueprint,
 }) {
-  // Resolve Porter's Five Forces with multiple alias keys and rich fallback analysis
   const resolvePorterForce = (key, aliases = [], fallbackAnalysis = "Moderate market dynamic.") => {
     const raw = portersFiveForces || blueprint?.portersFiveForces || {};
     let obj = raw[key];
@@ -2020,26 +1600,25 @@ function MarketCompetitorsSection({
   );
   const supplierPower = resolvePorterForce(
     "supplierPower",
-    ["suppliers", "supplier_power", "vendorPower"],
-    "Low dependence on any single provider because standard cloud tools and modern APIs can easily be swapped if pricing changes."
+    ["suppliers", "supplier_power"],
+    "Underlying LLM foundation models and cloud infrastructure continue to experience price commoditization and performance surges."
   );
   const competitiveRivalry = resolvePorterForce(
     "competitiveRivalry",
-    ["rivalry", "competition", "industryRivalry"],
-    "Existing competitors focus mostly on broad, generic features, leaving room for a tool that solves this specific task better and faster."
+    ["rivalry", "industry_rivalry"],
+    "Incumbents carry substantial enterprise technical debt; targeted speed and vertical personalization win early customers."
   );
   const threatOfSubstitutes = resolvePorterForce(
     "threatOfSubstitutes",
-    ["threatOfSubstitution", "substitutes", "substitutionThreat"],
-    "Current workarounds (like manual spreadsheets or disjointed tools) are slow, error-prone, and frustrating for users."
+    ["substitutes", "threat_substitutes"],
+    "Manual spreadsheets and fragmented agency retainer services represent the primary status-quo alternative."
   );
   const threatOfNewEntry = resolvePorterForce(
     "threatOfNewEntry",
-    ["threatOfNewEntrants", "newEntrants", "entryBarriers"],
-    "New competitors can enter quickly, but staying close to users, building brand loyalty, and keeping the product delightfully simple provides lasting defensibility."
+    ["new_entrants", "newEntrants"],
+    "Low technical barrier to entry for wrappers, but defensibility compounds rapidly via localized customer workflows and proprietary data."
   );
 
-  // Competitor vulnerability matrix items with intelligent fallback synthesis if backend omitted it
   const competitorsList = useMemo(() => {
     return toSafeArray(marketResearch?.competitors, [
       "Traditional Competitor",
@@ -2080,7 +1659,6 @@ function MarketCompetitorsSection({
     });
   }, [competitorWeaknessAnalysis, competitorsList]);
 
-  // Market opportunities with fallback
   const marketOpps = useMemo(() => {
     return toSafeArray(marketResearch?.opportunities, [
       "Strong demand for tools that save time and eliminate tedious manual tasks.",
@@ -2091,12 +1669,483 @@ function MarketCompetitorsSection({
 
   return (
     <div className="space-y-6">
+      {/* 1. Full 4-Quadrant SWOT Strategic Matrix (Institutional-Grade) */}
+      <SwotAnalysisMatrix
+        swotAnalysis={swotAnalysis}
+        ideaAnalysis={ideaAnalysis}
+        marketResearch={marketResearch}
+        competitorWeaknessAnalysis={competitorWeaknessAnalysis}
+        customerPersona={customerPersona}
+        blueprint={blueprint}
+      />
+
+      {/* 2. Porter's Five Forces & Market Demand Signals */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <PortersCard
+          forces={[
+            { force: buyerPower, label: "Buyer Power" },
+            { force: supplierPower, label: "Supplier Power" },
+            { force: competitiveRivalry, label: "Competitive Rivalry" },
+            { force: threatOfSubstitutes, label: "Threat of Substitution" },
+            { force: threatOfNewEntry, label: "Threat of New Entrants" },
+          ]}
+        />
+        <DemandSignals
+          domain={ideaAnalysis?.domain || "Market Intelligence"}
+          demandText={marketResearch?.marketDemand || "Growing tailwinds driven by demand for autonomous AI workflows."}
+          opportunities={marketOpps}
+          competitors={competitorsList}
+        />
+      </div>
+
+      {/* 3. Competitor Vulnerability & Exploit Strategies */}
+      <VulnerabilityGrid vulnerabilities={vulnerabilities} />
+    </div>
+  );
+}
+
+// ============================================================================
+// SECTION 4: PRODUCT ARCHITECTURE & MVP SCOPE
+// ============================================================================
+function ProductMvpSection({
+  productPlan,
+  technicalArchitecture,
+  roadmap,
+  onUpdateMvpFeatures,
+  onUpdateFutureFeatures,
+}) {
+  return (
+    <div className="space-y-6">
+      <ResponsiveCardGrid>
+        {/* Card 1: MVP Scope (Sprint 1) */}
+        <StatCard
+          title="Product Plan"
+          icon={ListChecks}
+          stat="Sprint 1 MVP"
+          subtitle={`Priority: ${productPlan?.developmentPriority || "Speed to Market"}`}
+          detailsTitle="Scope Rationale"
+          detailsText="Prioritized to validate core customer value proposition and collect telemetry in under 4 weeks. Hover to edit, delete, or add custom features."
+        >
+          <div className="space-y-2">
+            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
+              Core MVP Features (Editable)
+            </span>
+            <EditableList
+              items={productPlan?.mvpFeatures || []}
+              onUpdate={onUpdateMvpFeatures}
+              placeholder="e.g. Automated real-time report generator"
+              addButtonLabel="Add MVP Feature"
+              accentColor="orange"
+              icon={Check}
+            />
+          </div>
+        </StatCard>
+
+        {/* Card 2: Production Technical Architecture (Phase 6 Tiles + MetricRow) */}
+        <StatCard
+          title="Technical Architecture"
+          icon={Cpu}
+          stat="Production Stack"
+          subtitle="Cloud & AI Infrastructure"
+          detailsTitle="Architecture Overview"
+          detailsText={toSafeString(technicalArchitecture?.architectureOverview, "Containerized cloud backend with modern reactive frontend.")}
+        >
+          <div className="space-y-3">
+            <TileGrid cols={2}>
+              <Tile label="Frontend" value={toSafeString(technicalArchitecture?.frontend, "React / Tailwind")} />
+              <Tile label="Backend" value={toSafeString(technicalArchitecture?.backend, "FastAPI / Python")} />
+              <Tile label="Database" value={toSafeString(technicalArchitecture?.database, "PostgreSQL / Vector")} />
+              <Tile label="Cloud" value={toSafeString(technicalArchitecture?.hosting, "AWS / Vercel")} />
+            </TileGrid>
+            <MetricRow
+              label="AI Models & APIs"
+              value={toSafeString(technicalArchitecture?.aiApis, "Anthropic Claude / OpenAI / Local Embeddings")}
+              tone="orange"
+            />
+          </div>
+        </StatCard>
+
+        {/* Card 3: Future Roadmap Phases */}
+        <StatCard
+          title="Future Roadmap"
+          icon={MapIcon}
+          stat="Phase 2 & 3"
+          subtitle="Scaling & Enterprise Expansion"
+          detailsTitle="Launch Strategy"
+          detailsText={toSafeString(roadmap?.launchPlan, "Staged rollout to design partners followed by broad self-serve onboarding.")}
+        >
+          <div className="space-y-2">
+            <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block">
+              Future Expansion Roadmap (Editable)
+            </span>
+            <EditableList
+              items={toSafeArray(productPlan?.futureFeatures, [])}
+              onUpdate={onUpdateFutureFeatures}
+              placeholder="e.g. Enterprise RBAC & Audit Trails"
+              addButtonLabel="Add Roadmap Item"
+              accentColor="orange"
+              icon={Sparkles}
+            />
+          </div>
+        </StatCard>
+      </ResponsiveCardGrid>
+
+      {/* Execution Milestones Timeline (Phase 6) */}
+      {Array.isArray(roadmap?.milestones) && roadmap.milestones.length > 0 && (
+        <MilestoneTimeline
+          milestones={roadmap.milestones.map((m) => ({
+            title: toSafeString(m.title),
+            week: toSafeString(m.week),
+            tasks: toSafeArray(m.tasks, []),
+          }))}
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
+// SECTION 5: FINANCIAL MODEL & UNIT ECONOMICS
+// ============================================================================
+const COST_KEYS = ["domain", "hosting", "database", "aiApis", "email", "analytics", "storage", "authentication"];
+const COST_LABELS = {
+  domain: "🌐 Domain", hosting: "☁️ Hosting", database: "🗄️ Database", aiApis: "🤖 AI APIs",
+  email: "📧 Email", analytics: "📊 Analytics", storage: "💾 Storage", authentication: "🔐 Auth",
+};
+
+function FinancesSection({
+  costEstimator,
+  revenueSimulator,
+  businessStrategy,
+  marketResearch,
+  ideaAnalysis,
+  productPlan,
+  blueprint,
+}) {
+  const [selectedArchetype, setSelectedArchetype] = useState(() => {
+    const domain = (ideaAnalysis?.domain || "").toLowerCase();
+    const model = (businessStrategy?.revenueModel || "").toLowerCase();
+    if (
+      domain.includes("d2c") || domain.includes("retail") ||
+      domain.includes("ecommerce") || domain.includes("physical") ||
+      domain.includes("hardware") || model.includes("ecommerce")
+    ) {
+      return "d2c";
+    }
+    if (domain.includes("marketplace") || domain.includes("platform") || model.includes("marketplace") || model.includes("commission")) {
+      return "marketplace";
+    }
+    if (domain.includes("agency") || domain.includes("service") || domain.includes("consult") || model.includes("service")) {
+      return "agency";
+    }
+    return "saas";
+  });
+
+  const ARCHETYPES = {
+    saas: { id: "saas", name: "B2B SaaS", grossMargin: 88, ltvMultiplier: 20, cacDivisor: 3, payback: "< 6 mos", typeLabel: "Software Subscription", churnNote: "5% monthly SaaS churn benchmark" },
+    d2c: { id: "d2c", name: "D2C / E-Commerce", grossMargin: 54, ltvMultiplier: 2.2, cacDivisor: 2.0, payback: "First Order", typeLabel: "Physical Consumer Brand", churnNote: "Factoring manufacturing COGS & shipping" },
+    marketplace: { id: "marketplace", name: "Marketplace", grossMargin: 22, ltvMultiplier: 25, cacDivisor: 3.5, payback: "< 8 mos", typeLabel: "Two-Sided Net Take Rate", churnNote: "4% platform churn with network effects" },
+    agency: { id: "agency", name: "Agency / Retainer", grossMargin: 65, ltvMultiplier: 28, cacDivisor: 4, payback: "< 2 mos", typeLabel: "Client Retainers", churnNote: "3.5% client churn" },
+  };
+
+  const activeArch = ARCHETYPES[selectedArchetype] || ARCHETYPES.saas;
+
+  const arpu = useMemo(() => {
+    if (revenueSimulator?.pricingAssumption) {
+      const match = String(revenueSimulator.pricingAssumption).match(/\$(\d+)/);
+      if (match && match[1]) return parseInt(match[1], 10);
+    }
+    return 29;
+  }, [revenueSimulator]);
+
+  const monthlyBurn = useMemo(() => {
+    if (costEstimator?.estimatedMonthlyCost) {
+      const match = String(costEstimator.estimatedMonthlyCost).match(/\$(\d+)/);
+      if (match && match[1]) return parseInt(match[1], 10);
+    }
+    return 35;
+  }, [costEstimator]);
+
+  const breakevenSubscribers = Math.max(1, Math.ceil(monthlyBurn / arpu));
+  const estimatedLtv = Math.round(arpu * activeArch.ltvMultiplier);
+  const targetCac = Math.max(1, Math.round(estimatedLtv / activeArch.cacDivisor));
+  const grossMargin = activeArch.grossMargin;
+
+  return (
+    <div className="space-y-6">
+      {/* 1. Upmetrics Financial Simulator (Phase 5) */}
+      <UpmetricsFinancialSimulator
+        costEstimator={costEstimator}
+        revenueSimulator={revenueSimulator}
+      />
+
+      {/* 2. Core Financial Cards Grid (Phase 6 Tiles + MetricRow) */}
+      <ResponsiveCardGrid>
+        {/* Card 1: Infrastructure & Cloud Costs */}
+        <StatCard
+          title="Infrastructure Costs"
+          icon={DollarSign}
+          stat={toSafeString(costEstimator?.estimatedMonthlyCost, "$16-51")}
+          subtitle="Estimated Monthly Burn"
+          detailsTitle="Annual Projection"
+          detailsText={`Estimated yearly cloud burn: ${toSafeString(costEstimator?.estimatedYearlyCost, "$192-612")}. Highly cost-efficient serverless foundation with free tiers.`}
+        >
+          <div className="space-y-1">
+            {COST_KEYS.map((key) => {
+              const item = costEstimator?.[key];
+              if (!item) return null;
+              return (
+                <MetricRow
+                  key={key}
+                  label={COST_LABELS[key] || key}
+                  value={toSafeString(item.monthlyCost, "$0")}
+                  tag={item.freeTierSufficient ? "Free tier" : null}
+                />
+              );
+            })}
+          </div>
+        </StatCard>
+
+        {/* Card 2: User-Tier Revenue Projections */}
+        <StatCard
+          title="Revenue Projections"
+          icon={TrendingUp}
+          stat={toSafeString(revenueSimulator?.projections?.[2]?.annualRevenue, "$588,000")}
+          subtitle={toSafeString(revenueSimulator?.pricingAssumption, "Based on subscription model")}
+          detailsTitle="Pricing Assumption"
+          detailsText={revenueSimulator?.pricingAssumption || businessStrategy?.pricingIdea || "Tiered B2B SaaS pricing model with self-serve starter and high-ticket growth plans."}
+        >
+          <div className="space-y-1">
+            {(revenueSimulator?.projections || [
+              { users: 100, monthlyRevenue: "$4,900", annualRevenue: "$58,800" },
+              { users: 500, monthlyRevenue: "$24,500", annualRevenue: "$294,000" },
+              { users: 1000, monthlyRevenue: "$49,000", annualRevenue: "$588,000" },
+              { users: 5000, monthlyRevenue: "$245,000", annualRevenue: "$2,940,000" },
+            ]).map((proj, i) => (
+              <MetricRow
+                key={i}
+                label={`${proj.users?.toLocaleString()} users (${i === 0 ? "Traction" : i === 1 ? "PMF" : i === 2 ? "Scale" : "Leader"})`}
+                value={`${proj.monthlyRevenue}/mo`}
+                tag={`${proj.annualRevenue}/yr`}
+                tone="orange"
+              />
+            ))}
+          </div>
+        </StatCard>
+
+        {/* Card 3: Unit Economics & Multi-Archetype Health Ratios */}
+        <StatCard
+          title="Unit Economics & Ratios"
+          icon={BarChart3}
+          stat={`$${estimatedLtv} LTV`}
+          subtitle={`ARPU: $${arpu}/mo | Target CAC: <$${targetCac}`}
+          detailsTitle="Industry Benchmark"
+          detailsText={`Configured for ${activeArch.typeLabel}. ${activeArch.churnNote}. Maintaining a healthy LTV:CAC ensures sustainable unit margins.`}
+        >
+          <div className="space-y-3">
+            <div>
+              <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1.5">
+                Select Business Model Archetype:
+              </span>
+              <div className="grid grid-cols-2 gap-1.5">
+                {Object.values(ARCHETYPES).map((arch) => (
+                  <button
+                    key={arch.id}
+                    type="button"
+                    onClick={() => setSelectedArchetype(arch.id)}
+                    className={`px-2 py-1.5 rounded-lg text-[11px] font-semibold text-center transition-all cursor-pointer border ${
+                      selectedArchetype === arch.id
+                        ? "bg-slate-900 text-white border-slate-900 shadow-2xs"
+                        : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
+                    }`}
+                  >
+                    {arch.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <TileGrid cols={2}>
+              <Tile label="Gross Margin" value={`${grossMargin}%`} sub={activeArch.name} tone="green" />
+              <Tile label="Payback Period" value={activeArch.payback} sub="Acquisition Recoup" />
+            </TileGrid>
+
+            <div>
+              <MetricRow label="Average Revenue / Order (ARPU)" value={`$${arpu}/mo`} />
+              <MetricRow label="Expected Customer Lifetime Value" value={`$${estimatedLtv}`} tone="green" />
+              <MetricRow label="Max Allowable Target CAC" value={`< $${targetCac}`} tone="orange" />
+            </div>
+          </div>
+        </StatCard>
+
+        {/* Card 4: Breakeven & Capital Runway Analysis */}
+        <StatCard
+          title="Breakeven & Runway"
+          icon={ShieldCheck}
+          stat={`${breakevenSubscribers} subscribers`}
+          subtitle="Monthly Cash Flow Breakeven"
+          detailsTitle="Capital Efficiency"
+          detailsText={`With monthly infrastructure burn estimated at ~$${monthlyBurn} and ARPU at ~$${arpu}/mo, cash flow breakeven is reached at just ${breakevenSubscribers} customers.`}
+        >
+          <div className="space-y-3">
+            <TileGrid cols={2}>
+              <Tile label="Monthly Burn" value={`$${monthlyBurn}/mo`} />
+              <Tile label="ARPU" value={`$${arpu}/mo`} />
+            </TileGrid>
+
+            <div className="p-3 rounded-2xl bg-orange-50/70 border border-orange-100">
+              <div className="flex items-center justify-between mb-1 text-xs">
+                <span className="text-slate-600 font-mono">Breakeven Target</span>
+                <span className="font-mono font-bold text-orange-700">{breakevenSubscribers} paying users</span>
+              </div>
+              <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
+                <div className="h-full bg-orange-500 rounded-full" style={{ width: "0%" }} />
+              </div>
+              <div className="flex justify-between text-[11px] text-slate-500 mt-2">
+                <span>Bootstrapped: Zero external capital</span>
+                <span className="font-bold text-emerald-700">Infinite Runway</span>
+              </div>
+            </div>
+          </div>
+        </StatCard>
+
+        {/* Card 5: Business Strategy & Monetization Tiers */}
+        <StatCard
+          title="Monetization Architecture"
+          icon={Briefcase}
+          stat="Tiered Model"
+          subtitle={businessStrategy?.revenueModel || "Tiered SaaS Subscription"}
+          detailsTitle="Pricing Architecture"
+          detailsText={businessStrategy?.pricingIdea || "Three-tier subscription architecture with clear feature differentiation and usage upsells."}
+        >
+          <div className="space-y-3">
+            <TileGrid cols={3}>
+              <Tile label="Starter" value={`$${Math.max(9, Math.round(arpu * 0.6))}/mo`} />
+              <Tile label="Pro (Core)" value={`$${arpu}/mo`} tone="orange" />
+              <Tile label="Scale" value={`$${Math.round(arpu * 3)}/mo`} />
+            </TileGrid>
+
+            {businessStrategy?.marketingChannels?.length > 0 && (
+              <div className="mt-2">
+                <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1">
+                  Primary Customer Acquisition Channels
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {businessStrategy.marketingChannels.map((ch, i) => (
+                    <span
+                      key={i}
+                      className="text-[11px] bg-orange-50 text-orange-800 border border-orange-200 px-2 py-0.5 rounded-md font-medium"
+                    >
+                      {ch}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </StatCard>
+      </ResponsiveCardGrid>
+
+      {/* 3. Lean Canvas Matrix */}
+      <LeanCanvasMatrix
+        ideaAnalysis={ideaAnalysis}
+        productPlan={productPlan}
+        marketResearch={marketResearch}
+        costEstimator={costEstimator}
+        businessStrategy={businessStrategy}
+        swotAnalysis={blueprint?.swotAnalysis}
+        pitch={blueprint?.pitch}
+        goToMarket={blueprint?.goToMarket}
+        customerPersona={blueprint?.customerPersona}
+        viabilityScorecard={blueprint?.viabilityScorecard}
+        competitorWeaknessAnalysis={blueprint?.competitorWeaknessAnalysis}
+      />
+    </div>
+  );
+}
+
+// ============================================================================
+// SECTION 6: GO-TO-MARKET & LAUNCH EXECUTION
+// ============================================================================
+function formatTemplateContent(content) {
+  if (!content) return "";
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) {
+    return content
+      .map((c) => (typeof c === "object" ? formatTemplateContent(c) : String(c)))
+      .filter(Boolean)
+      .join("\n\n");
+  }
+  if (typeof content === "object") {
+    const subject = content.subject || content.subjectLine || content.headline || content.title;
+    const body = content.body || content.emailBody || content.content || content.text || content.message || content.post;
+    if (subject && body) {
+      return `Subject: ${subject}\n\n${body}`;
+    }
+    if (body) {
+      return String(body);
+    }
+    if (content.hook && content.thread) {
+      const threadStr = Array.isArray(content.thread) ? content.thread.join("\n\n") : content.thread;
+      return `${content.hook}\n\n${threadStr}`;
+    }
+    if (content.tweet || content.post) {
+      return String(content.tweet || content.post);
+    }
+    return Object.entries(content)
+      .map(([k, v]) => `${k.toUpperCase()}:\n${typeof v === "object" ? JSON.stringify(v, null, 2) : v}`)
+      .join("\n\n");
+  }
+  return String(content);
+}
+
+function GoToMarketSection({
+  goToMarket,
+  launchChecklist,
+  pitch,
+  ideaAnalysis,
+  customerPersona,
+  onToast,
+  onUpdateChecklist,
+}) {
+  const coldEmailText = formatTemplateContent(goToMarket?.coldEmailTemplate);
+  const linkedInDmText = formatTemplateContent(goToMarket?.linkedInDmTemplate);
+  const redditPostText = formatTemplateContent(goToMarket?.redditLaunchPost);
+  const twitterPostText = formatTemplateContent(goToMarket?.twitterLaunchPost);
+  const linkedInQueries = toSafeArray(goToMarket?.linkedInSearchStrategy, []);
+
+  const platformsList = useMemo(() => {
+    const raw = goToMarket?.platforms || [];
+    if (Array.isArray(raw) && raw.length > 0) {
+      return raw.map((p) => ({
+        platform: toSafeString(p?.platform || p?.name, "Channel"),
+        strategy: toSafeString(p?.strategy || p?.tactic || p?.why, "Direct outbound & high-intent organic distribution."),
+        urgency: toSafeString(p?.urgency || p?.timing || p?.timeline, "Immediate"),
+      }));
+    }
+    return [
+      { platform: "Founder-Led Outbound", strategy: "Direct personal outreach to 50 targeted prospects.", urgency: "Week 1" },
+      { platform: "Niche Communities", strategy: "Participate in subreddits & Discord servers answering relevant questions.", urgency: "Week 2" },
+      { platform: "Organic Social / Build in Public", strategy: "Share transparent lessons and milestones to build trust.", urgency: "Ongoing" },
+    ];
+  }, [goToMarket?.platforms]);
+
+  const safeChecklist = toSafeArray(launchChecklist, [
+    "Finalize customer interview script based on Mom Test guidelines",
+    "Identify and message 30 target ICP contacts for discovery calls",
+    "Ship landing page with clear value proposition and email capture",
+    "Deploy core MVP with single high-value workflow loop",
+    "Onboard first 5 design partners and instrument telemetry events",
+    "Conduct weekly feedback reviews to iterate product-market fit",
+  ]);
+
+  return (
+    <div className="space-y-6">
       <ResponsiveCardGrid>
         {/* Card 1: Founder Outreach Templates */}
         <StatCard
           title="Founder Outreach Templates"
           icon={Target}
-          iconColor="text-orange-500"
           stat="Production Copy"
           subtitle="Cold Hooks & Outbound Templates"
           detailsTitle="Outbound Playbook"
@@ -2117,7 +2166,6 @@ function MarketCompetitorsSection({
         <StatCard
           title="Acquisition Channels"
           icon={Rocket}
-          iconColor="text-orange-500"
           stat={`${platformsList.length} Channels`}
           subtitle="Growth Flywheel"
           detailsTitle="Target Audience"
@@ -2134,7 +2182,6 @@ function MarketCompetitorsSection({
         <StatCard
           title="Social Launch Copy"
           icon={MessageSquare}
-          iconColor="text-orange-500"
           stat="Ready-to-Post"
           subtitle="Reddit, X (Twitter) & LinkedIn"
           detailsTitle="Launch Distribution"
@@ -2170,4 +2217,3 @@ function MarketCompetitorsSection({
     </div>
   );
 }
-
