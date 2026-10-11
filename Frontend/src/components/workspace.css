@@ -782,7 +782,7 @@
 /* Startup cards */
 .wk-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
   gap: 16px;
 }
 .wk-card {
@@ -1499,16 +1499,42 @@
     inset: 0 auto 0 0;
     z-index: 50;
     width: 288px;
+    max-width: 85vw;
     transform: translateX(-100%);
     background: rgba(255, 255, 255, 0.92);
   }
   .wk-side.is-open {
     width: 288px;
+    max-width: 85vw;
     transform: none;
     box-shadow: 0 0 80px rgba(0, 0, 0, 0.3);
   }
   .wk-hide-sm {
-    display: none;
+    display: none !important;
+  }
+  .wk-main {
+    padding: 16px 14px;
+  }
+  .wk-top {
+    height: 54px;
+    padding: 0 12px;
+    gap: 8px;
+  }
+  .wk-top-left {
+    gap: 6px;
+  }
+  .wk-top-right {
+    gap: 6px;
+  }
+  .wk-grid {
+    grid-template-columns: 1fr;
+  }
+  .wk-card {
+    padding: 18px 16px;
+    border-radius: 20px;
+  }
+  .wk-prompt {
+    border-radius: 22px;
   }
   .wk-empty-suggest > div,
   .wk-suggest > div {
@@ -1533,6 +1559,50 @@
   .wk-bpbar {
     border-radius: 24px;
     padding-left: 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .wk-main {
+    padding: 12px 10px;
+  }
+  .wk-top {
+    padding: 0 8px;
+  }
+  .wk-crumbs button {
+    display: none;
+  }
+  .wk-crumbs svg {
+    display: none;
+  }
+  .wk-crumbs span {
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .wk-auth .wk-textbtn {
+    display: none;
+  }
+  .wk-hero {
+    margin: 4px 0 20px;
+  }
+  .wk-title--xl {
+    font-size: clamp(1.8rem, 7vw, 2.3rem);
+  }
+  .wk-prompt textarea {
+    font-size: 16px;
+    padding: 14px 14px 6px;
+  }
+  .wk-tags {
+    padding: 2px 10px 10px;
+    gap: 4px;
+  }
+  .wk-tags button {
+    height: 27px;
+    padding: 0 9px;
+    font-size: 12px;
+  }
+  .wk-search input {
+    font-size: 16px;
   }
 }
 

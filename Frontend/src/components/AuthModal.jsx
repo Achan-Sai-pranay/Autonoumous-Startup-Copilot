@@ -173,7 +173,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialMode
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     placeholder="e.g. Sarah Connor"
-                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-base sm:text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
                   />
                 </div>
               </div>
@@ -191,7 +191,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialMode
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="founder@venture.com"
                   required
-                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-base sm:text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
                 />
               </div>
             </div>
@@ -223,7 +223,7 @@ export default function AuthModal({ isOpen, onClose, onLoginSuccess, initialMode
                   placeholder="••••••••"
                   required
                   minLength={8}
-                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
+                  className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-200 text-base sm:text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 transition-all"
                 />
               </div>
             </div>

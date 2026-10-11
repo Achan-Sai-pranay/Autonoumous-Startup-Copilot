@@ -348,7 +348,7 @@ export default function App() {
   // --- VIEW 1: DEDICATED WORKSPACE & COPILOT PAGE (/app) ----------------------
   if (currentView === "workspace") {
     return (
-      <div className="relative h-screen w-full bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased overflow-hidden">
+      <div className="relative h-screen min-h-[100dvh] max-h-[100dvh] w-full bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased overflow-hidden">
         {authBanner && (
           <div className="relative z-50 w-full bg-amber-50 border-b border-amber-200 px-4 py-2 flex items-center justify-between text-xs text-amber-900 animate-fade-in shrink-0">
             <div className="flex items-center gap-2 max-w-4xl mx-auto">

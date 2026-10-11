@@ -1117,6 +1117,46 @@ button.lps-cta:active,
   }
 }
 
+@media (max-width: 480px) {
+  .lps {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .lps-metrics {
+    grid-template-columns: 1fr;
+  }
+  .lps-metric {
+    padding: 14px 16px;
+    border-radius: 16px;
+  }
+  .lps-stage {
+    padding: 14px 10px 18px;
+  }
+  .lps-tab {
+    padding: 0 10px;
+    font-size: 12px;
+    height: 32px;
+  }
+  .lps-card {
+    padding: 16px 14px;
+    border-radius: 18px;
+  }
+  .lps-verdict {
+    padding: 16px 14px;
+    border-radius: 18px;
+  }
+}
+
+@media (max-width: 360px) {
+  .lps-tabbar {
+    padding: 10px 8px 0;
+  }
+  .lps-stage {
+    padding: 12px 8px 16px;
+  }
+}
+
+
 /* ------------------------------------------------------------------ */
 /* Reduced motion                                                      */
 /* ------------------------------------------------------------------ */

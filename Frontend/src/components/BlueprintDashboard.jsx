@@ -605,7 +605,7 @@ export default function BlueprintDashboard({
       : null;
 
   return (
-    <div className="w-full max-w-7xl mx-auto mt-8 px-4 pb-24 animate-fade-in text-slate-900">
+    <div className="w-full max-w-7xl mx-auto mt-4 sm:mt-8 px-2 sm:px-4 pb-24 animate-fade-in text-slate-900">
       <ReaderToolbar
         briefNo={(originalIdea.length % 900) + 100}
         isFounderMode={isFounderMode}

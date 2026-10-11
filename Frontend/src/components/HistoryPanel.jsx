@@ -34,7 +34,7 @@ export default function HistoryPanel({ isOpen, onClose, history, onLoad, onDelet
         aria-hidden="true"
       />
 
-      <aside className="fixed top-0 right-0 z-50 h-full w-full max-w-sm bg-white border-l border-slate-200 shadow-2xl flex flex-col animate-toast-in">
+      <aside className="fixed top-0 right-0 z-50 h-full max-h-[100dvh] w-full max-w-[85vw] sm:max-w-sm bg-white border-l border-slate-200 shadow-2xl flex flex-col animate-toast-in">
         <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
           <div className="flex items-center gap-2.5">
             <span className="flex items-center justify-center h-7 w-7 rounded-lg bg-orange-50 border border-orange-200 text-orange-600">

@@ -1898,6 +1898,150 @@ button.hp-user-btn,
   }
 }
 
+@media (max-width: 640px) {
+  .hp-nav-bar {
+    padding: 0 16px;
+    gap: 10px;
+  }
+  .hp-banner {
+    padding: 8px 12px;
+    font-size: 12px;
+    gap: 4px 8px;
+  }
+  .hp-prompt textarea {
+    font-size: 16px;
+    padding: 18px 16px 8px;
+  }
+  .hp-prompt-bar {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 8px 12px 12px;
+    gap: 8px;
+  }
+  .hp-prompt-bar button {
+    width: 100%;
+    justify-content: center;
+  }
+  .hp-chips {
+    gap: 6px;
+  }
+  .hp-chips button {
+    font-size: 12.5px;
+    height: 32px;
+    padding: 0 12px;
+  }
+  .hp-assure {
+    gap: 6px 14px;
+    font-size: 12.5px;
+  }
+  .hp-table-wrap {
+    border-radius: 20px;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+}
+
+@media (max-width: 480px) {
+  .hp-wrap {
+    padding: 0 14px;
+  }
+  .hp-h1 {
+    font-size: clamp(2rem, 9.5vw, 2.75rem);
+  }
+  .hp-sub {
+    font-size: 14.5px;
+    margin-top: 14px;
+  }
+  .hp-tile--agents ul {
+    grid-template-columns: 1fr;
+  }
+  .hp-rounds {
+    grid-template-columns: 1fr;
+  }
+  .hp-console-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  .hp-seg--dark {
+    width: 100%;
+    display: flex;
+  }
+  .hp-seg--dark button {
+    flex: 1;
+    text-align: center;
+    padding: 0 8px;
+  }
+  .hp-challenge {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 10px;
+  }
+  .hp-challenge button {
+    width: 100%;
+    justify-content: center;
+  }
+  .hp-console-foot {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+  .hp-console-foot button {
+    width: 100%;
+    justify-content: center;
+  }
+  .hp-price strong {
+    font-size: clamp(40px, 11vw, 52px);
+  }
+  .hp-action {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+    gap: 14px;
+  }
+  .hp-action button {
+    width: 100%;
+    justify-content: center;
+  }
+  .hp-foot-grid {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+@media (max-width: 380px) {
+  .hp-nav-bar {
+    padding: 0 10px;
+    gap: 6px;
+  }
+  .hp-brand {
+    font-size: 14.5px;
+    gap: 7px;
+  }
+  .hp-brand-mark {
+    width: 28px;
+    height: 28px;
+  }
+  .hp-nav-actions .hp-btn--sm {
+    padding: 0 10px;
+    font-size: 12px;
+    height: 32px;
+  }
+  .hp-burger {
+    width: 34px;
+    height: 34px;
+  }
+  .hp-plan {
+    padding: 20px 16px;
+    border-radius: 22px;
+  }
+  .hp-console {
+    padding: 16px 12px;
+    border-radius: 20px;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Reduced motion                                                      */
 /* ------------------------------------------------------------------ */

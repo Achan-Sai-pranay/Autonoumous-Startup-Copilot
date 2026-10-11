@@ -309,4 +309,103 @@
 .cf-input-box:focus-within { border-color: rgba(0, 0, 0, 0.18); box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.04); }
 .cf-input-box textarea:focus, .cf-input-box textarea:focus-visible { outline: none; }
 .cf-input-box textarea { width: 100%; border: 0; outline: 0; resize: none; font: inherit; font-size: 14px; line-height: 1.45; color: var(--hp-ink); background: transparent; }
-.cf-input-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; pt: 4px; font-size: 12px; color: var(--hp-ink-3); }
+.cf-input-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding-top: 4px; font-size: 12px; color: var(--hp-ink-3); }
+
+/* ==================== CO-FOUNDER & STUDIO MOBILE =================== */
+@media (max-width: 640px) {
+  .cf-drawer {
+    width: 100vw;
+    max-width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+  .cf-head {
+    padding: 14px 16px;
+  }
+  .cf-context {
+    padding: 8px 16px;
+  }
+  .cf-body {
+    padding: 14px 12px;
+  }
+  .cf-bubble-user {
+    max-width: 92%;
+    padding: 10px 14px;
+    font-size: 13.5px;
+  }
+  .cf-bubble-ai {
+    max-width: 96%;
+    padding: 12px 14px;
+    font-size: 13.5px;
+  }
+  .cf-foot {
+    padding: 10px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  }
+  .cf-input-box textarea {
+    font-size: 16px;
+  }
+  .rv {
+    width: 100vw;
+    height: 96dvh;
+    max-height: 96dvh;
+    border-radius: 20px 20px 0 0;
+    margin-top: auto;
+  }
+  .rv-head {
+    padding: 18px 16px 6px;
+  }
+  .rv-tools {
+    padding: 10px 16px;
+  }
+  .rv-body {
+    padding: 4px 16px 16px;
+  }
+  .rv-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+  .rv-foot {
+    padding: 12px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cf-trigger {
+    right: 12px;
+    bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    height: 42px;
+    padding: 0 14px 0 8px;
+    font-size: 13px;
+    gap: 8px;
+  }
+  .cf-trigger-icon {
+    width: 28px;
+    height: 28px;
+  }
+  .if-step {
+    padding: 18px 14px;
+    border-radius: 20px;
+  }
+  .if-options button {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 0 16px;
+    font-size: 14px;
+    min-height: 44px;
+  }
+  .if-results li > button {
+    padding: 16px 14px;
+    border-radius: 18px;
+  }
+  .pr-top {
+    padding: 20px 16px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+  .pr-swipe-card {
+    padding: 18px 14px;
+    border-radius: 20px;
+  }
+}
+
