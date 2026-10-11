@@ -1,11 +1,13 @@
-// LoadingTimeline.jsx
+// components/LoadingTimeline.jsx
 // ---------------------------------------------------------------------------
-// Precision Multi-Agent Command Tracker:
-// Displays live orchestrator execution, active agent telemetry, elapsed duration,
-// and completion status across the 12 specialized AI co-founders.
+// Live tracker for the 12-agent pipeline: current stage, progress, elapsed time
+// and a status row per agent. Same props as before: <LoadingTimeline steps={...} />
+// Styles live in ./workspace.css.
 // ---------------------------------------------------------------------------
-import { useState, useEffect } from "react";
-import { CheckCircle2, Loader2, XCircle, Circle, Cpu, Sparkles } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Check, X } from "lucide-react";
+import "./home.css";
+import "./workspace.css";
 
 // Exported so App.jsx can build its initial "all pending" step list without
 // duplicating the agent names in two places. Order MUST match the STEPS
@@ -25,22 +27,29 @@ export const AGENT_STEP_NAMES = [
   "Launch Checklist & Financials",
 ];
 
+const FOUNDER_TIPS = [
+  "Lean tip: never ask “Would you buy this?” Ask what workaround they paid for last month.",
+  "MVP rule: an MVP should take under four weeks to build. We’re scoping your core feature set now.",
+  "Unit economics: calculating your cloud and server costs at 100, 500 and 5,000 active users.",
+  "Defensibility: finding structural blind spots and user complaints from direct competitors.",
+  "Distribution: drafting LinkedIn outreach, Reddit launch copy and email hooks, ready to send.",
+];
+
+const formatTime = (secs) => {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+};
+
 // steps: [{ name: string, status: "pending" | "running" | "done" | "failed" }]
 export default function LoadingTimeline({ steps }) {
   const [elapsed, setElapsed] = useState(0);
   const [tipIndex, setTipIndex] = useState(0);
-
-  const FOUNDER_TIPS = [
-    "💡 Lean Tip: Never ask users 'Would you buy this?' Ask what specific workaround they paid for last month.",
-    "⚡ MVP Rule: An MVP should take under 4 weeks to build. We are scoping your core feature set now.",
-    "💰 Unit Economics: Calculating your cloud and server costs at 100, 500, and 5,000 active users.",
-    "🎯 Defensibility: Identifying structural blind spots and user complaints from direct competitors.",
-    "🚀 Distribution: Drafting ready-to-send LinkedIn outreach, Reddit launch copy, and email hooks.",
-  ];
+  const listRef = useRef(null);
 
   useEffect(() => {
-    const timer = setInterval(() => setElapsed((prev) => prev + 1), 1000);
-    const tipTimer = setInterval(() => setTipIndex((prev) => (prev + 1) % 5), 7000);
+    const timer = setInterval(() => setElapsed((p) => p + 1), 1000);
+    const tipTimer = setInterval(() => setTipIndex((p) => (p + 1) % FOUNDER_TIPS.length), 7000);
     return () => {
       clearInterval(timer);
       clearInterval(tipTimer);
@@ -49,172 +58,86 @@ export default function LoadingTimeline({ steps }) {
 
   const totalSteps = steps.length;
   const completedSteps = steps.filter((s) => s.status === "done").length;
-  const runningStepIndex = steps.findIndex((s) => s.status === "running");
-  const runningStep = runningStepIndex !== -1 ? steps[runningStepIndex] : null;
+  const runningIndex = steps.findIndex((s) => s.status === "running");
+  const runningStep = runningIndex !== -1 ? steps[runningIndex] : null;
   const basePercent = Math.round(((completedSteps + (runningStep ? 0.4 : 0)) / totalSteps) * 100);
-  const progressPercent = Math.min(98, Math.max(6, basePercent));
-  
-  const estimatedRemaining = elapsed < 35 
-    ? `~${35 - elapsed}s` 
-    : elapsed < 65 
-    ? "Synthesizing" 
-    : "Wrapping up";
+  const progress = Math.min(98, Math.max(6, basePercent));
 
-  const formatTime = (secs) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-  };
+  const remaining = elapsed < 35 ? `~${35 - elapsed}s` : elapsed < 65 ? "Synthesizing" : "Wrapping up";
 
-  const listContainerRef = useRef(null);
-
-  // Auto-scroll the active agent step into view smoothly within the pipeline
+  // Keep the active agent in view inside the list
   useEffect(() => {
-    if (runningStepIndex >= 0 && listContainerRef.current) {
-      const activeEl = listContainerRef.current.querySelector(
-        `[data-agent-index="${runningStepIndex}"]`
-      );
-      if (activeEl) {
-        activeEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
+    if (runningIndex >= 0 && listRef.current) {
+      const el = listRef.current.querySelector(`[data-agent-index="${runningIndex}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" });
     }
-  }, [runningStepIndex]);
+  }, [runningIndex]);
 
   return (
-    <div className="w-full max-w-xl mx-auto mt-8 animate-fade-in">
-      {/* Elevated Status Header Card */}
-      <div className="bg-white rounded-2xl p-5 mb-4 border border-orange-200 shadow-lg shadow-orange-500/5">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2.5">
-            <span className="flex items-center justify-center h-8 w-8 rounded-lg bg-orange-50 border border-orange-200 text-orange-600">
-              <Cpu size={16} className="animate-pulse" />
-            </span>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 tracking-tight flex items-center gap-2">
-                12-Stage Intelligence Pipeline
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-orange-100 text-orange-700 border border-orange-200">
-                  LIVE STREAM
-                </span>
-              </h3>
-              <p className="text-xs text-slate-500">
-                {runningStep
-                  ? `Stage ${runningStepIndex + 1} of ${totalSteps}: ${runningStep.name}`
-                  : "Finalizing startup blueprint..."}
-              </p>
-            </div>
+    <div className="wk-lt">
+      <div className="wk-lt-head">
+        <div>
+          <h3>Building your blueprint</h3>
+          <p>
+            {runningStep
+              ? `Stage ${runningIndex + 1} of ${totalSteps} · ${runningStep.name}`
+              : "Finalizing your startup blueprint…"}
+          </p>
+        </div>
+        <dl className="wk-lt-times">
+          <div>
+            <dt>Remaining</dt>
+            <dd className="is-accent">{remaining}</dd>
           </div>
-
-          <div className="text-right flex items-center gap-4">
-            <div>
-              <span className="font-mono text-[10px] text-slate-400 block uppercase">Est. Left</span>
-              <p className="font-mono text-xs font-bold text-orange-600">
-                {estimatedRemaining}
-              </p>
-            </div>
-            <div>
-              <span className="font-mono text-[10px] text-slate-400 block uppercase">Elapsed</span>
-              <p className="font-mono text-xs font-bold text-slate-900">{formatTime(elapsed)}</p>
-            </div>
+          <div>
+            <dt>Elapsed</dt>
+            <dd>{formatTime(elapsed)}</dd>
           </div>
-        </div>
-
-        {/* Progress bar */}
-        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden border border-slate-200/60">
-          <div
-            className="bg-gradient-to-r from-orange-500 to-amber-500 h-full transition-all duration-500 ease-out rounded-full"
-            style={{ width: `${Math.max(progressPercent, 8)}%` }}
-          />
-        </div>
-
-        {/* Dynamic Founder Tip Box */}
-        <div className="mt-3.5 pt-3 border-t border-slate-100 flex items-start gap-2 text-xs text-slate-600">
-          <Sparkles size={13} className="text-orange-500 shrink-0 mt-0.5" />
-          <span className="leading-snug animate-fade-in font-medium">{FOUNDER_TIPS[tipIndex]}</span>
-        </div>
+        </dl>
       </div>
 
-      {/* Structured Agent Pipeline Grid with Smooth Scroll */}
       <div
-        ref={listContainerRef}
-        className="bg-white rounded-2xl p-3 border border-slate-200 shadow-sm divide-y divide-slate-100 max-h-[460px] overflow-y-auto"
+        className="wk-lt-bar"
+        role="progressbar"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={progress}
+        aria-label="Blueprint progress"
       >
+        <i style={{ width: `${Math.max(progress, 8)}%` }} />
+      </div>
+
+      <p key={tipIndex} className="wk-lt-tip">
+        {FOUNDER_TIPS[tipIndex]}
+      </p>
+
+      <ol className="wk-lt-list" ref={listRef}>
         {steps.map((step, idx) => {
           const isRunning = step.status === "running";
           const isDone = step.status === "done";
           const isFailed = step.status === "failed";
-
           return (
-            <div
+            <li
               key={step.name}
               data-agent-index={idx}
-              className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all duration-200 ${
-                isRunning
-                  ? "bg-orange-50/90 border border-orange-200 shadow-xs"
-                  : "hover:bg-slate-50"
+              className={`wk-lt-row ${isRunning ? "is-running" : ""} ${isDone ? "is-done" : ""} ${
+                isFailed ? "is-failed" : ""
               }`}
             >
-              <div className="flex items-center gap-3 min-w-0">
-                <span
-                  className={`font-mono text-[11px] w-5 ${
-                    isRunning ? "text-orange-600 font-bold" : "text-slate-400"
-                  }`}
-                >
-                  {(idx + 1).toString().padStart(2, "0")}
-                </span>
-                <StepIcon status={step.status} />
-                <span
-                  className={`text-xs font-medium truncate ${
-                    isRunning
-                      ? "text-orange-700 font-bold"
-                      : isDone
-                      ? "text-slate-800"
-                      : "text-slate-400"
-                  }`}
-                >
-                  {step.name}
-                </span>
-              </div>
-
-              <div className="shrink-0 pl-2">
-                {isRunning && (
-                  <span className="flex items-center gap-1.5 text-[11px] font-mono text-orange-600 font-semibold animate-pulse">
-                    <Sparkles size={11} />
-                    Synthesizing
-                  </span>
-                )}
-                {isDone && (
-                  <span className="text-[11px] font-mono font-medium text-emerald-600">
-                    Ready
-                  </span>
-                )}
-                {isFailed && (
-                  <span className="text-[11px] font-mono text-red-600">
-                    Bypassed
-                  </span>
-                )}
-                {!isRunning && !isDone && !isFailed && (
-                  <span className="text-[11px] font-mono text-slate-400">
-                    Queued
-                  </span>
-                )}
-              </div>
-            </div>
+              <span className="wk-lt-num">{(idx + 1).toString().padStart(2, "0")}</span>
+              <span className="wk-lt-dot" aria-hidden="true">
+                {isDone && <Check size={12} strokeWidth={3} />}
+                {isFailed && <X size={12} strokeWidth={3} />}
+                {isRunning && <span className="wk-lt-spin" />}
+              </span>
+              <span className="wk-lt-name">{step.name}</span>
+              <span className="wk-lt-status">
+                {isRunning ? "Working" : isDone ? "Ready" : isFailed ? "Skipped" : "Queued"}
+              </span>
+            </li>
           );
         })}
-      </div>
+      </ol>
     </div>
   );
-}
-
-function StepIcon({ status }) {
-  if (status === "done") {
-    return <CheckCircle2 size={15} className="shrink-0 text-emerald-600" />;
-  }
-  if (status === "failed") {
-    return <XCircle size={15} className="shrink-0 text-red-500" />;
-  }
-  if (status === "running") {
-    return <Loader2 size={15} className="shrink-0 text-orange-600 animate-spin" />;
-  }
-  return <Circle size={15} className="shrink-0 text-slate-300" />;
 }
