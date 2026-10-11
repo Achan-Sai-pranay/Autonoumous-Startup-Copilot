@@ -806,7 +806,8 @@
   gap: 12px;
   margin-bottom: 16px;
 }
-.wk-card-top > span {
+.wk-card-date,
+.wk-card-top > span:not(.wk-ring) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -868,29 +869,42 @@
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
+  flex: none;
 }
 .wk-ring svg {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
   transform: rotate(-90deg);
+  transform-origin: center;
 }
 .wk-ring .track {
   fill: none;
-  stroke: #ececf0;
-  stroke-width: 3;
+  stroke: rgba(0, 0, 0, 0.08);
+  stroke-width: 3.2;
 }
 .wk-ring .bar {
   fill: none;
   stroke: var(--hp-orange);
-  stroke-width: 3;
+  stroke-width: 3.2;
   stroke-linecap: round;
   transition: stroke-dashoffset 1s var(--hp-ease);
 }
 .wk-ring b {
-  font-size: 12px;
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin: 0;
+  padding: 0;
+  font-size: 11.5px;
   font-weight: 600;
+  line-height: 1;
+  text-align: center;
+  color: var(--hp-ink);
   font-variant-numeric: tabular-nums;
 }
 

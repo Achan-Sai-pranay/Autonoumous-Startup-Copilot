@@ -110,8 +110,8 @@ function Ring({ value }) {
   const C = 2 * Math.PI * R;
   const v = Math.max(0, Math.min(100, Number(value) || 0));
   return (
-    <span className="wk-ring" title={`Viability ${v} out of 100`}>
-      <svg viewBox="0 0 36 36" aria-hidden="true">
+    <div className="wk-ring" title={`Viability ${v} out of 100`}>
+      <svg viewBox="0 0 36 36" width="36" height="36" aria-hidden="true">
         <circle cx="18" cy="18" r={R} className="track" />
         <circle
           cx="18"
@@ -122,7 +122,7 @@ function Ring({ value }) {
         />
       </svg>
       <b>{v}</b>
-    </span>
+    </div>
   );
 }
 
@@ -863,7 +863,7 @@ export default function WorkspacePage({
                       >
                         <div>
                           <div className="wk-card-top">
-                            <span>
+                            <span className="wk-card-date">
                               <Clock size={13} /> {dateFormatted}
                             </span>
                             <Ring value={viability} />
