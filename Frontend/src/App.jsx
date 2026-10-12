@@ -29,6 +29,7 @@ import {
   FinalCtaBanner,
   FullFooter,
 } from "./components/MarketingSections.jsx";
+import ScreenshotSlideshow from "./components/ScreenshotSlideshow.jsx";
 import {
   getHistory,
   saveToHistory,
@@ -464,6 +465,9 @@ export default function App() {
           onStartWithIdea={handleStartWithIdea}
           initialIdea={idea}
         />
+
+        {/* Real Product Screenshot Slideshow */}
+        <ScreenshotSlideshow onCtaClick={handleProtectedStart} />
 
         {/* Live Product Simulator (Interactive Mac Window with 5 Tabs) */}
         <LiveProductSimulator onCtaClick={handleProtectedStart} />
