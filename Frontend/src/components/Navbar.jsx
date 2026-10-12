@@ -56,6 +56,69 @@ export default function Navbar({
     return () => io.disconnect();
   }, []);
 
+  const scrollToSection = (id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const navBar = document.querySelector(".hp-nav");
+    const navHeight = navBar ? navBar.offsetHeight : 58;
+    const targetGap = 20; // Exact Apple-style small gap (20px) under the sticky navbar
+
+    // Target the section heading so content starts right below the navbar with a small gap
+    const head = el.querySelector(".hp-head, .lps-head, .hp-pipe-intro, h2") || el;
+
+    // Calculate layout position without being skewed by active CSS animation transforms (.hp-rv)
+    let offsetInside = 0;
+    let curr = head;
+    while (curr && curr !== el) {
+      offsetInside += curr.offsetTop;
+      curr = curr.offsetParent;
+    }
+    const sectionTop = el.getBoundingClientRect().top + window.scrollY;
+    const headingTop = sectionTop + offsetInside;
+    const targetTop = headingTop - (navHeight + targetGap);
+
+    window.scrollTo({
+      top: Math.max(0, Math.round(targetTop)),
+      behavior: "smooth",
+    });
+
+    if (window.history && window.history.pushState) {
+      window.history.pushState(null, "", `#${id}`);
+    }
+    setActive(id);
+  };
+
+  // Intercept all in-page hash links so sections land with a uniform small gap
+  useEffect(() => {
+    const onAnchorClick = (e) => {
+      const a = e.target.closest("a");
+      if (!a) return;
+      const href = a.getAttribute("href");
+      if (href && href.startsWith("#") && href.length > 1) {
+        const id = href.slice(1);
+        const target = document.getElementById(id);
+        if (target) {
+          e.preventDefault();
+          scrollToSection(id);
+        }
+      }
+    };
+    document.addEventListener("click", onAnchorClick);
+    return () => document.removeEventListener("click", onAnchorClick);
+  }, []);
+  // Handle initial hash in URL when landing directly on #features, #pricing, etc.
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.hash) {
+      const hashId = window.location.hash.replace("#", "");
+      if (hashId) {
+        const timer = setTimeout(() => {
+          scrollToSection(hashId);
+        }, 120);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     const onDown = (e) => {
       if (userRef.current && !userRef.current.contains(e.target)) setUserOpen(false);
@@ -85,6 +148,10 @@ export default function Navbar({
           className="hp-brand"
           onClick={() => {
             setMenuOpen(false);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+            if (window.location.hash) {
+              window.history.pushState(null, "", window.location.pathname);
+            }
             onNavigateHome?.();
           }}
         >
@@ -96,7 +163,15 @@ export default function Navbar({
 
         <nav className="hp-nav-links" aria-label="Sections">
           {LINKS.map((l) => (
-            <a key={l.id} href={`#${l.id}`} className={active === l.id ? "is-active" : ""}>
+            <a
+              key={l.id}
+              href={`#${l.id}`}
+              className={active === l.id ? "is-active" : ""}
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToSection(l.id);
+              }}
+            >
               {l.label}
               {l.badge && <em>{l.badge}</em>}
             </a>
@@ -180,7 +255,15 @@ export default function Navbar({
         <div className="hp-sheet">
           <nav aria-label="Sections">
             {LINKS.map((l) => (
-              <a key={l.id} href={`#${l.id}`} onClick={() => setMenuOpen(false)}>
+              <a
+                key={l.id}
+                href={`#${l.id}`}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMenuOpen(false);
+                  scrollToSection(l.id);
+                }}
+              >
                 {l.label}
                 {l.badge && <em>{l.badge}</em>}
               </a>

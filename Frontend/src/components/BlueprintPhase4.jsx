@@ -101,10 +101,14 @@ export function SwotView({ strengths = [], weaknesses = [], opportunities = [], 
 /* Porter's five forces: level shown as three pips                     */
 /* ------------------------------------------------------------------ */
 const pipsFor = (level) => {
-  const l = String(level || "").toLowerCase();
-  if (l.includes("high")) return { n: 3, tone: "rose" };
-  if (l.includes("low")) return { n: 1, tone: "green" };
-  return { n: 2, tone: "amber" };
+  const l = String(level || "").toLowerCase().trim();
+  if (l.includes("high") || l.includes("strong") || l.includes("poor") || l === "3") {
+    return { n: 3, tone: "rose", text: level || "High" };
+  }
+  if (l.includes("low") || l.includes("weak") || l.includes("good") || l === "1") {
+    return { n: 1, tone: "green", text: level || "Low" };
+  }
+  return { n: 2, tone: "amber", text: level || "Moderate" };
 };
 
 export function PortersCard({ forces = [] }) {
@@ -118,20 +122,24 @@ export function PortersCard({ forces = [] }) {
         <span>Industry structure and competitive moats</span>
       </div>
       <ul className="bp-forces">
-        {forces.map(({ label, level, analysis }) => {
-          const { n, tone } = pipsFor(level);
+        {forces.map((item) => {
+          const label = item?.label || item?.name || "Market Force";
+          const rawLevel = item?.level ?? item?.force?.level ?? item?.force?.intensity ?? item?.rating;
+          const analysis = item?.analysis ?? item?.force?.analysis ?? item?.force?.explanation ?? item?.description;
+          const { n, tone, text } = pipsFor(rawLevel);
+          const displayLevel = rawLevel || text;
           return (
             <li key={label}>
               <div>
                 <b>{label}</b>
-                <span className={`bp-pips is-${tone}`} title={level}>
+                <span className={`bp-pips is-${tone}`} title={displayLevel}>
                   {[1, 2, 3].map((p) => (
                     <i key={p} className={p <= n ? "is-on" : ""} />
                   ))}
-                  <em>{level}</em>
+                  <em>{displayLevel}</em>
                 </span>
               </div>
-              <p>{analysis}</p>
+              {analysis && <p>{analysis}</p>}
             </li>
           );
         })}

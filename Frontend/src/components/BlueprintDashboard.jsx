@@ -1361,17 +1361,23 @@ function MarketCompetitorsSection({
 }) {
   const resolvePorterForce = (key, aliases = [], fallbackAnalysis = "Moderate market dynamic.") => {
     const raw = portersFiveForces || blueprint?.portersFiveForces || {};
-    let obj = raw[key];
-    if (!obj || typeof obj !== "object") {
+    let val = raw[key];
+    if (!val) {
       for (const alias of aliases) {
-        if (raw[alias] && typeof raw[alias] === "object") {
-          obj = raw[alias];
+        if (raw[alias]) {
+          val = raw[alias];
           break;
         }
       }
     }
-    const level = toSafeString(obj?.level || obj?.intensity || obj?.rating, "Moderate");
-    const analysis = toSafeString(obj?.analysis || obj?.explanation || obj?.description, fallbackAnalysis);
+    let level = "Moderate";
+    let analysis = fallbackAnalysis;
+    if (typeof val === "string") {
+      level = val;
+    } else if (val && typeof val === "object") {
+      level = toSafeString(val.level || val.intensity || val.rating || val.score, "Moderate");
+      analysis = toSafeString(val.analysis || val.explanation || val.description || val.text, fallbackAnalysis);
+    }
     return { level, analysis };
   };
 
@@ -1470,11 +1476,11 @@ function MarketCompetitorsSection({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <PortersCard
           forces={[
-            { force: buyerPower, label: "Buyer Power" },
-            { force: supplierPower, label: "Supplier Power" },
-            { force: competitiveRivalry, label: "Competitive Rivalry" },
-            { force: threatOfSubstitutes, label: "Threat of Substitution" },
-            { force: threatOfNewEntry, label: "Threat of New Entrants" },
+            { label: "Buyer Power", level: buyerPower.level, analysis: buyerPower.analysis, force: buyerPower },
+            { label: "Supplier Power", level: supplierPower.level, analysis: supplierPower.analysis, force: supplierPower },
+            { label: "Competitive Rivalry", level: competitiveRivalry.level, analysis: competitiveRivalry.analysis, force: competitiveRivalry },
+            { label: "Threat of Substitution", level: threatOfSubstitutes.level, analysis: threatOfSubstitutes.analysis, force: threatOfSubstitutes },
+            { label: "Threat of New Entrants", level: threatOfNewEntry.level, analysis: threatOfNewEntry.analysis, force: threatOfNewEntry },
           ]}
         />
         <DemandSignals

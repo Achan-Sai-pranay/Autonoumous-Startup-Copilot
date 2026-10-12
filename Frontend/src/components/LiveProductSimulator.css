@@ -22,7 +22,8 @@
 
   position: relative;
   width: 100%;
-  padding: clamp(72px, 10vw, 150px) 20px clamp(72px, 9vw, 130px);
+  padding: clamp(38px, 5vw, 64px) 20px clamp(44px, 5.5vw, 72px);
+  scroll-margin-top: 12px;
   background: #fff;
   font-family: var(--lps-font);
   font-feature-settings: "ss01", "cv11";

@@ -386,7 +386,11 @@ export default function App() {
           onOpenPayment={handleOpenPayment}
         />
 
-        <CoFounderChatDrawer blueprint={blueprint} originalIdea={idea} />
+        {/* Fallback to latest saved project in history if active workspace has not loaded a fresh blueprint */}
+        <CoFounderChatDrawer
+          blueprint={blueprint || (history.length > 0 ? history[0]?.blueprint : null)}
+          originalIdea={idea || (history.length > 0 ? (history[0]?.idea || history[0]?.title) : "")}
+        />
 
         <AuthModal
           isOpen={showAuthModal}
@@ -415,7 +419,7 @@ export default function App() {
 
   // --- VIEW 2: ORIGINAL LAUNCHPILOT HOMEPAGE (/) -----------------------------
   return (
-    <div className="relative min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased w-full max-w-full overflow-x-hidden">
+    <div className="relative min-h-screen bg-white text-slate-900 flex flex-col font-sans selection:bg-orange-500 selection:text-white antialiased w-full max-w-full overflow-x-clip">
       {/* Global Scroll Progress Bar */}
       <div
         id="global-scroll-progress"
@@ -454,7 +458,7 @@ export default function App() {
       )}
 
       {/* 3. Main Content Container */}
-      <main className="relative z-10 flex-1 flex flex-col w-full max-w-full overflow-x-hidden">
+      <main className="relative z-10 flex-1 flex flex-col w-full max-w-full overflow-x-clip">
         {/* Hero Section with Interactive Prompt Station */}
         <HeroSection
           onStartWithIdea={handleStartWithIdea}
@@ -509,7 +513,10 @@ export default function App() {
       <FullFooter />
 
       {/* 5. Floating Gemini AI Co-Founder Chat Drawer */}
-      <CoFounderChatDrawer blueprint={blueprint} originalIdea={idea} />
+      <CoFounderChatDrawer
+        blueprint={blueprint || (history.length > 0 ? history[0]?.blueprint : null)}
+        originalIdea={idea || (history.length > 0 ? (history[0]?.idea || history[0]?.title) : "")}
+      />
 
       {/* Modals & Overlays */}
       <AuthModal
