@@ -24,6 +24,7 @@ import {
   LogOut,
   Zap,
   Sparkles,
+  BookMarked,
 } from "lucide-react";
 import { BUSINESS_SECTIONS } from "./BlueprintDashboard.jsx";
 import "./studio.css";
@@ -73,6 +74,7 @@ export default function StudioSidebar({
   onOpenPayment,
   onSignOut,
   onOpenResources,
+  onOpenDictionary,
   onOpenSettings, // optional: menu item only shows when provided
   helpUrl, // optional: menu item only shows when provided
 }) {
@@ -240,6 +242,20 @@ export default function StudioSidebar({
             onClick={() => {
               closeSidebarOnMobile();
               onOpenResources();
+            }}
+          />
+          <Item
+            icon={BookMarked}
+            label="Dictionary"
+            title="Founder dictionary & startup glossary"
+            open={open}
+            onClick={() => {
+              closeSidebarOnMobile();
+              if (onOpenDictionary) {
+                onOpenDictionary();
+              } else {
+                window.dispatchEvent(new CustomEvent("open-dictionary", { detail: {} }));
+              }
             }}
           />
         </nav>

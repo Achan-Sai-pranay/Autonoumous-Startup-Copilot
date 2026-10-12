@@ -10,6 +10,7 @@
 // Needs BlueprintPhase2.jsx (Reveal) and ./blueprint.css
 // ---------------------------------------------------------------------------
 import { Reveal } from "./BlueprintPhase2.jsx";
+import DictionaryBadge from "./dictionary/DictionaryBadge.jsx";
 import "./blueprint.css";
 
 const flat = (val) => {
@@ -26,6 +27,7 @@ const flat = (val) => {
 export function StatCard({
   title,
   icon: Icon,
+  action,
   stat,
   subtitle,
   children,
@@ -37,11 +39,14 @@ export function StatCard({
     <Reveal as="article" className={`bp-stat ${className}`}>
       <header>
         <h3>{title}</h3>
-        {Icon && (
-          <span className="bp-stat-icon">
-            <Icon size={17} />
-          </span>
-        )}
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {action}
+          {Icon && (
+            <span className="bp-stat-icon">
+              <Icon size={17} />
+            </span>
+          )}
+        </div>
       </header>
 
       {stat && (
@@ -116,6 +121,7 @@ export function PortersCard({ forces = [] }) {
     <Reveal as="article" className="bp-stat">
       <header>
         <h3>Porter’s five forces</h3>
+        <DictionaryBadge termId="porters-five-forces" />
       </header>
       <div className="bp-stat-big">
         <strong>Market defensibility</strong>
@@ -163,6 +169,7 @@ export function DemandSignals({ domain, demand, opportunities = [], competitors 
     <Reveal as="article" className="bp-stat">
       <header>
         <h3>Market demand signals</h3>
+        <DictionaryBadge termId="tam-sam-som" label="Market Sizing" />
       </header>
       <div className="bp-stat-big">
         <strong>{domain || "Market intelligence"}</strong>

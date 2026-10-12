@@ -110,6 +110,7 @@ import {
   useScrollSpy,
 } from "./BlueprintPhase6.jsx";
 import { formatCurrency, convertCurrencyString, useExchangeRate } from "../lib/currency.js";
+import DictionaryBadge from "./dictionary/DictionaryBadge.jsx";
 
 
 // ---------------------------------------------------------------------------
@@ -1251,6 +1252,7 @@ function CustomerDiscoverySection({
       {/* Card 1: Customer Persona & Profile */}
       <StatCard
         title="Target Customer Profile"
+        action={<DictionaryBadge termId="icp" />}
         icon={Users}
         iconColor="text-orange-500"
         stat={`${users.length} ICP Segments`}
@@ -1285,6 +1287,7 @@ function CustomerDiscoverySection({
       {/* Card 3: Lean Customer Discovery — Mom Test (Editable) */}
       <StatCard
         title="Lean Customer Discovery"
+        action={<DictionaryBadge termId="mom-test" />}
         icon={Lightbulb}
         iconColor="text-orange-500"
         stat="The Mom Test"
@@ -1325,6 +1328,7 @@ function CustomerDiscoverySection({
       {/* Card 5: Willingness-to-Pay Signals (Editable) */}
       <StatCard
         title="Willingness-to-Pay Signals"
+        action={<DictionaryBadge termId="willingness-to-pay" />}
         icon={Wallet}
         iconColor="text-emerald-500"
         stat={`${wtpSignals.length} Commitment Tests`}
@@ -1513,6 +1517,7 @@ function ProductMvpSection({
         {/* Card 1: MVP Scope (Sprint 1) */}
         <StatCard
           title="Product Plan"
+          action={<DictionaryBadge termId="mvp-scope" />}
           icon={ListChecks}
           stat="Sprint 1 MVP"
           subtitle={`Priority: ${productPlan?.developmentPriority || "Speed to Market"}`}
@@ -1537,6 +1542,7 @@ function ProductMvpSection({
         {/* Card 2: Production Technical Architecture (Phase 6 Tiles + MetricRow) */}
         <StatCard
           title="Technical Architecture"
+          action={<DictionaryBadge termId="cloud-architecture" />}
           icon={Cpu}
           stat="Production Stack"
           subtitle="Cloud & AI Infrastructure"
@@ -1690,6 +1696,7 @@ function FinancesSection({
               />
             </span>
           }
+          action={<DictionaryBadge termId="cloud-architecture" />}
           icon={Wallet}
           stat={convertCurrencyString(toSafeString(costEstimator?.estimatedMonthlyCost, "₹1,500 - ₹4,900"), "INR")}
           subtitle="Estimated Monthly Burn"
@@ -1725,6 +1732,7 @@ function FinancesSection({
               />
             </span>
           }
+          action={<DictionaryBadge termId="arr" label="ARR/MRR" />}
           icon={TrendingUp}
           stat={convertCurrencyString(toSafeString(revenueSimulator?.projections?.[2]?.annualRevenue, "₹5.7 Crore"), "INR")}
           subtitle={convertCurrencyString(toSafeString(revenueSimulator?.pricingAssumption, "Based on subscription model"), "INR")}
@@ -1762,6 +1770,7 @@ function FinancesSection({
               />
             </span>
           }
+          action={<DictionaryBadge termId="unit-economics" />}
           icon={BarChart3}
           stat={`${formatCurrency(estimatedLtv, "INR")} LTV`}
           subtitle={`ARPU: ${formatCurrency(arpu, "INR")}/mo | Target CAC: <${formatCurrency(targetCac, "INR")}`}

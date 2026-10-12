@@ -35,6 +35,7 @@ import {
 import StudioSidebar from "./StudioSidebar.jsx";
 import IdeaFinder from "./IdeaFinder.jsx";
 import ResourcesVault from "./ResourcesVault.jsx";
+import StartupDictionaryModal from "./dictionary/StartupDictionaryModal.jsx";
 import { ScrollProgress } from "./BlueprintPhase2.jsx";
 import "./home.css";
 import "./workspace.css";
@@ -139,8 +140,20 @@ export default function WorkspacePage({
   const [exportingId, setExportingId] = useState(null);
   const [toastMessage, setToastMessage] = useState(null);
   const [showResourcesModal, setShowResourcesModal] = useState(false);
+  const [showDictionaryModal, setShowDictionaryModal] = useState(false);
+  const [selectedDictionaryTerm, setSelectedDictionaryTerm] = useState(null);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const userDropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleOpenDict = (e) => {
+      const termId = e.detail?.termId || null;
+      setSelectedDictionaryTerm(termId);
+      setShowDictionaryModal(true);
+    };
+    window.addEventListener("open-dictionary", handleOpenDict);
+    return () => window.removeEventListener("open-dictionary", handleOpenDict);
+  }, []);
 
   const scrollToTop = useCallback(() => {
     if (mainScrollRef.current) {
@@ -351,6 +364,10 @@ export default function WorkspacePage({
         onOpenPayment={onOpenPayment}
         onSignOut={onSignOut}
         onOpenResources={() => setShowResourcesModal(true)}
+        onOpenDictionary={() => {
+          setSelectedDictionaryTerm(null);
+          setShowDictionaryModal(true);
+        }}
       />
 
       {/* ---------------------------- Content ---------------------------- */}
@@ -705,6 +722,18 @@ export default function WorkspacePage({
         blueprint={blueprint || history[0]?.blueprint}
         idea={idea || history[0]?.idea}
         onToast={showToast}
+      />
+
+      <StartupDictionaryModal
+        isOpen={showDictionaryModal}
+        onClose={() => setShowDictionaryModal(false)}
+        activeTermId={selectedDictionaryTerm}
+        onNavigateSection={(secId) => {
+          setActiveView("blueprint");
+          setViewMode("dashboard");
+          setActiveSection(secId);
+          setTimeout(() => scrollToSection(`section-${secId}`), 40);
+        }}
       />
     </div>
   );
