@@ -1,9 +1,8 @@
 // components/ScreenshotSlideshow.jsx
 // ---------------------------------------------------------------------------
 // Homepage product showcase. Same prop as before: <ScreenshotSlideshow onCtaClick={...} />
-// Light Apple-style window frame, sliding segmented control, story-style
-// progress line (the animation itself advances the slide, so progress and
-// autoplay can never drift apart), click-to-expand viewer, swipe + arrow keys.
+// Light Apple-style window frame, sliding segmented control, silent autoplay,
+// click-to-expand viewer, swipe + arrow keys.
 //
 // Image paths & slide definitions live in `src/lib/screenshotSlidesConfig.js`
 // so you can swap screenshots anytime without touching this file's logic or CSS.
@@ -19,6 +18,8 @@ import {
 } from "lucide-react";
 import { SLIDES as DEFAULT_SLIDES } from "../lib/screenshotSlidesConfig.js";
 import "./ScreenshotSlideshow.css";
+
+const AUTOPLAY_MS = 5000;
 
 export default function ScreenshotSlideshow({ onCtaClick, slides = DEFAULT_SLIDES }) {
   const [index, setIndex] = useState(0);
@@ -49,11 +50,23 @@ export default function ScreenshotSlideshow({ onCtaClick, slides = DEFAULT_SLIDE
         setInView(e.isIntersecting);
         if (e.isIntersecting) setRevealed(true);
       },
-      { threshold: 0.3 }
+      { threshold: 0.25 }
     );
     io.observe(el);
     return () => io.disconnect();
   }, []);
+
+  const paused = !playing || hovered || !inView || expanded;
+
+  // Silent autoplay interval (no visible progress timer bar)
+  useEffect(() => {
+    if (paused) return;
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return;
+    }
+    const id = setInterval(next, AUTOPLAY_MS);
+    return () => clearInterval(id);
+  }, [paused, next, index]);
 
   // warm the next image so the cross-fade never shows a blank frame
   useEffect(() => {
@@ -75,7 +88,6 @@ export default function ScreenshotSlideshow({ onCtaClick, slides = DEFAULT_SLIDE
     };
   }, [expanded]);
 
-  const paused = !playing || hovered || !inView || expanded;
   const slide = slides[index] || slides[0];
 
   const onKeyDown = (e) => {
@@ -128,15 +140,6 @@ export default function ScreenshotSlideshow({ onCtaClick, slides = DEFAULT_SLIDE
               );
             })}
           </div>
-        </div>
-
-        {/* Progress: the animation ending advances the slide */}
-        <div className="ps-progress" aria-hidden="true">
-          <i
-            key={index}
-            style={{ animationPlayState: paused ? "paused" : "running" }}
-            onAnimationEnd={next}
-          />
         </div>
 
         {/* Window */}

@@ -35,23 +35,14 @@ const FOUNDER_TIPS = [
   "Distribution: drafting LinkedIn outreach, Reddit launch copy and email hooks, ready to send.",
 ];
 
-const formatTime = (secs) => {
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
-};
-
 // steps: [{ name: string, status: "pending" | "running" | "done" | "failed" }]
 export default function LoadingTimeline({ steps }) {
-  const [elapsed, setElapsed] = useState(0);
   const [tipIndex, setTipIndex] = useState(0);
   const listRef = useRef(null);
 
   useEffect(() => {
-    const timer = setInterval(() => setElapsed((p) => p + 1), 1000);
     const tipTimer = setInterval(() => setTipIndex((p) => (p + 1) % FOUNDER_TIPS.length), 7000);
     return () => {
-      clearInterval(timer);
       clearInterval(tipTimer);
     };
   }, []);
@@ -62,8 +53,6 @@ export default function LoadingTimeline({ steps }) {
   const runningStep = runningIndex !== -1 ? steps[runningIndex] : null;
   const basePercent = Math.round(((completedSteps + (runningStep ? 0.4 : 0)) / totalSteps) * 100);
   const progress = Math.min(98, Math.max(6, basePercent));
-
-  const remaining = elapsed < 35 ? `~${35 - elapsed}s` : elapsed < 65 ? "Synthesizing" : "Wrapping up";
 
   // Keep the active agent in view inside the list
   useEffect(() => {
@@ -84,16 +73,6 @@ export default function LoadingTimeline({ steps }) {
               : "Finalizing your startup blueprint…"}
           </p>
         </div>
-        <dl className="wk-lt-times">
-          <div>
-            <dt>Remaining</dt>
-            <dd className="is-accent">{remaining}</dd>
-          </div>
-          <div>
-            <dt>Elapsed</dt>
-            <dd>{formatTime(elapsed)}</dd>
-          </div>
-        </dl>
       </div>
 
       <div
