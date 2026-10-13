@@ -1,348 +1,233 @@
 // components/ScreenshotSlideshow.jsx
 // ---------------------------------------------------------------------------
-// Real Product Screenshot Slideshow for LaunchPilot Homepage
-// Shows authentic screenshots of LaunchPilot Studio and the 7-section blueprint
-// with a VenturusAI-inspired pill tab bar and macOS chassis.
+// Homepage product showcase. Same prop as before: <ScreenshotSlideshow onCtaClick={...} />
+// Light Apple-style window frame, sliding segmented control, story-style
+// progress line (the animation itself advances the slide, so progress and
+// autoplay can never drift apart), click-to-expand viewer, swipe + arrow keys.
+//
+// Image paths & slide definitions live in `src/lib/screenshotSlidesConfig.js`
+// so you can swap screenshots anytime without touching this file's logic or CSS.
 // ---------------------------------------------------------------------------
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  FolderKanban,
-  ShieldCheck,
-  Swords,
-  Wallet,
-  Rocket,
-  ChevronLeft,
-  ChevronRight,
-  Play,
-  Pause,
   ArrowRight,
   Lock,
+  Maximize2,
+  Pause,
+  Play,
+  X,
 } from "lucide-react";
+import { SLIDES as DEFAULT_SLIDES } from "../lib/screenshotSlidesConfig.js";
 import "./ScreenshotSlideshow.css";
 
-const SLIDES = [
-  {
-    id: "workspace",
-    numeral: "Hub",
-    label: "Startup Studio",
-    icon: FolderKanban,
-    tag: "Platform Workspace",
-    title: "LaunchPilot Studio & 12 AI Specialists",
-    desc: "Manage saved blueprints, monitor composite viability trends, and launch deep multi-agent analyses from your private founder vault.",
-    url: "launchpilot.ai/app • Founder Studio Hub",
-    image: "/screenshots/workspace.png",
-  },
-  {
-    id: "overview",
-    numeral: "01",
-    label: "Executive Overview",
-    icon: ShieldCheck,
-    tag: "Stage 01 of 7",
-    title: "Venture Viability Spotlight (92/100)",
-    desc: "Instant synthesis with calibrated viability scoring, core value proposition story trio, and strategic founder brief.",
-    url: "launchpilot.ai/app#overview • Stage 01 Viability",
-    image: "/screenshots/overview.png",
-  },
-  {
-    id: "vc-debate",
-    numeral: "02",
-    label: "VC War Room",
-    icon: Swords,
-    tag: "Stage 02 of 7",
-    title: "3-AI Multi-Agent Committee Debate",
-    desc: "Groq Llama 3.3 (Bull) defends the upside, OpenRouter DeepSeek V3 (Bear) attacks fatal risks, and Gemini 2.5 delivers the arbitrated ruling.",
-    url: "launchpilot.ai/app#vc-debate • 3-AI War Room",
-    image: "/screenshots/vc-debate.png",
-  },
-  {
-    id: "finances",
-    numeral: "06",
-    label: "Financial Simulator",
-    icon: Wallet,
-    tag: "Stage 06 of 7",
-    title: "Dynamic Unit Economics & Revenue Modeling",
-    desc: "Interactive pricing and customer volume sliders calculate real cloud burn, break-even thresholds, and ARR projections in real-time.",
-    url: "launchpilot.ai/app#finances • Unit Economics",
-    image: "/screenshots/financials.png",
-  },
-  {
-    id: "gtm-kit",
-    numeral: "07",
-    label: "Go-to-Market",
-    icon: Rocket,
-    tag: "Stage 07 of 7",
-    title: "Distribution Flywheel & Ready-to-Post Copy",
-    desc: "Channel-specific growth flywheels, proven founder outreach playbooks, and pre-written Reddit, LinkedIn, and X launch templates.",
-    url: "launchpilot.ai/app#gtm • Go-to-Market Engine",
-    image: "/screenshots/gtm-kit.png",
-  },
-];
+export default function ScreenshotSlideshow({ onCtaClick, slides = DEFAULT_SLIDES }) {
+  const [index, setIndex] = useState(0);
+  const [playing, setPlaying] = useState(true);
+  const [hovered, setHovered] = useState(false);
+  const [inView, setInView] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [loaded, setLoaded] = useState({});
+  const [failed, setFailed] = useState({});
 
-const AUTOPLAY_DURATION = 4500; // 4.5 seconds
+  const root = useRef(null);
+  const touch = useRef({ x: 0, y: 0 });
 
-export default function ScreenshotSlideshow({ onCtaClick }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isHovered, setIsHovered] = useState(false);
-  const [isInViewport, setIsInViewport] = useState(true);
+  const next = useCallback(() => setIndex((i) => (i + 1) % slides.length), [slides.length]);
+  const prev = useCallback(() => setIndex((i) => (i - 1 + slides.length) % slides.length), [slides.length]);
 
-  const containerRef = useRef(null);
-  const timerRef = useRef(null);
-  const touchStartX = useRef(0);
-  const touchEndX = useRef(0);
-
-  // Check prefers-reduced-motion
-  const prefersReduced = useCallback(() => {
-    return (
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    );
-  }, []);
-
-  const goToNext = useCallback(() => {
-    setCurrentIndex((prev) => (prev + 1) % SLIDES.length);
-  }, []);
-
-  const goToPrev = useCallback(() => {
-    setCurrentIndex((prev) => (prev - 1 + SLIDES.length) % SLIDES.length);
-  }, []);
-
-  const goToIndex = (idx) => {
-    setCurrentIndex(idx);
-  };
-
-  // Pause offscreen with IntersectionObserver
+  // reveal once, pause when off screen
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el || typeof IntersectionObserver === "undefined") return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        setIsInViewport(entry.isIntersecting);
-      },
-      { threshold: 0.15 }
-    );
-
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  // Autoplay timer logic
-  useEffect(() => {
-    if (prefersReduced() || !isPlaying || isHovered || !isInViewport) {
-      if (timerRef.current) clearInterval(timerRef.current);
+    const el = root.current;
+    if (!el || typeof IntersectionObserver === "undefined") {
+      setInView(true);
+      setRevealed(true);
       return;
     }
+    const io = new IntersectionObserver(
+      ([e]) => {
+        setInView(e.isIntersecting);
+        if (e.isIntersecting) setRevealed(true);
+      },
+      { threshold: 0.3 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
-    timerRef.current = setInterval(() => {
-      goToNext();
-    }, AUTOPLAY_DURATION);
+  // warm the next image so the cross-fade never shows a blank frame
+  useEffect(() => {
+    if (!slides.length) return;
+    const img = new Image();
+    img.src = slides[(index + 1) % slides.length].image;
+  }, [index, slides]);
 
+  // expanded viewer: Esc closes, page scroll locked
+  useEffect(() => {
+    if (!expanded) return;
+    const onKey = (e) => e.key === "Escape" && setExpanded(false);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
     };
-  }, [isPlaying, isHovered, isInViewport, goToNext, prefersReduced, currentIndex]);
+  }, [expanded]);
 
-  // Keyboard navigation
-  const handleKeyDown = (e) => {
-    if (e.key === "ArrowLeft") {
-      goToPrev();
-    } else if (e.key === "ArrowRight") {
-      goToNext();
-    }
+  const paused = !playing || hovered || !inView || expanded;
+  const slide = slides[index] || slides[0];
+
+  const onKeyDown = (e) => {
+    if (e.key === "ArrowRight") next();
+    if (e.key === "ArrowLeft") prev();
+  };
+  const onTouchStart = (e) => (touch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY });
+  const onTouchEnd = (e) => {
+    const dx = touch.current.x - e.changedTouches[0].clientX;
+    const dy = touch.current.y - e.changedTouches[0].clientY;
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy)) (dx > 0 ? next : prev)();
   };
 
-  // Touch swipe support
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchMove = (e) => {
-    touchEndX.current = e.touches[0].clientX;
-  };
-
-  const handleTouchEnd = () => {
-    const diff = touchStartX.current - touchEndX.current;
-    if (Math.abs(diff) > 50) {
-      if (diff > 0) goToNext();
-      else goToPrev();
-    }
-  };
-
-  const currentSlide = SLIDES[currentIndex];
+  if (!slide) return null;
 
   return (
-    <section
-      ref={containerRef}
-      className="hp-slideshow"
-      aria-label="LaunchPilot Real Screenshot Tour"
-      onKeyDown={handleKeyDown}
-      tabIndex={0}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="hp-slideshow-wrap">
-        {/* Section Heading */}
-        <div className="hp-slideshow-head">
-          <div className="hp-slideshow-badge">
-            <span className="hp-slideshow-badge-dot" aria-hidden="true" />
-            Live Platform Showcase
+    <section ref={root} className={`ps ${revealed ? "is-in" : ""}`} aria-label="Product tour" onKeyDown={onKeyDown}>
+      <div className="ps-glow" aria-hidden="true" />
+
+      <div className="ps-wrap">
+        <header className="ps-head">
+          <span className="ps-eyebrow">
+            <i />
+            Inside the product
+          </span>
+          <h2>See exactly what you get.</h2>
+          <p>Real screens from LaunchPilot. From a one-line idea to a debated, costed and launch-ready plan.</p>
+        </header>
+
+        {/* Segmented control with a sliding thumb */}
+        <div className="ps-tabs-scroll">
+          <div className="ps-tabs" role="tablist" aria-label="Product tour" style={{ "--n": slides.length, "--i": index }}>
+            <i className="ps-thumb" aria-hidden="true" />
+            {slides.map((s, i) => {
+              const Icon = s.icon;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  role="tab"
+                  id={`ps-tab-${s.id}`}
+                  aria-selected={i === index}
+                  aria-controls={`ps-panel-${s.id}`}
+                  className={i === index ? "is-on" : ""}
+                  onClick={() => setIndex(i)}
+                >
+                  <Icon size={15} />
+                  <span>{s.label}</span>
+                </button>
+              );
+            })}
           </div>
-          <h2 className="hp-slideshow-title">
-            See the exact blueprints our 12 AI co-founders build.
-          </h2>
-          <p className="hp-slideshow-lede">
-            Real interactive screenshots from LaunchPilot Studio. From multi-model investor debates to dynamic unit economics and ready-to-post launch copy.
-          </p>
         </div>
 
-        {/* Tab Pills Bar (VenturusAI-inspired) */}
-        <div className="hp-slideshow-tabs" role="tablist" aria-label="Product tour tabs">
-          {SLIDES.map((slide, idx) => {
-            const Icon = slide.icon;
-            const isActive = idx === currentIndex;
-            return (
-              <button
-                key={slide.id}
-                role="tab"
-                aria-selected={isActive}
-                aria-controls={`slide-panel-${slide.id}`}
-                id={`slide-tab-${slide.id}`}
-                className={`hp-slideshow-tab ${isActive ? "is-active" : ""}`}
-                onClick={() => goToIndex(idx)}
-              >
-                <span className="hp-slideshow-tab-icon">
-                  <Icon size={16} />
-                </span>
-                <span>{slide.label}</span>
-                <span className="hp-slideshow-tab-num">{slide.numeral}</span>
-                {isActive && isPlaying && !isHovered && isInViewport && (
-                  <span
-                    className="hp-slideshow-tab-timer"
-                    style={{ animationDuration: `${AUTOPLAY_DURATION}ms` }}
-                    aria-hidden="true"
-                  />
-                )}
-              </button>
-            );
-          })}
+        {/* Progress: the animation ending advances the slide */}
+        <div className="ps-progress" aria-hidden="true">
+          <i
+            key={index}
+            style={{ animationPlayState: paused ? "paused" : "running" }}
+            onAnimationEnd={next}
+          />
         </div>
 
-        {/* Mac Window Frame */}
+        {/* Window */}
         <div
-          className="hp-slideshow-frame"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
+          className="ps-stage"
+          onMouseEnter={() => setHovered(true)}
+          onMouseLeave={() => setHovered(false)}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
         >
-          {/* macOS Titlebar */}
-          <div className="hp-slideshow-titlebar">
-            <div className="hp-slideshow-dots" aria-hidden="true">
-              <span className="hp-slideshow-dot is-close" />
-              <span className="hp-slideshow-dot is-min" />
-              <span className="hp-slideshow-dot is-max" />
-            </div>
-
-            <div className="hp-slideshow-address">
-              <span className="is-lock" aria-hidden="true">
-                <Lock size={12} />
+          <div className="ps-window">
+            <div className="ps-bar">
+              <span className="ps-lights" aria-hidden="true">
+                <i />
+                <i />
+                <i />
               </span>
-              <strong>{currentSlide.url}</strong>
-            </div>
-
-            <div className="hp-slideshow-titlebar-right">
-              <span className="hp-slideshow-live-badge">
-                Real capture
+              <span className="ps-address" key={slide.url}>
+                <Lock size={11} />
+                {slide.url}
               </span>
+              <span className="ps-bar-end" />
             </div>
-          </div>
 
-          {/* Viewport for Screenshots */}
-          <div className="hp-slideshow-viewport">
-            {SLIDES.map((slide, idx) => (
-              <div
-                key={slide.id}
-                id={`slide-panel-${slide.id}`}
-                role="tabpanel"
-                aria-labelledby={`slide-tab-${slide.id}`}
-                className={`hp-slideshow-slide ${idx === currentIndex ? "is-active" : ""}`}
-              >
-                <img
-                  src={slide.image}
-                  alt={`${slide.title} — Real screenshot from LaunchPilot`}
-                  className="hp-slideshow-img"
-                  loading={idx === 0 ? "eager" : "lazy"}
-                />
-              </div>
-            ))}
-
-            {/* Previous Arrow */}
-            <button
-              type="button"
-              className="hp-slideshow-arrow is-prev"
-              onClick={goToPrev}
-              aria-label="Previous screenshot"
-            >
-              <ChevronLeft size={22} />
+            <button type="button" className="ps-view" onClick={() => setExpanded(true)} aria-label="Expand screenshot">
+              {slides.map((s, i) => (
+                <span
+                  key={s.id}
+                  id={`ps-panel-${s.id}`}
+                  role="tabpanel"
+                  aria-labelledby={`ps-tab-${s.id}`}
+                  aria-hidden={i !== index}
+                  className={`ps-slide ${i === index ? "is-on" : ""} ${i < index ? "is-before" : ""}`}
+                >
+                  {failed[s.id] ? (
+                    <span className="ps-missing">Screenshot unavailable</span>
+                  ) : (
+                    <img
+                      src={s.image}
+                      alt={`${s.title} A screenshot of the ${s.label} view in LaunchPilot.`}
+                      loading={i === 0 ? "eager" : "lazy"}
+                      decoding="async"
+                      className={loaded[s.id] ? "is-loaded" : ""}
+                      onLoad={() => setLoaded((l) => ({ ...l, [s.id]: true }))}
+                      onError={() => setFailed((f) => ({ ...f, [s.id]: true }))}
+                    />
+                  )}
+                </span>
+              ))}
+              <span className="ps-expand" aria-hidden="true">
+                <Maximize2 size={14} /> Click to expand
+              </span>
             </button>
-
-            {/* Next Arrow */}
-            <button
-              type="button"
-              className="hp-slideshow-arrow is-next"
-              onClick={goToNext}
-              aria-label="Next screenshot"
-            >
-              <ChevronRight size={22} />
-            </button>
-          </div>
-
-          {/* Bottom Information Glass Bar */}
-          <div className="hp-slideshow-caption-bar">
-            <div className="hp-slideshow-caption-text">
-              <div className="hp-slideshow-caption-title">
-                <span>{currentSlide.title}</span>
-                <span className="hp-slideshow-caption-pill">{currentSlide.tag}</span>
-              </div>
-              <p className="hp-slideshow-caption-desc">{currentSlide.desc}</p>
-            </div>
-
-            <div className="hp-slideshow-caption-actions">
-              <button
-                type="button"
-                className="hp-slideshow-playpause"
-                onClick={() => setIsPlaying(!isPlaying)}
-                aria-label={isPlaying ? "Pause slideshow autoplay" : "Resume slideshow autoplay"}
-                title={isPlaying ? "Pause" : "Play"}
-              >
-                {isPlaying ? <Pause size={15} /> : <Play size={15} />}
-              </button>
-
-              <button
-                type="button"
-                className="hp-slideshow-cta"
-                onClick={() => onCtaClick?.()}
-              >
-                Test your idea now <ArrowRight size={14} />
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* Bottom Dot Indicators */}
-        <div className="hp-slideshow-indicators" role="tablist" aria-label="Jump to slide">
-          {SLIDES.map((slide, idx) => (
-            <button
-              key={slide.id}
-              type="button"
-              className={`hp-slideshow-indicator-dot ${idx === currentIndex ? "is-active" : ""}`}
-              onClick={() => goToIndex(idx)}
-              aria-label={`Jump to slide ${idx + 1}: ${slide.label}`}
-              aria-selected={idx === currentIndex}
-            />
-          ))}
+        {/* Caption */}
+        <div className="ps-caption">
+          <div key={slide.id} className="ps-caption-text">
+            <span className="ps-tag">{slide.tag}</span>
+            <h3>{slide.title}</h3>
+            <p>{slide.desc}</p>
+            <ul>
+              {slide.points.map((p) => (
+                <li key={p}>{p}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="ps-caption-actions">
+            <button type="button" className="ps-round" onClick={() => setPlaying((p) => !p)} aria-label={playing ? "Pause tour" : "Play tour"} title={playing ? "Pause" : "Play"}>
+              {playing ? <Pause size={16} /> : <Play size={16} />}
+            </button>
+            <button type="button" className="hp-btn hp-btn--primary hp-btn--lg" onClick={() => onCtaClick?.()}>
+              Test your idea <ArrowRight size={16} />
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Expanded viewer */}
+      {expanded && (
+        <div className="ps-lightbox" role="dialog" aria-modal="true" aria-label={`${slide.label} screenshot`} onMouseDown={(e) => e.target === e.currentTarget && setExpanded(false)}>
+          <button type="button" className="ps-lightbox-close" onClick={() => setExpanded(false)} aria-label="Close">
+            <X size={20} />
+          </button>
+          <div className="ps-lightbox-scroll">
+            <img src={slide.image} alt={`${slide.label} screenshot, full size`} />
+          </div>
+        </div>
+      )}
     </section>
   );
 }
