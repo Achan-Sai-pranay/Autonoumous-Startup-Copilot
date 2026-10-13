@@ -1,23 +1,13 @@
 // Frontend/src/components/dictionary/StartupDictionaryModal.jsx
 // ---------------------------------------------------------------------------
-// Founder Dictionary & Knowledge Vault Modal
-// Provides founders with plain-English definitions, formulas, real-world examples,
-// and actionable takeaways for complex startup, financial, and architectural terms.
+// Founder Dictionary, redesigned. Same props and data file as before:
+//   isOpen, onClose, activeTermId, onNavigateSection
+// New: highlighted search matches, arrow-key navigation, "/" to search,
+// phone layout with list -> detail navigation, animated detail transitions.
+// Styles: ./dictionary.css (replace the old file; needs home.css tokens).
 // ---------------------------------------------------------------------------
-import { useState, useEffect, useMemo, useRef } from "react";
-import {
-  BookMarked,
-  Search,
-  X,
-  Copy,
-  Check,
-  ArrowRight,
-  Sparkles,
-  AlertCircle,
-  HelpCircle,
-  Calculator,
-  Compass,
-} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { ArrowLeft, ArrowRight, BookMarked, Check, Copy, HelpCircle, Lightbulb, Search, X } from "lucide-react";
 import {
   DICTIONARY_CATEGORIES,
   DICTIONARY_TERMS,
@@ -26,284 +16,246 @@ import {
 } from "../../lib/startupDictionaryData.js";
 import "./dictionary.css";
 
-export default function StartupDictionaryModal({
-  isOpen,
-  onClose,
-  activeTermId,
-  onNavigateSection,
-}) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedTermId, setSelectedTermId] = useState(
-    activeTermId || DICTIONARY_TERMS[0]?.id || "mom-test"
+function Hl({ text, q }) {
+  if (!q) return text;
+  const i = text.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return text;
+  return (
+    <>
+      {text.slice(0, i)}
+      <mark>{text.slice(i, i + q.length)}</mark>
+      {text.slice(i + q.length)}
+    </>
   );
+}
+
+export default function StartupDictionaryModal({ isOpen, onClose, activeTermId, onNavigateSection }) {
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("all");
+  const [selectedId, setSelectedId] = useState(activeTermId || DICTIONARY_TERMS[0]?.id);
+  const [showDetail, setShowDetail] = useState(Boolean(activeTermId)); // phone only
   const [copied, setCopied] = useState(false);
 
-  const searchInputRef = useRef(null);
-  const listContainerRef = useRef(null);
+  const searchRef = useRef(null);
+  const listRef = useRef(null);
 
-  // Sync when activeTermId prop changes
+  // open on a specific term (deep link from a DictionaryBadge)
   useEffect(() => {
-    if (activeTermId) {
-      const found = getDictionaryTerm(activeTermId);
-      if (found) {
-        setSelectedTermId(found.id);
-        if (selectedCategory !== "all" && found.category !== selectedCategory) {
-          setSelectedCategory("all");
-        }
-      }
+    if (!activeTermId) return;
+    const found = getDictionaryTerm(activeTermId);
+    if (found) {
+      setSelectedId(found.id);
+      setShowDetail(true);
+      setQuery("");
+      setCategory("all");
     }
   }, [activeTermId]);
 
-  // Keyboard shortcut: Esc to close
+  const terms = useMemo(() => searchDictionary(query, category), [query, category]);
+  const current = useMemo(
+    () => getDictionaryTerm(selectedId) || terms[0] || DICTIONARY_TERMS[0],
+    [selectedId, terms]
+  );
+
+  // lock page scroll while open, focus search, Esc closes, "/" focuses search
   useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (e) => {
-      if (e.key === "Escape") {
-        onClose?.();
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const t = setTimeout(() => !activeTermId && searchRef.current?.focus(), 120);
+    const onKey = (e) => {
+      if (e.key === "Escape") onClose?.();
+      if (e.key === "/" && document.activeElement !== searchRef.current) {
+        e.preventDefault();
+        searchRef.current?.focus();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+    window.addEventListener("keydown", onKey);
+    return () => {
+      clearTimeout(t);
+      document.body.style.overflow = prev;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [isOpen, onClose, activeTermId]);
 
-  // Auto focus search input when opening modal
+  // keep the selected row visible
   useEffect(() => {
-    if (isOpen) {
-      setTimeout(() => searchInputRef.current?.focus(), 80);
-    }
-  }, [isOpen]);
-
-  // Filtered terms
-  const filteredTerms = useMemo(() => {
-    return searchDictionary(searchQuery, selectedCategory);
-  }, [searchQuery, selectedCategory]);
-
-  // Current active term
-  const currentTerm = useMemo(() => {
-    const direct = getDictionaryTerm(selectedTermId);
-    if (direct) return direct;
-    return filteredTerms[0] || DICTIONARY_TERMS[0];
-  }, [selectedTermId, filteredTerms]);
-
-  // Copy definition handler
-  const handleCopy = () => {
-    if (!currentTerm) return;
-    const text = `${currentTerm.term}\n\nDefinition: ${currentTerm.shortDefinition}\n\nWhy It Matters: ${currentTerm.whyItMatters}\n\nFormula/Rule: ${currentTerm.formulaOrRule}\n\nExample: ${currentTerm.example}`;
-    navigator.clipboard?.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  // Jump to corresponding blueprint section
-  const handleJumpToSection = (sectionId) => {
-    if (!sectionId) return;
-    onClose?.();
-    if (onNavigateSection) {
-      onNavigateSection(sectionId);
-    } else {
-      const el = document.getElementById(`section-${sectionId}`);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
-    }
-  };
+    listRef.current?.querySelector(`[data-term="${current?.id}"]`)?.scrollIntoView({ block: "nearest" });
+  }, [current?.id]);
 
   if (!isOpen) return null;
 
+  const onListKey = (e) => {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+    e.preventDefault();
+    const i = terms.findIndex((t) => t.id === current?.id);
+    const next = terms[Math.max(0, Math.min(terms.length - 1, i + (e.key === "ArrowDown" ? 1 : -1)))];
+    if (next) setSelectedId(next.id);
+  };
+
+  const copy = () => {
+    if (!current) return;
+    navigator.clipboard?.writeText(
+      `${current.term}\n\nDefinition: ${current.shortDefinition}\n\nWhy it matters: ${current.whyItMatters}\n\nFormula / rule: ${current.formulaOrRule}\n\nExample: ${current.example}`
+    );
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1800);
+  };
+
+  const jump = (id) => {
+    if (!id) return;
+    onClose?.();
+    if (onNavigateSection) onNavigateSection(id);
+    else document.getElementById(`section-${id}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const q = query.trim();
+
   return (
-    <div
-      className="dict-modal-overlay"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose?.();
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Founder Dictionary"
-    >
-      <div className="dict-modal-window">
+    <div className="dict-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose?.()} role="dialog" aria-modal="true" aria-labelledby="dict-title">
+      <div className="dict-window">
         {/* Header */}
-        <header className="dict-modal-header">
-          <div className="dict-header-title-wrap">
-            <div className="dict-header-icon">
-              <BookMarked size={20} />
-            </div>
-            <div>
-              <h2 className="dict-header-title">Founder Dictionary & Knowledge Vault</h2>
-              <p className="dict-header-subtitle">
-                Clear definitions, benchmarks, and tactical formulas across the 7 agentic stages
-              </p>
-            </div>
+        <header className="dict-head">
+          <span className="dict-head-icon">
+            <BookMarked size={20} />
+          </span>
+          <div>
+            <h2 id="dict-title">Founder dictionary</h2>
+            <p>Plain-English meanings, formulas and benchmarks for every term in your report.</p>
           </div>
-          <button
-            type="button"
-            className="dict-close-btn"
-            onClick={onClose}
-            aria-label="Close dictionary"
-          >
+          <button type="button" className="dict-iconbtn" onClick={onClose} aria-label="Close dictionary">
             <X size={18} />
           </button>
         </header>
 
-        {/* Toolbar: Search + Category Filters */}
-        <div className="dict-toolbar">
-          <div className="dict-search-bar">
-            <Search size={16} className="dict-search-icon" />
+        {/* Search and categories */}
+        <div className="dict-tools">
+          <label className="dict-search">
+            <Search size={16} />
             <input
-              ref={searchInputRef}
-              type="text"
-              className="dict-search-input"
-              placeholder="Search startup terms, formulas, or metrics (e.g. Mom Test, ARR, Porter's, LTV)..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              ref={searchRef}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search terms, formulas or metrics"
+              aria-label="Search the dictionary"
             />
-            {searchQuery && (
-              <button
-                type="button"
-                className="dict-search-clear"
-                onClick={() => setSearchQuery("")}
-                aria-label="Clear search"
-              >
+            {query ? (
+              <button type="button" onClick={() => setQuery("")} aria-label="Clear search">
                 <X size={14} />
               </button>
+            ) : (
+              <kbd>/</kbd>
             )}
-          </div>
-
-          <div className="dict-category-pills" role="tablist">
-            {DICTIONARY_CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                type="button"
-                role="tab"
-                aria-selected={selectedCategory === cat.id}
-                className={`dict-category-pill ${
-                  selectedCategory === cat.id ? "is-active" : ""
-                }`}
-                onClick={() => setSelectedCategory(cat.id)}
-              >
-                {cat.label}
+          </label>
+          <div className="dict-cats" role="tablist" aria-label="Categories">
+            {DICTIONARY_CATEGORIES.map((c) => (
+              <button key={c.id} type="button" role="tab" aria-selected={category === c.id} className={category === c.id ? "is-on" : ""} onClick={() => setCategory(c.id)}>
+                {c.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Two-Column Body Content */}
-        <div className="dict-body">
-          {/* Left Column: Term List */}
-          <div className="dict-term-list" ref={listContainerRef}>
-            {filteredTerms.length === 0 ? (
-              <div className="dict-empty-state">
-                <HelpCircle size={28} style={{ margin: "0 auto 8px auto", opacity: 0.5 }} />
-                <p>No matching terms found.</p>
-                <small>Try searching another keyword or switch category.</small>
+        {/* Body */}
+        <div className={`dict-body ${showDetail ? "is-detail" : ""}`}>
+          {/* List */}
+          <div className="dict-list" ref={listRef} onKeyDown={onListKey} role="listbox" aria-label="Terms">
+            <p className="dict-count">
+              {terms.length} {terms.length === 1 ? "term" : "terms"}
+            </p>
+            {terms.length === 0 ? (
+              <div className="dict-empty">
+                <HelpCircle size={28} />
+                <b>No matching terms</b>
+                <span>Try another keyword or switch category.</span>
               </div>
             ) : (
-              filteredTerms.map((item) => {
-                const isSelected = item.id === currentTerm?.id;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className={`dict-list-item ${isSelected ? "is-selected" : ""}`}
-                    onClick={() => setSelectedTermId(item.id)}
-                  >
-                    <div className="dict-item-header">
-                      <span className="dict-item-title">{item.term}</span>
-                      <span className="dict-item-tag">{item.tag}</span>
-                    </div>
-                    <span className="dict-item-preview">{item.shortDefinition}</span>
-                  </button>
-                );
-              })
+              terms.map((item, i) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  role="option"
+                  aria-selected={item.id === current?.id}
+                  data-term={item.id}
+                  className={`dict-row ${item.id === current?.id ? "is-on" : ""}`}
+                  style={{ "--i": Math.min(i, 10) }}
+                  onClick={() => {
+                    setSelectedId(item.id);
+                    setShowDetail(true);
+                  }}
+                >
+                  <span>
+                    <b>
+                      <Hl text={item.term} q={q} />
+                    </b>
+                    <em>{item.tag}</em>
+                  </span>
+                  <small>{item.shortDefinition}</small>
+                </button>
+              ))
             )}
           </div>
 
-          {/* Right Column: Term Detail */}
-          {currentTerm && (
-            <div className="dict-term-detail">
-              <div className="dict-detail-head">
+          {/* Detail */}
+          {current && (
+            <article className="dict-detail" key={current.id}>
+              <button type="button" className="dict-back" onClick={() => setShowDetail(false)}>
+                <ArrowLeft size={16} /> All terms
+              </button>
+
+              <div className="dict-detail-top">
                 <div>
-                  <div className="dict-detail-badges">
-                    <span className="dict-category-badge">
-                      {currentTerm.categoryLabel}
-                    </span>
-                    <span className="dict-tag-badge">{currentTerm.tag}</span>
-                  </div>
-                  <h3 className="dict-detail-title">{currentTerm.term}</h3>
+                  <span className="dict-chips">
+                    <i>{current.categoryLabel}</i>
+                    <i>{current.tag}</i>
+                  </span>
+                  <h3>{current.term}</h3>
                 </div>
-                <button
-                  type="button"
-                  className="dict-copy-btn"
-                  onClick={handleCopy}
-                  title="Copy definition"
-                >
-                  {copied ? (
-                    <>
-                      <Check size={14} color="#10b981" />
-                      <span>Copied!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy size={14} />
-                      <span>Copy Entry</span>
-                    </>
-                  )}
+                <button type="button" className="dict-copy" onClick={copy}>
+                  {copied ? <Check size={14} /> : <Copy size={14} />}
+                  {copied ? "Copied" : "Copy"}
                 </button>
               </div>
 
-              {/* Core Short Definition */}
-              <div className="dict-section-block">
-                <span className="dict-section-label">Core Definition</span>
-                <p className="dict-short-def">{currentTerm.shortDefinition}</p>
-                <p className="dict-long-def">{currentTerm.detailedExplanation}</p>
-              </div>
+              <section className="dict-def">
+                <p className="dict-lede">{current.shortDefinition}</p>
+                <p>{current.detailedExplanation}</p>
+              </section>
 
-              {/* Why Founders Need This */}
-              {currentTerm.whyItMatters && (
-                <div className="dict-box-why">
-                  <AlertCircle size={18} className="dict-box-why-icon" />
-                  <div>
-                    <strong style={{ display: "block", marginBottom: 3, color: "#fef3c7" }}>
-                      Why Founders Must Know This
-                    </strong>
-                    <span className="dict-box-why-text">{currentTerm.whyItMatters}</span>
-                  </div>
-                </div>
+              {current.whyItMatters && (
+                <section className="dict-card is-why">
+                  <h4>
+                    <Lightbulb size={15} /> Why founders must know this
+                  </h4>
+                  <p>{current.whyItMatters}</p>
+                </section>
               )}
 
-              {/* Formula, Rule of Thumb or Benchmark */}
-              {currentTerm.formulaOrRule && (
-                <div className="dict-box-formula">
-                  <span className="dict-box-formula-label">Rule of Thumb / Formula</span>
-                  <div className="dict-box-formula-content">{currentTerm.formulaOrRule}</div>
-                </div>
+              {current.formulaOrRule && (
+                <section className="dict-card is-rule">
+                  <h4>Rule of thumb or formula</h4>
+                  <p>{current.formulaOrRule}</p>
+                </section>
               )}
 
-              {/* Practical Scenario / Example */}
-              {currentTerm.example && (
-                <div className="dict-box-example">
-                  <span className="dict-box-example-label">Real-World Scenario</span>
-                  <div className="dict-box-example-content">{currentTerm.example}</div>
-                </div>
+              {current.example && (
+                <section className="dict-card is-example">
+                  <h4>Real-world scenario</h4>
+                  <p>{current.example}</p>
+                </section>
               )}
 
-              {/* Footer jump to report section */}
-              {currentTerm.relatedSectionId && (
-                <div className="dict-footer-jump">
-                  <span style={{ fontSize: "12px", color: "#94a3b8" }}>
-                    Referenced in: <b>{currentTerm.relatedSectionLabel}</b>
+              {current.relatedSectionId && (
+                <footer className="dict-foot">
+                  <span>
+                    Referenced in <b>{current.relatedSectionLabel}</b>
                   </span>
-                  <button
-                    type="button"
-                    className="dict-related-link"
-                    onClick={() => handleJumpToSection(currentTerm.relatedSectionId)}
-                  >
-                    <span>View Section in Report</span>
-                    <ArrowRight size={13} />
+                  <button type="button" className="hp-btn hp-btn--ghost hp-btn--sm" onClick={() => jump(current.relatedSectionId)}>
+                    View in report <ArrowRight size={14} />
                   </button>
-                </div>
+                </footer>
               )}
-            </div>
+            </article>
           )}
         </div>
       </div>
