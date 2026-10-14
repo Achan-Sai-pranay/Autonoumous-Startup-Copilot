@@ -788,6 +788,7 @@ app.get("/api/public-share/:slug", (req, res) => {
     res.json({
       success: true,
       pitch: record,
+      data: record,
     });
   } catch (err) {
     console.error("[Public Share] Fetch error:", err.message);
