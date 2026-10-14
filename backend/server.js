@@ -21,11 +21,95 @@ import { fileURLToPath } from "url";
 import { runAllAgents } from "./agents.js";
 import { chatGemini, streamChatGemini } from "./gemini.js";
 import { runInteractiveWarRoomDebate } from "./debate.js";
+import Razorpay from "razorpay";
+import crypto from "crypto";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// --- Data Directory & JSON Storage Helpers ---
+const dataDir = path.join(__dirname, "data");
+if (!fs.existsSync(dataDir)) {
+  try {
+    fs.mkdirSync(dataDir, { recursive: true });
+  } catch (err) {
+    console.warn("[DataDir] Could not ensure data directory:", err.message);
+  }
+}
+
+function readJsonFile(filename, defaultValue = []) {
+  try {
+    const p = path.join(dataDir, filename);
+    if (!fs.existsSync(p)) return defaultValue;
+    const content = fs.readFileSync(p, "utf-8");
+    return JSON.parse(content);
+  } catch (err) {
+    console.warn(`[Storage] Error reading ${filename}:`, err.message);
+    return defaultValue;
+  }
+}
+
+function writeJsonFile(filename, data) {
+  try {
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir, { recursive: true });
+    }
+    const p = path.join(dataDir, filename);
+    fs.writeFileSync(p, JSON.stringify(data, null, 2), "utf-8");
+    return true;
+  } catch (err) {
+    console.error(`[Storage] Error writing ${filename}:`, err.message);
+    return false;
+  }
+}
+
+function isSubscriberActive(userId, deviceId) {
+  const subs = readJsonFile("subscriptions.json", []);
+  const now = Date.now();
+  return subs.some((sub) => {
+    const isOwner =
+      (userId && sub.userId === userId && userId !== "guest") ||
+      (deviceId && sub.deviceId === deviceId);
+    if (!isOwner) return false;
+    const expiry = new Date(sub.expiresAt).getTime();
+    return expiry > now && sub.status === "active";
+  });
+}
+
+function getDeviceQuotaRecord(deviceId) {
+  const quotas = readJsonFile("device_quotas.json", {});
+  return quotas[deviceId] || { count: 0, firstUsed: null, lastUsed: null };
+}
+
+function recordDeviceBlueprintUsage(deviceId, ip) {
+  const quotas = readJsonFile("device_quotas.json", {});
+  const current = quotas[deviceId] || { count: 0, firstUsed: new Date().toISOString() };
+  current.count = (current.count || 0) + 1;
+  current.lastUsed = new Date().toISOString();
+  current.lastIp = ip || "unknown";
+  quotas[deviceId] = current;
+  writeJsonFile("device_quotas.json", quotas);
+  return current;
+}
+
+// --- Razorpay Gateway Initialization ---
+const razorpayKeyId = process.env.RAZORPAY_KEY_ID || "";
+const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET || "";
+
+let razorpayClient = null;
+if (razorpayKeyId && razorpayKeySecret && !razorpayKeyId.includes("placeholder")) {
+  try {
+    razorpayClient = new Razorpay({
+      key_id: razorpayKeyId,
+      key_secret: razorpayKeySecret,
+    });
+    console.log("[Razorpay] Initialized successfully with Key ID:", razorpayKeyId.slice(0, 8) + "...");
+  } catch (err) {
+    console.warn("[Razorpay] Failed to initialize client:", err.message);
+  }
+}
 
 process.on("uncaughtException", (err) => {
   console.error("[Uncaught Exception]", err);
@@ -140,6 +224,21 @@ app.post("/api/generate-blueprint", blueprintLimiter, async (req, res) => {
     });
   }
 
+  // --- Strict Device Quota Check (1 Free Demo Lifetime per Device) ---
+  const deviceId = req.headers["x-device-id"] || req.body.deviceId || "unknown_dev";
+  const userId = req.body.userId || "guest";
+  const isPro = isSubscriberActive(userId, deviceId);
+  const deviceRecord = getDeviceQuotaRecord(deviceId);
+
+  if (!isPro && deviceRecord.count >= 1) {
+    return res.status(403).json({
+      error:
+        "Free demo limit reached for this device (1 free blueprint lifetime). Upgrade to Starter (₹129/mo) or Scale (₹299/mo) to validate more startups.",
+      limitReached: true,
+      deviceId,
+    });
+  }
+
   // Switch to streaming NDJSON response with immediate anti-buffering headers
   res.writeHead(200, {
     "Content-Type": "application/x-ndjson",
@@ -177,6 +276,11 @@ app.post("/api/generate-blueprint", blueprintLimiter, async (req, res) => {
     const blueprint = await runAllAgents(cleanIdea, (progress) => {
       writeEvent({ type: "progress", ...progress });
     });
+
+    // Record device usage on first free generation
+    if (!isPro) {
+      recordDeviceBlueprintUsage(deviceId, req.ip || req.headers["x-forwarded-for"]);
+    }
 
     writeEvent({ type: "result", data: blueprint });
   } catch (error) {
@@ -298,22 +402,17 @@ app.post("/api/consultant", chatLimiter, async (req, res) => {
   });
 
   let systemPrompt = [
-    "You are the elite IdeaPulse AI Co-Founder — an experienced Silicon Valley serial founder, Y Combinator partner, and veteran startup growth advisor.",
-    "Your mission: partner with the founder to test assumptions, sharpen product positioning, pressure-test unit economics, dissect competitive defensibility, and design aggressive go-to-market strategies.",
+    "You are the founder's sharp, experienced startup Co-Founder (ex-serial founder & YC alumni).",
+    "You talk like a real human co-founder in a live team chat (Slack, WhatsApp, iMessage) — NOT an AI essay writer, NOT ChatGPT, and NOT an academic textbook.",
     "",
-    "Core Operational Principles (Production Grade):",
-    "- Be immediately helpful, tactical, and decisive. Answer the user's inquiry directly with concrete specificity without stalling or requesting intake data.",
-    "- NEVER ask the user to 'drop your startup's blueprint data into the chat' or complain about missing context. Founders come to you for swift, high-leverage execution.",
-    "- If startup blueprint context or an original idea is attached below, seamlessly ground all numbers, customer personas, value metrics, and competitive angles directly into their venture.",
-    "- If no blueprint is attached, immediately provide world-class, concrete recommendations tailored to modern high-margin software/tech ventures (target 80%+ gross margin SaaS), with exact dollar tiers, tangible value metrics, and clear assumptions.",
-    "- Format responses cleanly with GitHub-Flavored Markdown:",
-    "  * Use structured headings (e.g. `### Alternative 1: ...`).",
-    "  * Present pricing tiers with exact recommended dollar amounts, included quotas, overage rates, and target buyer profiles.",
-    "  * Include clean markdown tables for comparisons, reality checks, or unit economics.",
-    "  * Use bolding (`**`) for prices, metrics, and key insights.",
-    "  * Distinguish verified assumptions from predictive estimates clearly.",
-    "- Abbreviations: write out full meanings on first mention in brackets (e.g., CAC [Customer Acquisition Cost], LTV [Lifetime Value], TAM [Total Addressable Market], ACV [Annual Contract Value]).",
-    "- Conclude with a punchy, high-leverage 'Your Immediate Next Step' that the founder can execute today.",
+    "CRITICAL CONVERSATIONAL RULES (STRICTLY ENFORCED):",
+    "1. CRISP & CONCISE: Limit answers to 2 to 4 punchy sentences, or at most 1 short paragraph plus 2-3 brief bullet points (under 120 words total). Get straight to the point without filler.",
+    "2. NO BLOAT / NO TABLES: NEVER output markdown tables (| col |), NEVER use giant '###' headings, NEVER write horizontal dividers (---), and NEVER write textbook dissertations.",
+    "3. REALISTIC & OPINIONATED: Take a strong stance like a real partner. If pricing is too low or student churn will kill the business, say it bluntly and propose the exact fix with real dollar figures.",
+    "4. NO JARGON EXPANSION: Speak like a normal founder. Never write out acronyms in brackets (e.g. do NOT write 'CAC [Customer Acquisition Cost]' or 'B2B [Business-to-Business]'). Just use normal terms.",
+    "5. ONE CONVERSATIONAL HOOK: Always end with ONE short, natural question or next step to keep the dialogue moving (e.g., 'Want me to draft the 3-line pitch for that?').",
+    "6. QUICK FOLLOW-UP PREDICTION CHIPS: At the very end of your response, on a new line, always provide 2 or 3 quick, relevant follow-up questions the founder might want to ask next in this exact format:",
+    "<<SUGGESTIONS: [Option 1] | [Option 2] | [Option 3]>>",
   ].join("\n");
 
   if (originalIdea && typeof originalIdea === "string") {
@@ -377,6 +476,153 @@ app.post("/api/waitlist", async (req, res) => {
     console.error("Waitlist save error:", err.message);
     res.json({ success: true, message: "Acknowledged." });
   }
+});
+
+// --- 9. Device Quota Status Endpoint --------------------------------------
+app.get("/api/device-quota/:deviceId", (req, res) => {
+  const { deviceId } = req.params;
+  const userId = req.query.userId || "guest";
+  const isPro = isSubscriberActive(userId, deviceId);
+  const record = getDeviceQuotaRecord(deviceId);
+  const used = record.count || 0;
+  const remaining = isPro ? 999 : Math.max(0, 1 - used);
+
+  res.json({
+    deviceId,
+    isPro,
+    used,
+    limit: isPro ? "unlimited" : 1,
+    remaining,
+    locked: !isPro && used >= 1,
+  });
+});
+
+// --- 10. Razorpay Order Creation Endpoint ----------------------------------
+app.post("/api/razorpay/create-order", async (req, res) => {
+  try {
+    const { planId = "starter_129", userId = "guest", email = "", name = "", deviceId = "" } = req.body || {};
+
+    const planPrices = {
+      starter_129: { amount: 12900, name: "Starter Founder (5 ideas/week)" },
+      scale_299: { amount: 29900, name: "Scale Founder (10 ideas/week)" },
+    };
+
+    const selectedPlan = planPrices[planId] || planPrices.starter_129;
+    const amountInPaise = selectedPlan.amount;
+
+    if (razorpayClient) {
+      const order = await razorpayClient.orders.create({
+        amount: amountInPaise,
+        currency: "INR",
+        receipt: `lp_${Date.now().toString(36)}`,
+        notes: {
+          planId,
+          userId,
+          deviceId,
+          customerName: name,
+          customerEmail: email,
+        },
+      });
+
+      return res.json({
+        keyId: process.env.RAZORPAY_KEY_ID,
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        planId,
+      });
+    }
+
+    // Sandbox / Test fallback when keys are pending in backend/.env
+    const mockOrderId = `order_demo_${Date.now().toString(36)}`;
+    return res.json({
+      keyId: process.env.RAZORPAY_KEY_ID || "rzp_test_demo",
+      orderId: mockOrderId,
+      amount: amountInPaise,
+      currency: "INR",
+      planId,
+      sandbox: true,
+      message: "Razorpay keys pending in backend/.env — running in test simulation mode.",
+    });
+  } catch (err) {
+    console.error("[Razorpay] Create order error:", err.message);
+    res.status(500).json({ error: "Failed to initialize payment order: " + err.message });
+  }
+});
+
+// --- 11. Razorpay Payment Signature Verification Endpoint ------------------
+app.post("/api/razorpay/verify-payment", async (req, res) => {
+  try {
+    const {
+      razorpay_order_id,
+      razorpay_payment_id,
+      razorpay_signature,
+      planId = "starter_129",
+      userId = "guest",
+      deviceId = "",
+    } = req.body || {};
+
+    if (!razorpay_order_id || !razorpay_payment_id) {
+      return res.status(400).json({ error: "Missing required order or payment IDs." });
+    }
+
+    // Signature verification if secret is configured
+    if (process.env.RAZORPAY_KEY_SECRET && razorpay_signature) {
+      const expectedSignature = crypto
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+        .digest("hex");
+
+      if (expectedSignature !== razorpay_signature) {
+        return res.status(400).json({ error: "Payment verification failed: invalid signature mismatch." });
+      }
+    }
+
+    // Record subscription
+    const subscriptions = readJsonFile("subscriptions.json", []);
+    const newSub = {
+      paymentId: razorpay_payment_id,
+      orderId: razorpay_order_id,
+      userId: userId || "guest",
+      deviceId: deviceId || "unknown",
+      planId,
+      amount: planId === "scale_299" ? 299 : 129,
+      currency: "INR",
+      status: "active",
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+    };
+
+    subscriptions.push(newSub);
+    writeJsonFile("subscriptions.json", subscriptions);
+
+    return res.json({
+      success: true,
+      verified: true,
+      message: "Payment successfully verified and subscription activated.",
+      subscription: newSub,
+    });
+  } catch (err) {
+    console.error("[Razorpay] Verify payment error:", err.message);
+    res.status(500).json({ error: "Payment verification error: " + err.message });
+  }
+});
+
+// --- 12. Subscription Status Endpoint -------------------------------------
+app.get("/api/subscription/:identifier", (req, res) => {
+  const { identifier } = req.params;
+  const subs = readJsonFile("subscriptions.json", []);
+  const now = Date.now();
+  const activeSub = subs.find(
+    (s) =>
+      (s.userId === identifier || s.deviceId === identifier) &&
+      new Date(s.expiresAt).getTime() > now &&
+      s.status === "active"
+  );
+  if (activeSub) {
+    return res.json({ active: true, subscription: activeSub });
+  }
+  return res.json({ active: false });
 });
 
 app.listen(PORT, () => {

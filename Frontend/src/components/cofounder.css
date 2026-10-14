@@ -72,6 +72,40 @@
 .cf-dots i:nth-child(3) { animation-delay: 0.3s; }
 @keyframes cf-bounce { 0%, 60%, 100% { transform: none; opacity: 0.5; } 30% { transform: translateY(-5px); opacity: 1; } }
 
+/* Prediction-style follow-up suggestion chips */
+.cf-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+.cf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--hp-orange);
+  background: var(--hp-orange-tint);
+  border: 1px solid rgba(224, 86, 38, 0.22);
+  cursor: pointer;
+  transition: all 0.2s var(--hp-ease);
+  text-align: left;
+  line-height: 1.35;
+}
+.cf-chip:hover {
+  background: var(--hp-orange);
+  color: #ffffff;
+  border-color: var(--hp-orange);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px -2px rgba(224, 86, 38, 0.35);
+}
+.cf-chip:active {
+  transform: scale(0.96);
+}
+
 /* Message actions appear on hover or focus, always on touch */
 .cf-actions { display: flex; gap: 4px; margin-top: 6px; opacity: 0; transition: opacity 0.2s; }
 .cf-msg:hover .cf-actions, .cf-actions:focus-within { opacity: 1; }

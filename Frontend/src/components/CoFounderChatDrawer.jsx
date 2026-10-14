@@ -6,7 +6,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { marked } from "marked";
 import DOMPurify from "dompurify";
-import CoFounderPanel, { CoFounderLauncher } from "./CoFounderPanel.jsx";
+import CoFounderPanel, { CoFounderLauncher, parseMessageContent } from "./CoFounderPanel.jsx";
 import { getHistory } from "../lib/projectHistory.js";
 import "./home.css";
 import "./cofounder.css";
@@ -155,7 +155,7 @@ export default function CoFounderChatDrawer({ blueprint = null, originalIdea = "
         .filter((m) => (m.role === "user" || m.role === "assistant") && m.content)
         .map((m) => ({
           role: m.role,
-          content: m.content,
+          content: parseMessageContent(m.content).cleanText || m.content,
         }));
 
       const res = await fetch(CONSULTANT_URL, {

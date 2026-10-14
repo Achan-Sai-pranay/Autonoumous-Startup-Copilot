@@ -19,30 +19,49 @@ import {
   Tag,
   Users,
   X,
+  Sparkles,
 } from "lucide-react";
 import "./home.css";
 import "./cofounder.css";
+
+export function parseMessageContent(rawText) {
+  if (!rawText) return { cleanText: "", suggestions: [] };
+  const match = rawText.match(/<<SUGGESTIONS:\s*([\s\S]+?)>>/);
+  if (match) {
+    const cleanText = rawText.replace(/<<SUGGESTIONS:\s*[\s\S]+?>>/, "").trim();
+    const suggestions = match[1]
+      .split("|")
+      .map((s) => s.trim().replace(/^\[|\]$/g, "").trim())
+      .filter(Boolean);
+    return { cleanText, suggestions };
+  }
+  const partialIndex = rawText.indexOf("<<SUGGESTIONS");
+  if (partialIndex !== -1) {
+    return { cleanText: rawText.slice(0, partialIndex).trim(), suggestions: [] };
+  }
+  return { cleanText: rawText, suggestions: [] };
+}
 
 const DEFAULT_SUGGESTIONS = [
   {
     icon: Flame,
     title: "Grill my assumptions",
-    text: "Grill me like a veteran Y Combinator partner during batch office hours. Brutally critique our defensibility, market risk, and assumptions. Where are we most likely to fail, and what should we test immediately?",
+    text: "What's the #1 fatal assumption that could kill this venture, and how do we test it today?",
   },
   {
     icon: Users,
-    title: "Win my first 20 customers",
-    text: "Give me an aggressive, zero-dollar playbook to acquire our first 20 paying customers within the next 3 weeks. Be hyper-specific on which channels, exact search filters, and messaging hooks to use.",
+    title: "First 10 customers",
+    text: "What is the fastest zero-dollar way to land our first 10 paying customers?",
   },
   {
     icon: Tag,
-    title: "Test my pricing",
-    text: "Analyze our pricing model and suggest 3 high-margin alternative B2B pricing structures (e.g. usage-based, tiered seat + value metric, performance-fee). Include exact recommended pricing tiers.",
+    title: "Review my pricing",
+    text: "Is our pricing model realistic, or are we charging the wrong buyers?",
   },
   {
     icon: Search,
-    title: "Find the weakest part",
-    text: "What is the single weakest part of this venture and how do I fix it?",
+    title: "Cut the MVP",
+    text: "What is one feature we should cut from our MVP to ship two weeks faster?",
   },
 ];
 
@@ -54,10 +73,11 @@ export function Avatar({ src, size = 32 }) {
   );
 }
 
-function Message({ m, isLast, isStreaming, avatarSrc, renderContent, onRegenerate }) {
+function Message({ m, isLast, isStreaming, avatarSrc, renderContent, onRegenerate, onSuggestionClick }) {
+  const { cleanText, suggestions } = parseMessageContent(m.content);
   const [copied, setCopied] = useState(false);
   const copy = () => {
-    navigator.clipboard?.writeText(m.content);
+    navigator.clipboard?.writeText(cleanText || m.content);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -70,7 +90,7 @@ function Message({ m, isLast, isStreaming, avatarSrc, renderContent, onRegenerat
     );
   }
 
-  const waiting = m.streaming && !m.content;
+  const waiting = m.streaming && !cleanText;
   return (
     <li className="cf-msg is-ai" title={m.time || m.timestamp}>
       <Avatar src={avatarSrc} size={28} />
@@ -83,10 +103,27 @@ function Message({ m, isLast, isStreaming, avatarSrc, renderContent, onRegenerat
           </span>
         ) : (
           <div className={`cf-text ${m.streaming ? "is-streaming" : ""}`}>
-            {renderContent ? renderContent(m.content) : m.content}
+            {renderContent ? renderContent(cleanText) : cleanText}
           </div>
         )}
-        {!m.streaming && m.content && (
+
+        {!m.streaming && suggestions.length > 0 && isLast && (
+          <div className="cf-suggestions" aria-label="Suggested follow-up questions">
+            {suggestions.map((s, idx) => (
+              <button
+                key={idx}
+                type="button"
+                className="cf-chip"
+                onClick={() => onSuggestionClick?.(s)}
+              >
+                <Sparkles size={12} />
+                <span>{s}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        {!m.streaming && cleanText && (
           <div className="cf-actions">
             <button type="button" onClick={copy} aria-label="Copy answer">
               {copied ? <Check size={14} /> : <Copy size={14} />}
@@ -244,6 +281,7 @@ export default function CoFounderPanel({
                 avatarSrc={avatarSrc}
                 renderContent={renderContent}
                 onRegenerate={onRegenerate}
+                onSuggestionClick={(s) => submit(s)}
               />
             ))}
           </ol>

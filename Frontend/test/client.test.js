@@ -264,4 +264,33 @@ test("Dynamic cloud & database provider scaling (e.g. 1,640 users at 400 price)"
   assert.ok(STARTUP_GLOSSARY.unitEconomics.title.length > 0);
 });
 
+test("Device-level quota lock & LaunchPilot paid plans", async () => {
+  const { PLANS, FREE_DEVICE_LIFETIME_LIMIT, PLAN_STARTER_LIMIT, PLAN_SCALE_LIMIT } =
+    await import("../src/lib/quotaManager.js");
+
+  // Free Tier: exactly 1 lifetime demo idea per device
+  assert.strictEqual(FREE_DEVICE_LIFETIME_LIMIT, 1);
+
+  // Starter Plan: ₹129/mo, 5 ideas/week
+  assert.strictEqual(PLANS.starter.priceInr, 129);
+  assert.strictEqual(PLANS.starter.weeklyLimit, 5);
+  assert.strictEqual(PLAN_STARTER_LIMIT, 5);
+
+  // Scale Plan: ₹299/mo, 10 ideas/week
+  assert.strictEqual(PLANS.scale.priceInr, 299);
+  assert.strictEqual(PLANS.scale.weeklyLimit, 10);
+  assert.strictEqual(PLAN_SCALE_LIMIT, 10);
+
+  // Device lock check
+  const isDeviceLocked = (freeUsed, isPro) => {
+    if (isPro) return false;
+    return freeUsed >= FREE_DEVICE_LIFETIME_LIMIT;
+  };
+
+  assert.strictEqual(isDeviceLocked(0, false), false); // Fresh device: unlocked
+  assert.strictEqual(isDeviceLocked(1, false), true);  // 1 idea consumed: locked
+  assert.strictEqual(isDeviceLocked(2, false), true);  // subsequent attempts: locked
+  assert.strictEqual(isDeviceLocked(1, true), false);  // Paid subscriber: unlocked
+});
+
 

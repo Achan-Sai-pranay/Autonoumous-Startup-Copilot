@@ -1,10 +1,11 @@
 // components/PaymentModal.jsx
 // ---------------------------------------------------------------------------
-// IdeaPulse Pro Founder Upgrade Modal (₹149 / mo • $4.99 / mo)
-// Honest, secure upgrade flow:
-// - If VITE_PAYMENT_CHECKOUT_URL is configured, directs directly to the gateway checkout.
-// - Supports Early Access Passes / Beta Vouchers (e.g. FOUNDER_PASS) for invited testers.
-// - Allows joining the Pro Priority Access waitlist with zero fake card collection.
+// LaunchPilot Upgrade & Razorpay UPI Payment Modal:
+// - Free Demo: 1 blueprint lifetime per device (Full institutional access).
+// - Plan A: Starter Founder (₹129 / mo — 5 blueprints / week).
+// - Plan B: Scale Founder (₹299 / mo — 10 blueprints / week).
+// - Integrated Razorpay Checkout: Scan UPI QR, GPay, PhonePe, Paytm, or Cards.
+// - Supports Early Access Voucher (e.g. FOUNDER_PASS) for invited testers.
 // ---------------------------------------------------------------------------
 import { useState } from "react";
 import {
@@ -12,17 +13,18 @@ import {
   Check,
   Zap,
   ShieldCheck,
-  Lock,
   Sparkles,
-  ArrowRight,
   CheckCircle2,
   Loader2,
-  ExternalLink,
   Ticket,
+  QrCode,
+  Smartphone,
+  CreditCard,
+  Building2,
+  ArrowRight,
 } from "lucide-react";
-import { upgradeUserToPro } from "../lib/quotaManager.js";
-
-const CHECKOUT_URL = import.meta.env.VITE_PAYMENT_CHECKOUT_URL || "";
+import { upgradeUserToPro, getDeviceId } from "../lib/quotaManager.js";
+import { initiateRazorpayPayment } from "../lib/razorpay.js";
 
 export default function PaymentModal({
   isOpen,
@@ -30,15 +32,47 @@ export default function PaymentModal({
   currentUser,
   onPaymentSuccess = () => {},
 }) {
-  const [activeTab, setActiveTab] = useState(CHECKOUT_URL ? "checkout" : "access");
+  const [selectedPlan, setSelectedPlan] = useState("starter_129");
+  const [activeTab, setActiveTab] = useState("plans"); // 'plans' | 'voucher'
   const [voucherCode, setVoucherCode] = useState("");
-  const [waitlistEmail, setWaitlistEmail] = useState(currentUser?.email || "");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submittedWaitlist, setSubmittedWaitlist] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState("");
   const [unlockedSuccess, setUnlockedSuccess] = useState(false);
+  const [activatedSub, setActivatedSub] = useState(null);
 
   if (!isOpen) return null;
+
+  const currentPrice = selectedPlan === "scale_299" ? 299 : 129;
+  const currentWeeklyLimit = selectedPlan === "scale_299" ? 10 : 5;
+  const currentPlanName = selectedPlan === "scale_299" ? "Scale Founder" : "Starter Founder";
+
+  async function handlePayWithRazorpay() {
+    setError("");
+    setIsProcessing(true);
+
+    try {
+      await initiateRazorpayPayment({
+        planId: selectedPlan,
+        currentUser,
+        onSuccess: (sub) => {
+          setIsProcessing(false);
+          setActivatedSub(sub);
+          setUnlockedSuccess(true);
+          onPaymentSuccess(sub);
+          window.dispatchEvent(new CustomEvent("quota-updated", { detail: sub }));
+        },
+        onError: (errMsg) => {
+          setIsProcessing(false);
+          if (errMsg && !errMsg.includes("cancelled")) {
+            setError(errMsg);
+          }
+        },
+      });
+    } catch (err) {
+      setIsProcessing(false);
+      setError(err.message || "Could not initiate payment. Please try again.");
+    }
+  }
 
   async function handleRedeemVoucher(e) {
     e?.preventDefault();
@@ -47,18 +81,17 @@ export default function PaymentModal({
     const rawCode = (voucherCode || "").trim().toUpperCase();
     const code = rawCode.replace(/[\s\-_]+/g, "_");
     if (!code) {
-      setError("Please enter an early access voucher or invitation code.");
+      setError("Please enter your invitation or founder voucher code.");
       return;
     }
 
-    // Supported early founder vouchers
     const validCodes = ["FOUNDER_PASS", "IDEAPULSE2026", "BETA_PRO", "VIP_FOUNDER"];
     if (!validCodes.includes(code)) {
       setError("Invalid voucher code. Enter FOUNDER_PASS for instant testing access.");
       return;
     }
 
-    setIsSubmitting(true);
+    setIsProcessing(true);
     try {
       const sub = await upgradeUserToPro(currentUser?.id, {
         paymentMethod: "VOUCHER",
@@ -66,94 +99,42 @@ export default function PaymentModal({
         voucherCode: code,
         isUnlimited: true,
       });
-      setIsSubmitting(false);
+      setIsProcessing(false);
+      setActivatedSub(sub);
       setUnlockedSuccess(true);
-      if (typeof onPaymentSuccess === "function") {
-        onPaymentSuccess(sub);
-      }
+      onPaymentSuccess(sub);
       window.dispatchEvent(new CustomEvent("quota-updated", { detail: sub }));
-    } catch (err) {
-      setIsSubmitting(false);
-      setError("Activation failed. Please retry.");
-    }
-  }
-
-  async function handleJoinWaitlist(e) {
-    e?.preventDefault();
-    setError("");
-
-    const email = waitlistEmail.trim();
-    if (!email || !email.includes("@")) {
-      setError("Please enter a valid founder email address.");
-      return;
-    }
-
-    setIsSubmitting(true);
-
-    try {
-      // Record waitlist request to backend or localStorage
-      const payload = {
-        email,
-        userId: currentUser?.id || "guest",
-        type: "pro_priority_upgrade",
-        requestedAt: new Date().toISOString(),
-      };
-
-      // Save locally
-      try {
-        const existing = JSON.parse(localStorage.getItem("ideapulse_pro_requests") || "[]");
-        existing.push(payload);
-        localStorage.setItem("ideapulse_pro_requests", JSON.stringify(existing));
-      } catch {
-        // ignore
-      }
-
-      // Try sending to backend waitlist endpoint if reachable
-      try {
-        await fetch("/api/waitlist", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-      } catch {
-        // Backend optional
-      }
-
-      setIsSubmitting(false);
-      setSubmittedWaitlist(true);
     } catch {
-      setIsSubmitting(false);
-      setError("Could not submit request. Please try again.");
-    }
-  }
-
-  function handleExternalCheckout() {
-    if (CHECKOUT_URL) {
-      window.open(CHECKOUT_URL, "_blank", "noopener,noreferrer");
+      setIsProcessing(false);
+      setError("Activation failed. Please check your network and retry.");
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden text-slate-900 max-h-[92vh] flex flex-col">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 sm:px-6 pt-5 pb-4 border-b border-slate-100 bg-slate-50/70 shrink-0">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-sm animate-fade-in font-sans">
+      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden text-slate-900 max-h-[94vh] flex flex-col">
+        {/* Modal Top Header */}
+        <div className="flex items-center justify-between px-5 sm:px-6 pt-5 pb-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="h-7 w-7 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-xs shadow-xs animate-idea-pulse">
-              IP
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center text-white font-black text-xs shadow-xs">
+              LP
             </div>
             <div>
-              <span className="font-extrabold text-slate-900 text-sm tracking-tight flex items-center gap-1.5">
-                IdeaPulse Pro
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-700 border border-orange-200">
-                  Founder Tier
+              <div className="flex items-center gap-2">
+                <span className="font-extrabold text-slate-900 text-sm tracking-tight">
+                  LaunchPilot Founder Upgrade
                 </span>
-              </span>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200">
+                  Instant UPI
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-500">1 Demo Idea Per Device Used · Upgrade to unlock weekly access</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/50 transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer"
+            aria-label="Close modal"
           >
             <X size={18} />
           </button>
@@ -161,31 +142,35 @@ export default function PaymentModal({
 
         {unlockedSuccess ? (
           /* Success Screen */
-          <div className="p-8 text-center space-y-5 animate-fade-in">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center shadow-inner animate-scale-up">
+          <div className="p-7 sm:p-9 text-center space-y-5 animate-fade-in my-auto">
+            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center shadow-inner">
               <CheckCircle2 size={36} />
             </div>
             <div>
               <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                Welcome to IdeaPulse Pro!
+                Plan Unlocked Successfully!
               </h3>
-              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                Your account is upgraded with 10 blueprints per week, priority AI inference, and unlimited Co-Founder chat.
+              <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto">
+                Payment verified. Your account and device have been upgraded with full weekly blueprint access.
               </p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2 font-mono">
+            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2.5">
               <div className="flex justify-between text-slate-600">
-                <span>Plan Tier:</span>
-                <span className="font-bold text-slate-900">Pro Founder Plan</span>
+                <span>Active Plan:</span>
+                <span className="font-bold text-slate-900">{activatedSub?.planName || currentPlanName}</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Active Quota:</span>
-                <span className="font-bold text-emerald-600">10 Blueprints / Week</span>
+                <span>Weekly Blueprint Limit:</span>
+                <span className="font-bold text-emerald-600">{activatedSub?.weeklyLimit || currentWeeklyLimit} Blueprints / Week</span>
               </div>
               <div className="flex justify-between text-slate-600">
-                <span>Status:</span>
-                <span className="text-emerald-700 font-bold">Active</span>
+                <span>Payment Reference:</span>
+                <span className="font-mono text-slate-700">{activatedSub?.paymentId || "Verified"}</span>
+              </div>
+              <div className="flex justify-between text-slate-600">
+                <span>Access:</span>
+                <span className="text-emerald-700 font-bold">All 12 AI Specialists + War Room Unlocked</span>
               </div>
             </div>
 
@@ -194,216 +179,210 @@ export default function PaymentModal({
                 setUnlockedSuccess(false);
                 onClose();
               }}
-              className="w-full py-3 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-md shadow-orange-500/20 transition-all cursor-pointer"
+              className="w-full py-3.5 px-4 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              Back to Studio & Start Creating
+              <span>Back to Studio & Validate Startups</span>
+              <ArrowRight size={16} />
             </button>
           </div>
         ) : (
-          /* Main Content */
-          <div className="p-5 sm:p-6 space-y-5 overflow-y-auto flex-1">
-            {/* Price Box */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-50 via-amber-50/60 to-white border border-orange-200 flex items-center justify-between">
-              <div>
-                <span className="text-xs font-semibold text-orange-900 uppercase tracking-wide">
-                  Monthly Subscription
-                </span>
-                <div className="flex items-baseline gap-1.5 mt-0.5">
-                  <span className="text-3xl font-black text-slate-900">₹149</span>
-                  <span className="text-xs text-slate-500 font-medium">/ month (Billed in INR)</span>
-                </div>
-                <span className="text-[11px] text-slate-500 block">Cancel anytime • No lock-in</span>
-              </div>
-              <div className="text-right space-y-1">
-                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2.5 py-1 rounded-full">
-                  <Sparkles size={11} /> 10 Blueprints / Wk
-                </span>
-              </div>
+          /* Selection & Checkout View */
+          <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
+            {/* Tabs */}
+            <div className="flex items-center gap-2 p-1 rounded-xl bg-slate-100 border border-slate-200/80 text-xs font-semibold">
+              <button
+                type="button"
+                className={`flex-1 py-1.5 rounded-lg transition-all text-center cursor-pointer ${
+                  activeTab === "plans"
+                    ? "bg-white text-slate-900 shadow-xs font-bold"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+                onClick={() => setActiveTab("plans")}
+              >
+                Choose Subscription
+              </button>
+              <button
+                type="button"
+                className={`flex-1 py-1.5 rounded-lg transition-all text-center cursor-pointer ${
+                  activeTab === "voucher"
+                    ? "bg-white text-slate-900 shadow-xs font-bold"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+                onClick={() => setActiveTab("voucher")}
+              >
+                Have a Voucher Pass?
+              </button>
             </div>
-
-            {/* Perks List */}
-            <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-700 font-medium pt-1">
-              <div className="flex items-center gap-1.5">
-                <Check size={14} className="text-orange-600 shrink-0" />
-                <span>10 blueprints every week</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Check size={14} className="text-orange-600 shrink-0" />
-                <span>Priority fast AI pipeline</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Check size={14} className="text-orange-600 shrink-0" />
-                <span>Unlimited Co-Founder chat</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Check size={14} className="text-orange-600 shrink-0" />
-                <span>Watermark-free PDF & PRD export</span>
-              </div>
-            </div>
-
-            {/* Tabs / Actions */}
-            {CHECKOUT_URL ? (
-              <div className="pt-2 space-y-3">
-                <button
-                  type="button"
-                  onClick={handleExternalCheckout}
-                  className="w-full py-3.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-lg shadow-orange-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
-                >
-                  <span>Proceed to Secure Checkout</span>
-                  <ExternalLink size={16} />
-                </button>
-                <p className="text-[11px] text-center text-slate-500 flex items-center justify-center gap-1.5">
-                  <ShieldCheck size={13} className="text-emerald-600" />
-                  <span>Encrypted 256-bit payment checkout</span>
-                </p>
-              </div>
-            ) : (
-              <div className="pt-2 space-y-4">
-                {/* Method Switcher */}
-                <div className="flex bg-slate-100 p-1 rounded-xl">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab("access");
-                      setError("");
-                    }}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                      activeTab === "access"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Request Priority Upgrade
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveTab("voucher");
-                      setError("");
-                    }}
-                    className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                      activeTab === "voucher"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Redeem Founder Voucher
-                  </button>
-                </div>
-
-                {activeTab === "access" && (
-                  <div className="space-y-3 animate-fade-in">
-                    {submittedWaitlist ? (
-                      <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
-                        <CheckCircle2 size={24} className="text-emerald-600 mx-auto" />
-                        <h4 className="text-xs font-bold text-emerald-900">Priority Request Received!</h4>
-                        <p className="text-[11px] text-emerald-700">
-                          We will email you a direct invite and instant checkout link as soon as the payment gateway activates.
-                        </p>
-                      </div>
-                    ) : (
-                      <form onSubmit={handleJoinWaitlist} className="space-y-3">
-                        <div className="p-3 bg-amber-50/70 border border-amber-200 rounded-xl text-xs text-amber-900 space-y-1">
-                          <p className="font-semibold flex items-center gap-1.5">
-                            <Lock size={13} className="text-amber-700" />
-                            Direct Gateway Integration In Progress
-                          </p>
-                          <p className="text-[11px] text-amber-800 leading-relaxed">
-                            We are configuring a low-friction payment provider. Enter your email below to receive immediate access and an early adopter discount.
-                          </p>
-                        </div>
-
-                        <div>
-                          <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                            Your Founder Email
-                          </label>
-                          <input
-                            type="email"
-                            value={waitlistEmail}
-                            onChange={(e) => setWaitlistEmail(e.target.value)}
-                            placeholder="founder@startup.com"
-                            required
-                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs text-slate-900 placeholder-slate-400"
-                          />
-                        </div>
-
-                        <button
-                          type="submit"
-                          disabled={isSubmitting}
-                          className="w-full py-3 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-xs transition-all shadow-md shadow-orange-500/20 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-                        >
-                          {isSubmitting ? (
-                            <>
-                              <Loader2 size={14} className="animate-spin" />
-                              <span>Submitting...</span>
-                            </>
-                          ) : (
-                            <>
-                              <span>Request Pro Access</span>
-                              <ArrowRight size={14} />
-                            </>
-                          )}
-                        </button>
-                      </form>
-                    )}
-                  </div>
-                )}
-
-                {activeTab === "voucher" && (
-                  <form onSubmit={handleRedeemVoucher} className="space-y-3 animate-fade-in">
-                    <div>
-                      <label className="text-[11px] font-bold text-slate-600 block mb-1">
-                        Early Founder Voucher or Passcode
-                      </label>
-                      <div className="relative">
-                        <Ticket size={15} className="absolute left-3 top-2.5 text-slate-400" />
-                        <input
-                          type="text"
-                          value={voucherCode}
-                          onChange={(e) => setVoucherCode(e.target.value)}
-                          placeholder="e.g. FOUNDER_PASS"
-                          className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-orange-500 text-xs font-mono uppercase text-slate-900"
-                        />
-                      </div>
-                      <span className="text-[10px] text-slate-500 mt-1 block">
-                        Beta testers can enter <code className="bg-slate-100 px-1 py-0.5 rounded text-orange-600 font-bold">FOUNDER_PASS</code> to activate.
-                      </span>
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={isSubmitting}
-                      className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition-all shadow-md shadow-slate-900/10 disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" />
-                          <span>Activating...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Activate Pro Plan</span>
-                          <Check size={14} />
-                        </>
-                      )}
-                    </button>
-                  </form>
-                )}
-              </div>
-            )}
 
             {error && (
-              <p className="text-xs text-red-600 bg-red-50 border border-red-200 px-3 py-2 rounded-lg">
-                {error}
-              </p>
+              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+                <span>{error}</span>
+              </div>
             )}
 
-            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-              <span className="flex items-center gap-1">
-                <ShieldCheck size={12} className="text-emerald-600" /> No hidden fees
-              </span>
-              <span>Need invoice? hello@ideapulse.ai</span>
-            </div>
+            {activeTab === "plans" ? (
+              <div className="space-y-4">
+                {/* 2 Plan Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Plan 1: Starter (₹129) */}
+                  <div
+                    onClick={() => setSelectedPlan("starter_129")}
+                    className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                      selectedPlan === "starter_129"
+                        ? "border-orange-500 bg-orange-50/40 shadow-xs ring-1 ring-orange-500"
+                        : "border-slate-200 hover:border-slate-300 bg-white"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Starter</span>
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedPlan === "starter_129" ? "border-orange-600 bg-orange-600" : "border-slate-300"}`}>
+                        {selectedPlan === "starter_129" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-baseline gap-1">
+                      <span className="text-2xl font-black text-slate-900">₹129</span>
+                      <span className="text-xs text-slate-500">/ month</span>
+                    </div>
+                    <p className="mt-1 text-[11px] font-bold text-orange-700">
+                      5 Blueprints per week
+                    </p>
+                    <ul className="mt-3 space-y-1.5 text-[11px] text-slate-600">
+                      <li className="flex items-center gap-1.5">
+                        <Check size={13} className="text-emerald-600 shrink-0" />
+                        <span>All 12 Specialist Co-Founders</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <Check size={13} className="text-emerald-600 shrink-0" />
+                        <span>3-AI VC War Room Debate</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <Check size={13} className="text-emerald-600 shrink-0" />
+                        <span>PDF & PRD Dossier Export</span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {/* Plan 2: Scale (₹299) */}
+                  <div
+                    onClick={() => setSelectedPlan("scale_299")}
+                    className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                      selectedPlan === "scale_299"
+                        ? "border-orange-500 bg-orange-50/40 shadow-xs ring-1 ring-orange-500"
+                        : "border-slate-200 hover:border-slate-300 bg-white"
+                    }`}
+                  >
+                    <span className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-600 text-white shadow-xs">
+                      Popular
+                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Scale Founder</span>
+                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedPlan === "scale_299" ? "border-orange-600 bg-orange-600" : "border-slate-300"}`}>
+                        {selectedPlan === "scale_299" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-baseline gap-1">
+                      <span className="text-2xl font-black text-slate-900">₹299</span>
+                      <span className="text-xs text-slate-500">/ month</span>
+                    </div>
+                    <p className="mt-1 text-[11px] font-bold text-orange-700">
+                      10 Blueprints per week
+                    </p>
+                    <ul className="mt-3 space-y-1.5 text-[11px] text-slate-600">
+                      <li className="flex items-center gap-1.5">
+                        <Check size={13} className="text-emerald-600 shrink-0" />
+                        <span>Everything in Starter</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <Check size={13} className="text-emerald-600 shrink-0" />
+                        <span>Priority Multi-Agent Inference</span>
+                      </li>
+                      <li className="flex items-center gap-1.5">
+                        <Check size={13} className="text-emerald-600 shrink-0" />
+                        <span>Extended Co-Founder Chat</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Razorpay UPI Action */}
+                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3">
+                  <div className="flex items-center justify-between text-xs text-slate-600">
+                    <span className="flex items-center gap-1.5 font-medium">
+                      <QrCode size={15} className="text-orange-600" />
+                      <span>Instant UPI QR, GPay, PhonePe, Cards</span>
+                    </span>
+                    <span className="font-extrabold text-slate-900 text-sm">
+                      ₹{currentPrice} <span className="text-[10px] text-slate-500 font-normal">/ mo</span>
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handlePayWithRazorpay}
+                    disabled={isProcessing}
+                    className="w-full py-3.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    {isProcessing ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Opening Razorpay Gateway...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Smartphone size={16} />
+                        <span>Pay ₹{currentPrice} & Unlock {currentWeeklyLimit} Ideas/Week</span>
+                      </>
+                    )}
+                  </button>
+
+                  <div className="flex items-center justify-center gap-3 text-[10px] text-slate-500 pt-1 font-mono">
+                    <span className="flex items-center gap-1">
+                      <ShieldCheck size={12} className="text-emerald-600" /> 256-Bit SSL Secured
+                    </span>
+                    <span>•</span>
+                    <span>Razorpay Verified</span>
+                    <span>•</span>
+                    <span>Direct UPI Auto-Credit</span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* Voucher Pass Tab */
+              <form onSubmit={handleRedeemVoucher} className="space-y-4">
+                <div className="p-4 rounded-2xl bg-orange-50/50 border border-orange-200/70 space-y-1.5">
+                  <div className="flex items-center gap-2 text-xs font-bold text-orange-950">
+                    <Ticket size={16} className="text-orange-600" />
+                    <span>Founder Invitation / Early Access Pass</span>
+                  </div>
+                  <p className="text-[11px] text-orange-900/80 leading-relaxed">
+                    If you received an early invitation pass (such as <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-orange-200">FOUNDER_PASS</code>), enter it below to unlock testing access.
+                  </p>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="voucher-code" className="text-xs font-bold text-slate-700 block">
+                    Voucher Code
+                  </label>
+                  <input
+                    id="voucher-code"
+                    type="text"
+                    value={voucherCode}
+                    onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. FOUNDER_PASS"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 font-mono text-sm uppercase tracking-wider focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isProcessing || !voucherCode.trim()}
+                  className="w-full py-3 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Zap size={15} />}
+                  <span>Redeem Pass & Activate</span>
+                </button>
+              </form>
+            )}
           </div>
         )}
       </div>

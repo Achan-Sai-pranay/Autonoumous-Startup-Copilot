@@ -119,9 +119,9 @@ export default function StudioSidebar({
     setViewMode(viewMode === "prd" ? "dashboard" : "prd");
   };
 
-  const qTotal = quota?.total ?? (quota?.isPro ? 100 : 3);
-  const qLeft = quota?.remaining ?? qTotal;
-  const qUsed = quota?.isUnlimited ? 0 : Math.min(100, Math.round(((qTotal - qLeft) / qTotal) * 100));
+  const qTotal = quota?.total ?? (quota?.isPro ? 5 : 1);
+  const qLeft = quota?.remaining ?? (quota?.isLocked ? 0 : 1);
+  const qUsed = quota?.isUnlimited ? 0 : Math.min(100, Math.round(((qTotal - qLeft) / Math.max(1, qTotal)) * 100));
   const shortTitle = ideaTitle ? (ideaTitle.length > 30 ? `${ideaTitle.slice(0, 30)}…` : ideaTitle) : "Current venture";
 
   return (
@@ -143,7 +143,7 @@ export default function StudioSidebar({
           {open && (
             <span className="wk-brand-text wk-label">
               <b>{studioName}</b>
-              <small>{currentUser ? (currentUser.plan || (quota?.isPro ? "Pro founder" : "Free · 3 a week")) : "3 free ideas/wk with account"}</small>
+              <small>{quota?.isPro ? (quota.planName || "Pro founder") : (quota?.isLocked ? "Demo Used · Locked" : "1 Free Demo Idea")}</small>
             </span>
           )}
         </button>
@@ -264,40 +264,32 @@ export default function StudioSidebar({
       {/* Usage */}
       {open && (
         <div className="ss-plan">
-          {currentUser ? (
+          {quota?.isPro ? (
             <>
               <div>
                 <b>
-                  {quota?.isPro ? (
-                    <>
-                      <Sparkles size={13} /> Pro founder
-                    </>
-                  ) : (
-                    "Free plan"
-                  )}
+                  <Sparkles size={13} /> {quota.planName || "Pro founder"}
                 </b>
-                <span>{quota?.isUnlimited ? "Unlimited" : `${qLeft} of ${qTotal} left`}</span>
+                <span>{quota?.isUnlimited ? "Unlimited" : `${qLeft} of ${qTotal} left this week`}</span>
               </div>
               <i aria-hidden="true">
                 <u style={{ width: `${qUsed}%` }} />
               </i>
-              {!quota?.isPro && (
-                <button type="button" className="hp-btn hp-btn--primary hp-btn--sm" onClick={onOpenPayment}>
-                  <Zap size={13} /> Upgrade to Pro
-                </button>
-              )}
             </>
           ) : (
             <>
               <div>
-                <b>Free Starter</b>
-                <span>3 ideas / week</span>
+                <b>Free Demo</b>
+                <span>{quota?.isLocked ? "Locked (1/1 used)" : "1 demo idea left"}</span>
               </div>
+              <i aria-hidden="true">
+                <u style={{ width: quota?.isLocked ? "100%" : "0%" }} />
+              </i>
               <p style={{ margin: "2px 0 6px 0", fontSize: "11px", color: "var(--hp-text-muted, #64748b)", lineHeight: 1.3 }}>
-                Sign in to activate your 3 free weekly blueprints.
+                {quota?.isLocked ? "Device limit reached. Upgrade to unlock weekly access." : "1 free demo blueprint per device."}
               </p>
-              <button type="button" className="hp-btn hp-btn--primary hp-btn--sm" onClick={() => onOpenAuth?.("signup")}>
-                <Zap size={13} /> Create free account
+              <button type="button" className="hp-btn hp-btn--primary hp-btn--sm" onClick={onOpenPayment}>
+                <Zap size={13} /> {quota?.isLocked ? "Unlock Weekly (₹129)" : "View Pro Plans"}
               </button>
             </>
           )}

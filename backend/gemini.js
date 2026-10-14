@@ -431,7 +431,7 @@ export async function streamChatGemini(messages = [], systemPrompt = "", onChunk
       role: "model",
       parts: [
         {
-          text: "Understood. I am your IdeaPulse AI Co-Founder and YC-grade strategic advisor. I have deeply analyzed your startup blueprint and data, and I am ready to provide direct, high-impact, actionable guidance.",
+          text: "Understood. I am your active co-founder. I will keep my advice crisp, direct, and conversational (under 120 words), avoiding long essays and tables, and ending with next-step suggestions.",
         },
       ],
     });
@@ -453,7 +453,7 @@ export async function streamChatGemini(messages = [], systemPrompt = "", onChunk
         contents,
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 4096,
+          maxOutputTokens: 1024,
         },
       }),
     });

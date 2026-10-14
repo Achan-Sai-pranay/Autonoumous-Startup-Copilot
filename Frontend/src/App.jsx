@@ -288,15 +288,10 @@ export default function App() {
       return;
     }
 
-    if (!currentUser) {
-      setError("Please sign in or create a free account to generate your startup blueprint (3 free ideas per week).");
-      handleOpenAuth("signup");
-      return;
-    }
-
-    const currentQuota = getWeeklyUsage(currentUser.id, history);
+    // 1 Free Demo Blueprint Lifetime per Device (Locked after 1 idea unless Pro)
+    const currentQuota = getWeeklyUsage(currentUser?.id, history);
     if (!currentQuota.isPro && currentQuota.remaining <= 0) {
-      setError("You have reached your free weekly limit of 3 blueprints. Enter voucher FOUNDER_PASS in Pro upgrade for unlimited testing.");
+      setError("Free demo limit reached for this device (1 free blueprint lifetime). Upgrade to Starter (₹129/mo) or Scale (₹299/mo) to validate more startups.");
       setShowPaymentModal(true);
       return;
     }
@@ -309,8 +304,11 @@ export default function App() {
     try {
       const response = await fetch(API_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idea }),
+        headers: {
+          "Content-Type": "application/json",
+          "x-device-id": currentQuota.deviceId || "unknown_dev",
+        },
+        body: JSON.stringify({ idea, deviceId: currentQuota.deviceId, userId: currentUser?.id }),
         signal: AbortSignal.timeout(180000),
       });
 

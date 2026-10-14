@@ -992,25 +992,31 @@ export function TestimonialsSection() {
 /* 10. Pricing                                                         */
 /* ------------------------------------------------------------------ */
 export function PricingSection({ onSelectPlan }) {
-  const [cycle, setCycle] = useState("annual");
-  const annual = cycle === "annual";
-
   const free = [
-    "3 startup blueprints per week",
+    "1 full demo blueprint per device",
     "All 12 specialist AI co-founders",
-    "3-AI VC War Room debate",
+    "Full 3-AI VC War Room debate",
     "Bottom-up TAM, SAM and SOM sizing",
     "SWOT and competitor vulnerability matrix",
-    "Unit economics and cost simulator",
-    "Executive PDF and Markdown download",
+    "Unit economics and financial simulator",
+    "Executive PDF and Markdown export",
   ];
-  const pro = [
-    "10 startup blueprints per week",
-    "Unlimited VC debates and rebuttals",
-    "Priority inference with no queue",
-    "Unlimited co-founder and YC partner chat",
+  const starter = [
+    "5 startup blueprints per week",
+    "All 12 specialist AI co-founders",
+    "Full 3-AI VC War Room debate",
+    "Priority AI response velocity",
+    "Unlimited Co-Founder chat",
     "Full PDF and PRD dossier suite",
-    "Priority cloud vault backup",
+    "Project cloud vault sync",
+  ];
+  const scale = [
+    "10 startup blueprints per week",
+    "Everything in Starter Founder",
+    "Highest priority AI queue",
+    "Unlimited VC War Room rebuttals",
+    "Extended prediction Co-Founder chat",
+    "Direct founder strategy assistance",
     "Voucher code support (FOUNDER_PASS)",
   ];
 
@@ -1018,33 +1024,23 @@ export function PricingSection({ onSelectPlan }) {
     <section id="pricing" className="hp hp-sec">
       <div className="hp-wrap">
         <Head
-          title="Start free. Upgrade when you’re validating weekly."
-          lede="Every account gets 3 blueprints a week. No hidden fees, no surprise subscriptions."
+          title="Try 1 demo blueprint free. Upgrade for weekly validation."
+          lede="Experience the entire institutional AI pipeline on your device. Unlock 5 or 10 blueprints per week with instant UPI."
         />
 
-        <div className="hp-center">
-          <div className="hp-seg" role="radiogroup" aria-label="Billing cycle">
-            <button role="radio" aria-checked={!annual} className={!annual ? "is-on" : ""} onClick={() => setCycle("monthly")}>
-              Monthly
-            </button>
-            <button role="radio" aria-checked={annual} className={annual ? "is-on" : ""} onClick={() => setCycle("annual")}>
-              Annual <em>Save 20%</em>
-            </button>
-          </div>
-        </div>
-
-        <div className="hp-plans">
+        <div className="hp-plans" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))" }}>
+          {/* Free Demo Plan */}
           <Reveal className="hp-plan">
             <header>
-              <h3>Free starter</h3>
-              <p>For early founders and students testing problem-solution fit.</p>
+              <h3>Free Demo</h3>
+              <p>Test your first idea with zero features hidden.</p>
             </header>
             <div className="hp-price">
               <strong>₹0</strong>
-              <span>/ week</span>
+              <span>/ 1 idea per device</span>
             </div>
             <button type="button" className="hp-btn hp-btn--ghost" onClick={() => onSelectPlan?.("starter")}>
-              Sign in to start free
+              Try Demo Blueprint
             </button>
             <ul>
               {free.map((f) => (
@@ -1055,24 +1051,47 @@ export function PricingSection({ onSelectPlan }) {
             </ul>
           </Reveal>
 
+          {/* Starter Plan (₹129) */}
           <Reveal className="hp-plan hp-plan--pro" delay={100}>
             <header>
               <h3>
-                Pro founder <span>Popular</span>
+                Starter Founder <span>Popular</span>
               </h3>
-              <p>For active builders who want high-volume validation.</p>
+              <p>For builders actively testing multiple venture angles.</p>
             </header>
             <div className="hp-price">
-              <strong>{annual ? "₹119" : "₹149"}</strong>
-              <span>/ month{annual ? ", billed yearly" : ""}</span>
+              <strong>₹129</strong>
+              <span>/ month · 5 ideas/wk</span>
             </div>
-            <button type="button" className="hp-btn hp-btn--primary" onClick={() => onSelectPlan?.("pro")}>
+            <button type="button" className="hp-btn hp-btn--primary" onClick={() => onSelectPlan?.("starter_129")}>
               <Zap size={15} />
-              Upgrade to Pro
+              Unlock Starter (₹129)
             </button>
-            {annual && <p className="hp-save">You save ₹360 a year.</p>}
             <ul>
-              {pro.map((f) => (
+              {starter.map((f) => (
+                <li key={f}>
+                  <Check size={15} /> {f}
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+
+          {/* Scale Plan (₹299) */}
+          <Reveal className="hp-plan" delay={200}>
+            <header>
+              <h3>Scale Founder</h3>
+              <p>For serious founders and studios launching weekly.</p>
+            </header>
+            <div className="hp-price">
+              <strong>₹299</strong>
+              <span>/ month · 10 ideas/wk</span>
+            </div>
+            <button type="button" className="hp-btn hp-btn--ghost" onClick={() => onSelectPlan?.("scale_299")}>
+              <Zap size={15} />
+              Unlock Scale (₹299)
+            </button>
+            <ul>
+              {scale.map((f) => (
                 <li key={f}>
                   <Check size={15} /> {f}
                 </li>

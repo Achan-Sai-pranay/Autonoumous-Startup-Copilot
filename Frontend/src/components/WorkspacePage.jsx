@@ -796,7 +796,7 @@ function WorkspaceInput({
     inputRef.current?.focus();
   };
 
-  const outOfQuota = currentUser && !quota?.isPro && (quota?.remaining ?? 3) <= 0;
+  const isOutOfQuota = !quota?.isPro && (quota?.isLocked || (quota?.remaining ?? 1) <= 0);
 
   return (
     <div className="wk-prompt">
@@ -805,7 +805,7 @@ function WorkspaceInput({
         value={idea}
         onChange={(e) => setIdea(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="A mobile app that connects dog walkers with busy pet owners, or a micro-SaaS that alerts you on WhatsApp when your website goes down…"
+        placeholder={isOutOfQuota ? "You have used your 1 free demo blueprint on this device. Upgrade to Starter (₹129/mo) or Scale (₹299/mo) to validate more startups..." : "A mobile app that connects dog walkers with busy pet owners, or a micro-SaaS that alerts you on WhatsApp when your website goes down…"}
         rows={4}
         disabled={isLoading}
         aria-label="Describe your startup idea"
@@ -851,24 +851,15 @@ function WorkspaceInput({
             </button>
           )}
 
-          {!currentUser ? (
-            <button
-              type="button"
-              className="hp-btn hp-btn--primary wk-generate"
-              onClick={() => onOpenAuth?.("signup")}
-              title="Sign in or create a free account to test this idea (3 free ideas per week)"
-            >
-              <Zap size={15} />
-              Sign in to generate
-            </button>
-          ) : outOfQuota ? (
+          {isOutOfQuota ? (
             <button
               type="button"
               className="hp-btn hp-btn--primary"
               onClick={() => onOpenPayment?.()}
+              title="1 free demo blueprint used on this device. Upgrade to unlock weekly access."
             >
               <Zap size={15} />
-              Upgrade to Pro
+              Unlock Weekly (₹129)
             </button>
           ) : (
             <button
@@ -878,7 +869,7 @@ function WorkspaceInput({
               disabled={isLoading || !idea.trim()}
             >
               <Zap size={15} className={isLoading ? "wk-spin-icon" : ""} />
-              {isLoading ? "Synthesizing…" : "Generate blueprint"}
+              <span>{isLoading ? "Validating idea..." : (quota?.isPro ? "Generate blueprint" : "Generate free demo")}</span>
               {!isLoading && <kbd>⌘↵</kbd>}
             </button>
           )}

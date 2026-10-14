@@ -4,10 +4,11 @@
 // ---------------------------------------------------------------------------
 import { Client, Account, Avatars, Databases, ID, OAuthProvider, Query, Permission, Role } from "appwrite";
 
-const endpoint = import.meta.env.VITE_APPWRITE_ENDPOINT || "https://sgp.cloud.appwrite.io/v1";
-const projectId = import.meta.env.VITE_APPWRITE_PROJECT_ID || "";
-export const APPWRITE_DATABASE_ID = import.meta.env.VITE_APPWRITE_DATABASE_ID || "launchpilot_db";
-export const APPWRITE_COLLECTION_ID = import.meta.env.VITE_APPWRITE_COLLECTION_ID || "blueprints";
+const env = typeof import.meta !== "undefined" && import.meta.env ? import.meta.env : {};
+const endpoint = env.VITE_APPWRITE_ENDPOINT || "https://sgp.cloud.appwrite.io/v1";
+const projectId = env.VITE_APPWRITE_PROJECT_ID || "";
+export const APPWRITE_DATABASE_ID = env.VITE_APPWRITE_DATABASE_ID || "launchpilot_db";
+export const APPWRITE_COLLECTION_ID = env.VITE_APPWRITE_COLLECTION_ID || "blueprints";
 
 export const client = new Client();
 
