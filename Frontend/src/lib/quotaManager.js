@@ -157,6 +157,20 @@ export function isUserPro(userId, userPrefs = null) {
   return false;
 }
 
+export function isUserScaleFounder(userId, userPrefs = null) {
+  if (userPrefs?.planId === "scale_299" || userPrefs?.planId === "founder_pass_unlimited") {
+    return true;
+  }
+  const sub = getProSubscription(userId);
+  if (!sub) return false;
+  return (
+    sub.planId === "scale_299" ||
+    sub.planId === "founder_pass_unlimited" ||
+    sub.isUnlimited ||
+    sub.voucherCode?.toUpperCase()?.includes("FOUNDER")
+  );
+}
+
 export function getProSubscription(userId) {
   const key = `${PRO_STORAGE_PREFIX}${userId || "guest"}`;
   try {

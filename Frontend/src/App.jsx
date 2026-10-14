@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from "react";
 import LoadingTimeline, { AGENT_STEP_NAMES } from "./components/LoadingTimeline.jsx";
 import BlueprintDashboard from "./components/BlueprintDashboard.jsx";
 import WorkspacePage from "./components/WorkspacePage.jsx";
+import PublicPitchView from "./components/PublicPitchView.jsx";
 import Navbar from "./components/Navbar.jsx";
 import HistoryPanel from "./components/HistoryPanel.jsx";
 import AuthModal from "./components/AuthModal.jsx";
@@ -76,10 +77,22 @@ function buildInitialSteps() {
 }
 
 export default function App() {
+  const [publicPitchSlug, setPublicPitchSlug] = useState(() => {
+    if (typeof window !== "undefined") {
+      const path = window.location.pathname;
+      const search = new URLSearchParams(window.location.search);
+      if (path.startsWith("/p/")) return path.replace("/p/", "").trim();
+      if (search.get("p")) return search.get("p").trim();
+    }
+    return "";
+  });
+
   const [currentView, setCurrentView] = useState(() => {
     if (typeof window !== "undefined") {
       const path = window.location.pathname;
       const hash = window.location.hash;
+      const search = new URLSearchParams(window.location.search);
+      if (path.startsWith("/p/") || search.get("p")) return "public_pitch";
       return path === "/app" || hash === "#app" ? "workspace" : "home";
     }
     return "home";
@@ -202,7 +215,12 @@ export default function App() {
   function navigateTo(view, updateHistory = true, replace = false) {
     setCurrentView(view);
     if (updateHistory && typeof window !== "undefined") {
-      const targetUrl = view === "workspace" ? "/app" : "/";
+      const targetUrl =
+        view === "workspace"
+          ? "/app"
+          : view === "public_pitch"
+          ? `/p/${publicPitchSlug || "pitch"}`
+          : "/";
       if (replace) {
         window.history.replaceState({ view }, "", targetUrl);
       } else if (window.location.pathname !== targetUrl) {
@@ -216,6 +234,13 @@ export default function App() {
     function handlePopState(e) {
       const path = window.location.pathname;
       const hash = window.location.hash;
+      const search = new URLSearchParams(window.location.search);
+      if (path.startsWith("/p/") || search.get("p")) {
+        const slug = path.startsWith("/p/") ? path.replace("/p/", "").trim() : search.get("p").trim();
+        setPublicPitchSlug(slug);
+        setCurrentView("public_pitch");
+        return;
+      }
       const view =
         e.state?.view || (path === "/app" || hash === "#app" ? "workspace" : "home");
       setCurrentView(view);
@@ -342,6 +367,16 @@ export default function App() {
     } finally {
       setIsLoading(false);
     }
+  }
+
+  // --- VIEW 0: INVESTOR READ-ONLY PITCH VIEW (/p/:slug) ----------------------
+  if (currentView === "public_pitch") {
+    return (
+      <PublicPitchView
+        slug={publicPitchSlug}
+        onNavigateHome={() => navigateTo("home")}
+      />
+    );
   }
 
   // --- VIEW 1: DEDICATED WORKSPACE & COPILOT PAGE (/app) ----------------------

@@ -60,6 +60,8 @@ import {
   X,
   Zap,
   Bot,
+  Code,
+  Share2,
 } from "lucide-react";
 import { downloadMarkdown, downloadPdf } from "../components/exportBlueprint.js";
 import {
@@ -71,6 +73,9 @@ import {
 } from "./CompetitorUpgrades.jsx";
 import PrdDossier from "./PrdDossier.jsx";
 import AiDebateWarRoomSection from "./BlueprintPhase3.jsx";
+import LiveMarketEvidence from "./LiveMarketEvidence.jsx";
+import PromptPackModal from "./PromptPackModal.jsx";
+import SharePitchModal from "./SharePitchModal.jsx";
 import {
   SectionGatewayHeader,
   ViabilitySpotlight,
@@ -371,11 +376,16 @@ export default function BlueprintDashboard({
   viewMode: controlledViewMode,
   setViewMode: setControlledViewMode,
   scrollContainerRef,
+  currentUser = null,
+  onOpenPayment = () => {},
 }) {
   const [internalActiveSection, setInternalActiveSection] = useState("overview");
   const activeSection =
     controlledActiveSection !== undefined ? controlledActiveSection : internalActiveSection;
   const setActiveSection = setControlledActiveSection || setInternalActiveSection;
+
+  const [showPromptPackModal, setShowPromptPackModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const [displayMode, setDisplayMode] = useState("continuous"); // "continuous" | "focused"
   const isProgrammaticScrollRef = useRef(false);
@@ -626,6 +636,7 @@ export default function BlueprintDashboard({
           originalIdea={originalIdea}
           onSwitchToDashboard={() => setViewMode("dashboard")}
           onToast={showToast}
+          onOpenPromptPack={() => setShowPromptPackModal(true)}
         />
       ) : (
         <div className="w-full">
@@ -750,7 +761,12 @@ export default function BlueprintDashboard({
                       competitorWeaknessAnalysis={competitorWeaknessAnalysis}
                       marketResearch={marketResearch}
                       ideaAnalysis={ideaAnalysis}
+                      customerPersona={customerPersona}
                       blueprint={blueprint}
+                      currentUser={currentUser}
+                      onOpenPayment={onOpenPayment}
+                      onToast={showToast}
+                      originalIdea={originalIdea}
                     />
                   </SectionErrorBoundary>
                 </section>
@@ -777,6 +793,7 @@ export default function BlueprintDashboard({
                       roadmap={roadmap}
                       onUpdateMvpFeatures={(val) => updateSectionField("productPlan", "mvpFeatures", val)}
                       onUpdateFutureFeatures={(val) => updateSectionField("productPlan", "futureFeatures", val)}
+                      onOpenPromptPack={() => setShowPromptPackModal(true)}
                     />
                   </SectionErrorBoundary>
                 </section>
@@ -945,7 +962,12 @@ export default function BlueprintDashboard({
                         competitorWeaknessAnalysis={competitorWeaknessAnalysis}
                         marketResearch={marketResearch}
                         ideaAnalysis={ideaAnalysis}
+                        customerPersona={customerPersona}
                         blueprint={blueprint}
+                        currentUser={currentUser}
+                        onOpenPayment={onOpenPayment}
+                        onToast={showToast}
+                        originalIdea={originalIdea}
                       />
                     )}
 
@@ -956,6 +978,7 @@ export default function BlueprintDashboard({
                         roadmap={roadmap}
                         onUpdateMvpFeatures={(val) => updateSectionField("productPlan", "mvpFeatures", val)}
                         onUpdateFutureFeatures={(val) => updateSectionField("productPlan", "futureFeatures", val)}
+                        onOpenPromptPack={() => setShowPromptPackModal(true)}
                       />
                     )}
 
@@ -990,6 +1013,26 @@ export default function BlueprintDashboard({
         </div>
       )}
 
+
+      {/* 1-Click Prompt Pack Modal */}
+      <PromptPackModal
+        isOpen={showPromptPackModal}
+        onClose={() => setShowPromptPackModal(false)}
+        idea={originalIdea || blueprint?.idea}
+        blueprint={blueprint}
+        onToast={showToast}
+      />
+
+      {/* Share Pitch Modal */}
+      <SharePitchModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        idea={originalIdea || blueprint?.idea}
+        blueprint={blueprint}
+        currentUser={currentUser}
+        onOpenPayment={onOpenPayment}
+        onToast={showToast}
+      />
 
       {/* Toast */}
       <Toast message={toast} />
@@ -1362,6 +1405,10 @@ function MarketCompetitorsSection({
   ideaAnalysis,
   customerPersona,
   blueprint,
+  currentUser = null,
+  onOpenPayment = () => {},
+  onToast = () => {},
+  originalIdea = "",
 }) {
   const resolvePorterForce = (key, aliases = [], fallbackAnalysis = "Moderate market dynamic.") => {
     const raw = portersFiveForces || blueprint?.portersFiveForces || {};
@@ -1497,6 +1544,16 @@ function MarketCompetitorsSection({
 
       {/* 3. Competitor Vulnerability & Exploit Strategies */}
       <VulnerabilityGrid items={vulnerabilities} vulnerabilities={vulnerabilities} />
+
+      {/* 4. Live Competitor & Reddit Evidence Grounding (Scale Founder Feature) */}
+      <LiveMarketEvidence
+        idea={originalIdea || blueprint?.idea}
+        domain={ideaAnalysis?.domain}
+        competitors={competitorsList}
+        currentUser={currentUser}
+        onOpenPayment={onOpenPayment}
+        onToast={onToast}
+      />
     </div>
   );
 }
@@ -1510,9 +1567,38 @@ function ProductMvpSection({
   roadmap,
   onUpdateMvpFeatures,
   onUpdateFutureFeatures,
+  onOpenPromptPack = () => {},
 }) {
   return (
     <div className="space-y-6">
+      {/* 1-Click AI Prompt Pack (Cursor, Lovable, Bolt, v0) */}
+      <div className="rounded-2xl border border-orange-200/90 bg-gradient-to-r from-orange-50/70 via-white to-amber-50/40 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+        <div className="flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-orange-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+            <Code size={18} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <span className="text-[10px] font-mono uppercase font-bold text-orange-700">Developer Bridge</span>
+              <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-emerald-100 text-emerald-800 font-bold">Free & Pro</span>
+            </div>
+            <h4 className="text-sm font-bold text-slate-900">
+              Export to Cursor, Bolt, Lovable & v0
+            </h4>
+            <p className="text-xs text-slate-500">
+              Turn this 7-stage validated blueprint into ready-to-paste <code>.cursorrules</code> and full-app prompts in 1-click.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onOpenPromptPack}
+          className="px-4 py-2 text-xs font-semibold text-white bg-slate-900 hover:bg-slate-800 rounded-xl shadow-2xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+        >
+          <Sparkles size={13} className="text-orange-400" />
+          Export Prompt Pack
+        </button>
+      </div>
+
       <ResponsiveCardGrid>
         {/* Card 1: MVP Scope (Sprint 1) */}
         <StatCard

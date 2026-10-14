@@ -7,7 +7,7 @@
 // now returning SwotView).
 // ---------------------------------------------------------------------------
 import { memo, useEffect, useMemo, useState } from "react";
-import { Check, Copy, Cpu, Wallet, LayoutGrid, TrendingUp } from "lucide-react";
+import { Check, Copy, Cpu, Wallet, LayoutGrid, TrendingUp, Code2 } from "lucide-react";
 import { Reveal } from "./BlueprintPhase2.jsx";
 import { ViabilityBreakdown } from "./BlueprintPhase7.jsx";
 import { UpmetricsFinancialSimulator } from "./BlueprintPhase5.jsx";
@@ -172,7 +172,13 @@ export const SwipeFile = memo(function SwipeFile({ gtm, pitch, onToast }) {
 /* ------------------------------------------------------------------ */
 /* Dossier                                                             */
 /* ------------------------------------------------------------------ */
-export const PrdDossier = memo(function PrdDossier({ blueprint, originalIdea, onSwitchToDashboard, onToast }) {
+export const PrdDossier = memo(function PrdDossier({
+  blueprint,
+  originalIdea,
+  onSwitchToDashboard,
+  onToast,
+  onOpenPromptPack,
+}) {
   const {
     ideaAnalysis,
     marketResearch,
@@ -285,6 +291,17 @@ ${productPlan?.mvpFeatures?.map((f) => `- ${f}`).join("\n") || "Core features"}
           <p>Everything about this venture in a single continuous read. Copy it, share it, or go back to the dashboard.</p>
         </div>
         <div className="pr-top-actions">
+          {onOpenPromptPack && (
+            <button
+              type="button"
+              className="hp-btn hp-btn--ghost flex items-center gap-1.5"
+              onClick={onOpenPromptPack}
+              title="Export Cursor, Lovable & Bolt Prompt Pack"
+            >
+              <Code2 size={15} className="text-orange-600" />
+              <span>Prompt Pack</span>
+            </button>
+          )}
           <button type="button" className="hp-btn hp-btn--ghost" onClick={copyFullPrd}>
             <Copy size={15} /> Copy PRD
           </button>

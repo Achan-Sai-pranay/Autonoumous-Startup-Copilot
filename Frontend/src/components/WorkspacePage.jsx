@@ -31,11 +31,17 @@ import {
   Clock,
   Rocket,
   X,
+  Code,
+  Share2,
+  Scale,
 } from "lucide-react";
 import StudioSidebar from "./StudioSidebar.jsx";
 import IdeaFinder from "./IdeaFinder.jsx";
 import ResourcesVault from "./ResourcesVault.jsx";
 import StartupDictionaryModal from "./dictionary/StartupDictionaryModal.jsx";
+import PromptPackModal from "./PromptPackModal.jsx";
+import SharePitchModal from "./SharePitchModal.jsx";
+import VentureComparisonModal from "./VentureComparisonModal.jsx";
 import { ScrollProgress } from "./BlueprintPhase2.jsx";
 import "./home.css";
 import "./workspace.css";
@@ -142,6 +148,9 @@ export default function WorkspacePage({
   const [showResourcesModal, setShowResourcesModal] = useState(false);
   const [showDictionaryModal, setShowDictionaryModal] = useState(false);
   const [selectedDictionaryTerm, setSelectedDictionaryTerm] = useState(null);
+  const [showPromptPackModal, setShowPromptPackModal] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const userDropdownRef = useRef(null);
 
@@ -511,21 +520,37 @@ export default function WorkspacePage({
               </div>
 
               {history.length > 0 && (
-                <label className="wk-search">
-                  <Search size={17} />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by idea, market or problem"
-                    aria-label="Search startups"
-                  />
-                  {searchQuery && (
-                    <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear search">
-                      <X size={15} />
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  <label className="wk-search flex-1">
+                    <Search size={17} />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder="Search by idea, market or problem"
+                      aria-label="Search startups"
+                    />
+                    {searchQuery && (
+                      <button type="button" onClick={() => setSearchQuery("")} aria-label="Clear search">
+                        <X size={15} />
+                      </button>
+                    )}
+                  </label>
+
+                  {history.length >= 2 && (
+                    <button
+                      type="button"
+                      onClick={() => setShowComparisonModal(true)}
+                      className="px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-800 bg-white hover:bg-slate-50 border border-slate-200/90 shadow-2xs transition-all flex items-center justify-center gap-1.5 shrink-0 cursor-pointer"
+                    >
+                      <Scale size={14} className="text-orange-600" />
+                      <span>Compare 2 Ventures</span>
+                      <span className="px-1.5 py-0.2 rounded text-[10px] font-mono bg-orange-50 text-orange-700 font-bold border border-orange-200/60">
+                        Scale
+                      </span>
                     </button>
                   )}
-                </label>
+                </div>
               )}
 
               {history.length === 0 ? (
@@ -680,9 +705,32 @@ export default function WorkspacePage({
                   <ChevronRight size={13} />
                   <span>{idea || "Venture blueprint"}</span>
                 </nav>
-                <button type="button" className="hp-btn hp-btn--ghost hp-btn--sm" onClick={handleStartNew}>
-                  <Plus size={14} /> Analyze new venture
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    className="hp-btn hp-btn--ghost hp-btn--sm flex items-center gap-1.5"
+                    onClick={() => setShowPromptPackModal(true)}
+                    title="Export AI Prompt Pack (Cursor, Bolt, Lovable, v0)"
+                  >
+                    <Code size={13} className="text-slate-600" />
+                    <span className="hidden sm:inline">AI Prompt Pack</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="hp-btn hp-btn--ghost hp-btn--sm flex items-center gap-1.5"
+                    onClick={() => setShowShareModal(true)}
+                    title="Generate Shareable Public Pitch Link"
+                  >
+                    <Share2 size={13} className="text-orange-600" />
+                    <span>Share Pitch</span>
+                    <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200/60">
+                      Scale
+                    </span>
+                  </button>
+                  <button type="button" className="hp-btn hp-btn--ghost hp-btn--sm" onClick={handleStartNew}>
+                    <Plus size={14} /> Analyze new venture
+                  </button>
+                </div>
               </div>
 
               <BlueprintDashboard
@@ -702,6 +750,8 @@ export default function WorkspacePage({
                 viewMode={viewMode}
                 setViewMode={setViewMode}
                 scrollContainerRef={mainScrollRef}
+                currentUser={currentUser}
+                onOpenPayment={onOpenPayment}
               />
             </div>
           )}
@@ -715,6 +765,36 @@ export default function WorkspacePage({
           <span>{toastMessage}</span>
         </div>
       )}
+
+      {/* 1-Click AI Prompt Pack Modal */}
+      <PromptPackModal
+        isOpen={showPromptPackModal}
+        onClose={() => setShowPromptPackModal(false)}
+        idea={idea || history[0]?.idea}
+        blueprint={blueprint || history[0]?.blueprint}
+        onToast={showToast}
+      />
+
+      {/* Shareable Public Pitch Link Modal */}
+      <SharePitchModal
+        isOpen={showShareModal}
+        onClose={() => setShowShareModal(false)}
+        idea={idea || history[0]?.idea}
+        blueprint={blueprint || history[0]?.blueprint}
+        currentUser={currentUser}
+        onOpenPayment={onOpenPayment}
+        onToast={showToast}
+      />
+
+      {/* Side-by-Side Venture Comparison Modal */}
+      <VentureComparisonModal
+        isOpen={showComparisonModal}
+        onClose={() => setShowComparisonModal(false)}
+        history={history}
+        currentUser={currentUser}
+        onOpenPayment={onOpenPayment}
+        onSelectVenture={(item) => handleOpenStartup(item)}
+      />
 
       <ResourcesVault
         isOpen={showResourcesModal}

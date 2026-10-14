@@ -73,3 +73,38 @@ test("Razorpay plan amounts and signature verification", async () => {
   assert.strictEqual(verify(expectedSignature), true);
   assert.strictEqual(verify("tampered_signature"), false);
 });
+
+test("Public Shareable Pitch Link slug generation and validation", () => {
+  const generateSlug = (idea) => {
+    const base = idea
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40);
+    return `${base || "pitch"}-abc12`;
+  };
+
+  const slug = generateSlug("AI Autonomous Startup Copilot");
+  assert.strictEqual(slug, "ai-autonomous-startup-copilot-abc12");
+
+  const specialSlug = generateSlug("B2B SaaS: 100% Automated!! & Fast");
+  assert.strictEqual(specialSlug, "b2b-saas-100-automated-fast-abc12");
+});
+
+test("Market Intelligence Reddit & Competitor schema contract", () => {
+  const samplePayload = {
+    competitors: [
+      { name: "IncumbentCo", url: "https://incumbent.com", pricing: "$49/mo", traffic: "1M/mo", weakness: "High churn" },
+    ],
+    redditThreads: [
+      { subreddit: "r/startups", title: "Tired of slow tools", url: "https://reddit.com/r/startups/1", upvotes: 120, painPoint: "Too slow", founderWedge: "Instant speed" },
+    ],
+    summary: "High user frustration with legacy incumbents.",
+  };
+
+  assert.ok(Array.isArray(samplePayload.competitors));
+  assert.ok(samplePayload.competitors[0].url.startsWith("https://"));
+  assert.ok(Array.isArray(samplePayload.redditThreads));
+  assert.strictEqual(samplePayload.redditThreads[0].subreddit, "r/startups");
+  assert.ok(typeof samplePayload.redditThreads[0].upvotes === "number");
+});

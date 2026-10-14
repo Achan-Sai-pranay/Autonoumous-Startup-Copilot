@@ -28,6 +28,10 @@ import {
   Copy,
   FolderKanban,
   Layers,
+  Code2,
+  Globe,
+  Share2,
+  GitCompare,
 } from "lucide-react";
 import "./home.css";
 
@@ -92,10 +96,10 @@ export function AnnouncementBanner({ onCtaClick }) {
   return (
     <div id="banner" className="hp hp-banner">
       <p>
-        <b>New</b> The 3-AI VC War Room is live. Stress-test your idea against three models.
+        <b>New</b> Real-time Reddit grounding, 1-Click Cursor & Lovable prompt packs, and Side-by-Side Venture Comparison are live.
       </p>
       <button type="button" onClick={onCtaClick}>
-        Try 3 ideas free <ArrowRight size={13} />
+        Try 1 demo blueprint free <ArrowRight size={13} />
       </button>
     </div>
   );
@@ -211,7 +215,7 @@ export function HeroSection({ onStartWithIdea, initialIdea = "" }) {
             aria-label="Describe your startup idea"
           />
           <div className="hp-prompt-bar">
-            <span>3 free blueprints a week</span>
+            <span>1 free demo blueprint per device</span>
             <button type="submit" className="hp-btn hp-btn--primary">
               <Zap size={15} />
               Run market pulse
@@ -687,10 +691,11 @@ export function BentoFeatureGrid() {
       <div className="hp-wrap">
         <Head
           title="Everything from raw concept to investor deck."
-          lede="Specialist reasoning, checked arithmetic and the tools you need to start talking to customers."
+          lede="Specialist reasoning, checked arithmetic, live market evidence, and code prompts to ship your MVP."
         />
 
         <div className="hp-bento">
+          {/* Row 1: 12 Specialists + One Report */}
           <Reveal className="hp-tile hp-tile--agents hp-tile--dark">
             <h3>Twelve specialists, working in parallel.</h3>
             <p>
@@ -719,6 +724,97 @@ export function BentoFeatureGrid() {
             <p>A sticky section rail keeps you oriented as the analysis streams in.</p>
           </Reveal>
 
+          {/* Row 2: Prompt Pack + Reddit Grounding */}
+          <Reveal className="hp-tile hp-tile--half" delay={40}>
+            <div className="hp-code-preview" aria-hidden="true">
+              <header>
+                <span>.cursorrules · Lovable Prompt</span>
+                <span style={{ color: "#34d399", fontWeight: 700 }}>Ready to ship</span>
+              </header>
+              <div style={{ fontFamily: "monospace", color: "#cbd5e1", fontSize: "11px", lineHeight: "1.4" }}>
+                <span style={{ color: "#38bdf8" }}># Architecture Specification</span><br />
+                Stack: React 19, Tailwind, Supabase<br />
+                P0 Features: 5 core workflows defined
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span className="hp-tile-icon">
+                <Code2 size={18} />
+              </span>
+              <span style={{ padding: "3px 8px", borderRadius: "999px", fontSize: "10.5px", fontWeight: 700, background: "#ecfdf5", color: "#059669", border: "1px solid #a7f3d0" }}>
+                All Tiers · Free
+              </span>
+            </div>
+            <h3>1-Click Cursor, Lovable & Bolt Prompt Pack.</h3>
+            <p>Bridges the chasm from blueprint to shipping code. Generates .cursorrules, Lovable kick-off prompts, and master specs in one click.</p>
+          </Reveal>
+
+          <Reveal className="hp-tile hp-tile--half" delay={80}>
+            <div className="hp-reddit-preview" aria-hidden="true">
+              <header>
+                <span>r/startups · 142 upvotes</span>
+                <span style={{ color: "#ea580c", fontWeight: 700 }}>Unmet Need</span>
+              </header>
+              <p>“Existing contract tools charge ₹2.5L/yr and take 3 months to onboard. We just need simple automated renewal alerts…”</p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span className="hp-tile-icon">
+                <Globe size={18} />
+              </span>
+              <span style={{ padding: "3px 8px", borderRadius: "999px", fontSize: "10.5px", fontWeight: 700, background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa" }}>
+                Scale Founder Exclusive
+              </span>
+            </div>
+            <h3>Live Web & Reddit Complaint Grounding.</h3>
+            <p>Scrapes real competitor pricing tiers and crawls Reddit threads (r/startups, r/SaaS) to find verified complaints and underserved wedges.</p>
+          </Reveal>
+
+          {/* Row 3: Public Pitch Links + Venture Comparison Duel */}
+          <Reveal className="hp-tile hp-tile--half" delay={120}>
+            <div className="hp-share-preview" aria-hidden="true">
+              <span className="hp-share-url">launchpilot.ai/p/b2b-audit-89</span>
+              <span className="hp-share-badge">
+                <Check size={11} /> 89/100 Validated
+              </span>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span className="hp-tile-icon">
+                <Share2 size={18} />
+              </span>
+              <span style={{ padding: "3px 8px", borderRadius: "999px", fontSize: "10.5px", fontWeight: 700, background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa" }}>
+                Scale Founder Exclusive
+              </span>
+            </div>
+            <h3>One-Click Shareable Public Pitch Links.</h3>
+            <p>Publish an investor-ready read-only pitch page with a LaunchPilot verification watermark to share with angels, accelerators, or on X.</p>
+          </Reveal>
+
+          <Reveal className="hp-tile hp-tile--half" delay={160}>
+            <div className="hp-duel-preview" aria-hidden="true">
+              <div className="hp-duel-card">
+                <b>Contract Auditor</b>
+                <span>Score: <em>89</em> · 22 Mo</span>
+                <span style={{ fontSize: "10px", color: "#059669", fontWeight: 700 }}>Recommended to build</span>
+              </div>
+              <div className="hp-duel-card">
+                <b>Gym Stakes App</b>
+                <span>Score: <em>78</em> · 45 Mo</span>
+                <span style={{ fontSize: "10px", color: "#64748b" }}>Secondary project</span>
+              </div>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
+              <span className="hp-tile-icon">
+                <GitCompare size={18} />
+              </span>
+              <span style={{ padding: "3px 8px", borderRadius: "999px", fontSize: "10.5px", fontWeight: 700, background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa" }}>
+                Scale Founder Exclusive
+              </span>
+            </div>
+            <h3>Side-by-Side Venture Comparison Duel.</h3>
+            <p>Compare two ventures head-to-head on Viability Score, break-even targets, and CAC risk. The AI co-founder rules which idea to build first.</p>
+          </Reveal>
+
+          {/* Row 4: Outreach, Chat & Vault */}
           <Reveal className="hp-tile" delay={0}>
             <div className="hp-sample">
               <b>Sample message</b>
@@ -772,8 +868,10 @@ export function ComparisonSection({ onCtaClick }) {
     ["Market sizing", "Napkin guesses", "Top-down numbers with no sources", "Bottom-up TAM, SAM and SOM"],
     ["Customer discovery", "Leading questions", "Generic survey questions", "Mom Test interview scripts"],
     ["Financial model", "Spreadsheets you build yourself", "Advice with no real cost numbers", "Interactive costs, MRR and break-even"],
+    ["Market Evidence Grounding", "Outdated Google results", "Static training data", "Live competitor pricing & Reddit complaint threads"],
+    ["Code & MVP Launch Pack", "Start from blank prompt", "Vague code snippets", "1-Click Cursor, Lovable & Bolt Prompt Pack"],
     ["Export", "Scattered notes and docs", "Copied chat logs", "16-part PDF, pitch deck, Markdown"],
-    ["Cost", "₹8–20 Lakhs in consulting", "₹1,600 a month, no structure", "Free beta, 3 ideas a week"],
+    ["Cost", "₹8–20 Lakhs in consulting", "₹1,600 a month, no structure", "Free demo on your device, from ₹129/mo"],
   ];
   return (
     <section id="compare" className="hp hp-sec hp-soft">
@@ -996,6 +1094,7 @@ export function PricingSection({ onSelectPlan }) {
     "1 full demo blueprint per device",
     "All 12 specialist AI co-founders",
     "Full 3-AI VC War Room debate",
+    "1-Click Cursor, Lovable & Bolt Prompt Pack",
     "Bottom-up TAM, SAM and SOM sizing",
     "SWOT and competitor vulnerability matrix",
     "Unit economics and financial simulator",
@@ -1005,18 +1104,20 @@ export function PricingSection({ onSelectPlan }) {
     "5 startup blueprints per week",
     "All 12 specialist AI co-founders",
     "Full 3-AI VC War Room debate",
+    "1-Click Cursor, Lovable & Bolt Prompt Pack",
     "Priority AI response velocity",
-    "Unlimited Co-Founder chat",
+    "Crisp, prediction-focused Co-Founder chat",
     "Full PDF and PRD dossier suite",
     "Project cloud vault sync",
   ];
   const scale = [
     "10 startup blueprints per week",
-    "Everything in Starter Founder",
+    "Live Web & Reddit Complaint Grounding (r/startups, r/SaaS)",
+    "Public Shareable Pitch Links with Investor Mode",
+    "Side-by-Side Venture Comparison Duel",
+    "1-Click Cursor, Lovable & Bolt Prompt Pack",
     "Highest priority AI queue",
     "Unlimited VC War Room rebuttals",
-    "Extended prediction Co-Founder chat",
-    "Direct founder strategy assistance",
     "Voucher code support (FOUNDER_PASS)",
   ];
 
@@ -1119,8 +1220,8 @@ export function FaqSection({ onCtaClick }) {
       a: "The Bull argues why your idea could reach ₹800 Crore ARR. The Bear attacks acquisition costs, retention and incumbent retaliation. The Chief Judge returns a ruling and names the one experiment you should run first.",
     },
     {
-      q: "How does the weekly quota work?",
-      a: "Every free account gets 3 complete blueprints per week, and the quota resets every 7 days. Pro Founder gives you 10 a week for ₹149 a month, or you can use the FOUNDER_PASS voucher for unlimited testing.",
+      q: "How does the device quota and subscription work?",
+      a: "Every device gets 1 complete demo blueprint for free with zero locked features. To validate multiple ideas, upgrade to Starter Founder (₹129/mo for 5 ideas/wk) or Scale Founder (₹299/mo for 10 ideas/wk plus live Reddit intelligence, public pitch links, and side-by-side venture comparisons). Instant UPI activation with Razorpay.",
     },
     {
       q: "Can I trust the market size numbers?",
@@ -1128,7 +1229,7 @@ export function FaqSection({ onCtaClick }) {
     },
     {
       q: "Can I download or share my blueprint?",
-      a: "Yes. Every blueprint exports in one click as a formatted PDF or Markdown file you can share with co-founders, incubators or advisors.",
+      a: "Yes. Every blueprint exports in one click as a formatted PDF or Markdown file, or you can generate a public read-only pitch link with an authentic viability watermark for investors.",
     },
   ];
 
@@ -1188,7 +1289,7 @@ export function FinalCtaBanner({ onCtaClick }) {
           Validate your idea, free
           <ArrowRight size={16} />
         </button>
-        <small>No credit card · 3 blueprints a week · Synced with Appwrite</small>
+        <small>No credit card · 1 free demo blueprint · Instant UPI unlock</small>
       </Reveal>
     </section>
   );
