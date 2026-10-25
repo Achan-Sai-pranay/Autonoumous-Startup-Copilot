@@ -1,36 +1,64 @@
 // components/PaymentModal.jsx
 // ---------------------------------------------------------------------------
-// LaunchPilot Upgrade & Razorpay UPI Payment Modal:
+// LaunchPilot Upgrade & Razorpay UPI Payment Modal (Apple-style redesign)
 // - Free Demo: 1 blueprint lifetime per device (Full institutional access).
 // - Plan A: Starter Founder (₹129 / mo — 5 blueprints / week).
 // - Plan B: Scale Founder (₹299 / mo — 10 blueprints / week).
 // - Integrated Razorpay Checkout: Scan UPI QR, GPay, PhonePe, Paytm, or Cards.
 // - Supports Early Access Voucher (e.g. FOUNDER_PASS) for invited testers.
+// Styling: auth.css (shared tokens) + payment.css
 // ---------------------------------------------------------------------------
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   X,
   Check,
   Zap,
   ShieldCheck,
-  Sparkles,
-  CheckCircle2,
   Loader2,
   Ticket,
   QrCode,
   Smartphone,
-  CreditCard,
-  Building2,
   ArrowRight,
+  AlertCircle,
 } from "lucide-react";
 import { upgradeUserToPro, getDeviceId } from "../lib/quotaManager.js";
 import { initiateRazorpayPayment } from "../lib/razorpay.js";
+import "../styles/auth.css";
+import "../styles/payment.css";
+
+const PLANS = {
+  starter_129: {
+    tab: "Starter",
+    name: "Starter Founder",
+    price: 129,
+    limit: 5,
+    popular: false,
+    features: [
+      "All 12 Specialist Co-Founders",
+      "3-AI VC War Room Debate",
+      "PDF & PRD Dossier Export",
+    ],
+  },
+  scale_299: {
+    tab: "Scale Founder",
+    name: "Scale Founder",
+    price: 299,
+    limit: 10,
+    popular: true,
+    features: [
+      "Everything in Starter",
+      "Priority Multi-Agent Inference",
+      "Extended Co-Founder Chat",
+    ],
+  },
+};
 
 export default function PaymentModal({
   isOpen,
   onClose,
   currentUser,
   onPaymentSuccess = () => {},
+  theme = "light", // "light" | "dark"
 }) {
   const [selectedPlan, setSelectedPlan] = useState("starter_129");
   const [activeTab, setActiveTab] = useState("plans"); // 'plans' | 'voucher'
@@ -40,11 +68,25 @@ export default function PaymentModal({
   const [unlockedSuccess, setUnlockedSuccess] = useState(false);
   const [activatedSub, setActivatedSub] = useState(null);
 
+  // Esc to close + lock page scroll while open
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e) => e.key === "Escape" && onClose();
+    document.addEventListener("keydown", onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
-  const currentPrice = selectedPlan === "scale_299" ? 299 : 129;
-  const currentWeeklyLimit = selectedPlan === "scale_299" ? 10 : 5;
-  const currentPlanName = selectedPlan === "scale_299" ? "Scale Founder" : "Starter Founder";
+  const plan = PLANS[selectedPlan];
+  const currentPrice = plan.price;
+  const currentWeeklyLimit = plan.limit;
+  const currentPlanName = plan.name;
 
   async function handlePayWithRazorpay() {
     setError("");
@@ -111,276 +153,254 @@ export default function PaymentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-sm animate-fade-in font-sans">
-      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden text-slate-900 max-h-[94vh] flex flex-col">
-        {/* Modal Top Header */}
-        <div className="flex items-center justify-between px-5 sm:px-6 pt-5 pb-4 border-b border-slate-100 bg-slate-50/80 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center text-white font-black text-xs shadow-xs">
-              LP
-            </div>
+    <div
+      className="ax-overlay"
+      data-theme={theme}
+      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="ax-card px-card" role="dialog" aria-modal="true" aria-labelledby="px-title">
+        {/* Header */}
+        <div className="ax-head">
+          <div className="px-brand">
+            <span className="px-brand-mark">LP</span>
             <div>
-              <div className="flex items-center gap-2">
-                <span className="font-extrabold text-slate-900 text-sm tracking-tight">
-                  LaunchPilot Founder Upgrade
-                </span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200">
-                  Instant UPI
-                </span>
+              <div className="px-title-row">
+                <span className="px-title" id="px-title">LaunchPilot Founder Upgrade</span>
+                <span className="px-pill">Instant UPI</span>
               </div>
-              <p className="text-[11px] text-slate-500">1 Demo Idea Per Device Used · Upgrade to unlock weekly access</p>
+              <p className="px-caption">
+                1 Demo Idea Per Device Used · Upgrade to unlock weekly access
+              </p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-200/60 transition-colors cursor-pointer"
-            aria-label="Close modal"
-          >
-            <X size={18} />
+          <button type="button" className="ax-close" onClick={onClose} aria-label="Close modal">
+            <X size={16} />
           </button>
         </div>
 
         {unlockedSuccess ? (
-          /* Success Screen */
-          <div className="p-7 sm:p-9 text-center space-y-5 animate-fade-in my-auto">
-            <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 mx-auto flex items-center justify-center shadow-inner">
-              <CheckCircle2 size={36} />
-            </div>
-            <div>
-              <h3 className="text-xl font-black text-slate-900 tracking-tight">
-                Plan Unlocked Successfully!
-              </h3>
-              <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto">
-                Payment verified. Your account and device have been upgraded with full weekly blueprint access.
-              </p>
-            </div>
+          /* ---------------- Success ---------------- */
+          <div className="ax-body px-success">
+            <svg className="px-ring" viewBox="0 0 76 76" aria-hidden="true">
+              <circle cx="38" cy="38" r="30" />
+              <path d="M26 39l9 9 16-18" />
+            </svg>
+            <h3>Plan Unlocked Successfully!</h3>
+            <p>
+              Payment verified. Your account and device have been upgraded with full weekly
+              blueprint access.
+            </p>
 
-            <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-left text-xs space-y-2.5">
-              <div className="flex justify-between text-slate-600">
-                <span>Active Plan:</span>
-                <span className="font-bold text-slate-900">{activatedSub?.planName || currentPlanName}</span>
+            <dl className="px-list">
+              <div>
+                <dt>Active Plan</dt>
+                <dd>{activatedSub?.planName || currentPlanName}</dd>
               </div>
-              <div className="flex justify-between text-slate-600">
-                <span>Weekly Blueprint Limit:</span>
-                <span className="font-bold text-emerald-600">{activatedSub?.weeklyLimit || currentWeeklyLimit} Blueprints / Week</span>
+              <div>
+                <dt>Weekly Blueprint Limit</dt>
+                <dd className="is-good">
+                  {activatedSub?.weeklyLimit || currentWeeklyLimit} Blueprints / Week
+                </dd>
               </div>
-              <div className="flex justify-between text-slate-600">
-                <span>Payment Reference:</span>
-                <span className="font-mono text-slate-700">{activatedSub?.paymentId || "Verified"}</span>
+              <div>
+                <dt>Payment Reference</dt>
+                <dd className="is-mono">{activatedSub?.paymentId || "Verified"}</dd>
               </div>
-              <div className="flex justify-between text-slate-600">
-                <span>Access:</span>
-                <span className="text-emerald-700 font-bold">All 12 AI Specialists + War Room Unlocked</span>
+              <div>
+                <dt>Access</dt>
+                <dd className="is-good">All 12 AI Specialists + War Room Unlocked</dd>
               </div>
-            </div>
+            </dl>
 
             <button
+              type="button"
+              className="ax-primary"
               onClick={() => {
                 setUnlockedSuccess(false);
                 onClose();
               }}
-              className="w-full py-3.5 px-4 rounded-2xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
             >
-              <span>Back to Studio & Validate Startups</span>
-              <ArrowRight size={16} />
+              <span>Back to Studio &amp; Validate Startups</span>
+              <ArrowRight size={15} className="ax-arrow" />
             </button>
           </div>
         ) : (
-          /* Selection & Checkout View */
-          <div className="p-5 sm:p-6 overflow-y-auto space-y-5">
-            {/* Tabs */}
-            <div className="flex items-center gap-2 p-1 rounded-xl bg-slate-100 border border-slate-200/80 text-xs font-semibold">
+          /* ---------------- Selection & Checkout ---------------- */
+          <div className="ax-body">
+            {/* Main tabs */}
+            <div className="ax-seg" role="tablist" data-pos={activeTab === "voucher" ? 1 : 0}>
+              <span className="ax-seg-pill" />
               <button
                 type="button"
-                className={`flex-1 py-1.5 rounded-lg transition-all text-center cursor-pointer ${
-                  activeTab === "plans"
-                    ? "bg-white text-slate-900 shadow-xs font-bold"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-                onClick={() => setActiveTab("plans")}
+                role="tab"
+                aria-selected={activeTab === "plans"}
+                onClick={() => {
+                  setActiveTab("plans");
+                  setError("");
+                }}
               >
                 Choose Subscription
               </button>
               <button
                 type="button"
-                className={`flex-1 py-1.5 rounded-lg transition-all text-center cursor-pointer ${
-                  activeTab === "voucher"
-                    ? "bg-white text-slate-900 shadow-xs font-bold"
-                    : "text-slate-600 hover:text-slate-900"
-                }`}
-                onClick={() => setActiveTab("voucher")}
+                role="tab"
+                aria-selected={activeTab === "voucher"}
+                onClick={() => {
+                  setActiveTab("voucher");
+                  setError("");
+                }}
               >
                 Have a Voucher Pass?
               </button>
             </div>
 
             {error && (
-              <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 flex items-center gap-2">
+              <div className="ax-error" role="alert" key={error}>
+                <AlertCircle size={15} />
                 <span>{error}</span>
               </div>
             )}
 
             {activeTab === "plans" ? (
-              <div className="space-y-4">
-                {/* 2 Plan Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Plan 1: Starter (₹129) */}
-                  <div
-                    onClick={() => setSelectedPlan("starter_129")}
-                    className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                      selectedPlan === "starter_129"
-                        ? "border-orange-500 bg-orange-50/40 shadow-xs ring-1 ring-orange-500"
-                        : "border-slate-200 hover:border-slate-300 bg-white"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Starter</span>
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedPlan === "starter_129" ? "border-orange-600 bg-orange-600" : "border-slate-300"}`}>
-                        {selectedPlan === "starter_129" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                      </div>
-                    </div>
-                    <div className="mt-2 flex items-baseline gap-1">
-                      <span className="text-2xl font-black text-slate-900">₹129</span>
-                      <span className="text-xs text-slate-500">/ month</span>
-                    </div>
-                    <p className="mt-1 text-[11px] font-bold text-orange-700">
-                      5 Blueprints per week
-                    </p>
-                    <ul className="mt-3 space-y-1.5 text-[11px] text-slate-600">
-                      <li className="flex items-center gap-1.5">
-                        <Check size={13} className="text-emerald-600 shrink-0" />
-                        <span>All 12 Specialist Co-Founders</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <Check size={13} className="text-emerald-600 shrink-0" />
-                        <span>3-AI VC War Room Debate</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <Check size={13} className="text-emerald-600 shrink-0" />
-                        <span>PDF & PRD Dossier Export</span>
-                      </li>
-                    </ul>
-                  </div>
-
-                  {/* Plan 2: Scale (₹299) */}
-                  <div
-                    onClick={() => setSelectedPlan("scale_299")}
-                    className={`relative p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                      selectedPlan === "scale_299"
-                        ? "border-orange-500 bg-orange-50/40 shadow-xs ring-1 ring-orange-500"
-                        : "border-slate-200 hover:border-slate-300 bg-white"
-                    }`}
-                  >
-                    <span className="absolute -top-2.5 right-3 px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-600 text-white shadow-xs">
-                      Popular
-                    </span>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-slate-600">Scale Founder</span>
-                      <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedPlan === "scale_299" ? "border-orange-600 bg-orange-600" : "border-slate-300"}`}>
-                        {selectedPlan === "scale_299" && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
-                      </div>
-                    </div>
-                    <div className="mt-2 flex items-baseline gap-1">
-                      <span className="text-2xl font-black text-slate-900">₹299</span>
-                      <span className="text-xs text-slate-500">/ month</span>
-                    </div>
-                    <p className="mt-1 text-[11px] font-bold text-orange-700">
-                      10 Blueprints per week
-                    </p>
-                    <ul className="mt-3 space-y-1.5 text-[11px] text-slate-600">
-                      <li className="flex items-center gap-1.5">
-                        <Check size={13} className="text-emerald-600 shrink-0" />
-                        <span>Everything in Starter</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <Check size={13} className="text-emerald-600 shrink-0" />
-                        <span>Priority Multi-Agent Inference</span>
-                      </li>
-                      <li className="flex items-center gap-1.5">
-                        <Check size={13} className="text-emerald-600 shrink-0" />
-                        <span>Extended Co-Founder Chat</span>
-                      </li>
-                    </ul>
-                  </div>
+              <>
+                {/* Plan switcher */}
+                <div
+                  className="ax-seg"
+                  role="radiogroup"
+                  aria-label="Plan"
+                  data-pos={selectedPlan === "scale_299" ? 1 : 0}
+                  style={{ marginBottom: 0 }}
+                >
+                  <span className="ax-seg-pill" />
+                  {Object.entries(PLANS).map(([id, p]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      role="radio"
+                      aria-checked={selectedPlan === id}
+                      aria-selected={selectedPlan === id}
+                      className="px-seg-plan"
+                      onClick={() => setSelectedPlan(id)}
+                    >
+                      <span>{p.tab}</span>
+                      <em>₹{p.price}</em>
+                    </button>
+                  ))}
                 </div>
 
-                {/* Razorpay UPI Action */}
-                <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-3">
-                  <div className="flex items-center justify-between text-xs text-slate-600">
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <QrCode size={15} className="text-orange-600" />
+                {/* Selected plan detail */}
+                <div className="px-panel" key={selectedPlan}>
+                  <div className="px-panel-top">
+                    <div className="px-price">
+                      ₹{plan.price}
+                      <span className="px-per">/ month</span>
+                    </div>
+                    <div className="px-chips">
+                      {plan.popular && <span className="px-chip px-chip--solid">Popular</span>}
+                      <span className="px-chip">{plan.limit} Blueprints per week</span>
+                    </div>
+                  </div>
+                  <ul className="px-feats">
+                    {plan.features.map((f) => (
+                      <li key={f}>
+                        <span className="px-tick">
+                          <Check size={11} strokeWidth={3.2} />
+                        </span>
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Razorpay checkout dock */}
+                <div className="px-dock">
+                  <div className="px-dock-row">
+                    <span className="px-methods">
+                      <QrCode size={16} />
                       <span>Instant UPI QR, GPay, PhonePe, Cards</span>
                     </span>
-                    <span className="font-extrabold text-slate-900 text-sm">
-                      ₹{currentPrice} <span className="text-[10px] text-slate-500 font-normal">/ mo</span>
+                    <span className="px-total">
+                      ₹{currentPrice} <small>/ mo</small>
                     </span>
                   </div>
 
                   <button
                     type="button"
+                    className="ax-primary"
                     onClick={handlePayWithRazorpay}
                     disabled={isProcessing}
-                    className="w-full py-3.5 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 active:scale-[0.99] text-white font-bold text-sm shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center justify-center gap-2"
                   >
                     {isProcessing ? (
                       <>
-                        <Loader2 size={16} className="animate-spin" />
+                        <Loader2 size={16} className="ax-spin" />
                         <span>Opening Razorpay Gateway...</span>
                       </>
                     ) : (
                       <>
                         <Smartphone size={16} />
-                        <span>Pay ₹{currentPrice} & Unlock {currentWeeklyLimit} Ideas/Week</span>
+                        <span>
+                          Pay ₹{currentPrice} &amp; Unlock {currentWeeklyLimit} Ideas/Week
+                        </span>
                       </>
                     )}
                   </button>
 
-                  <div className="flex items-center justify-center gap-3 text-[10px] text-slate-500 pt-1 font-mono">
-                    <span className="flex items-center gap-1">
-                      <ShieldCheck size={12} className="text-emerald-600" /> 256-Bit SSL Secured
+                  <div className="px-trust">
+                    <span>
+                      <ShieldCheck size={13} /> 256-Bit SSL Secured
                     </span>
-                    <span>•</span>
                     <span>Razorpay Verified</span>
-                    <span>•</span>
                     <span>Direct UPI Auto-Credit</span>
                   </div>
                 </div>
-              </div>
+              </>
             ) : (
-              /* Voucher Pass Tab */
-              <form onSubmit={handleRedeemVoucher} className="space-y-4">
-                <div className="p-4 rounded-2xl bg-orange-50/50 border border-orange-200/70 space-y-1.5">
-                  <div className="flex items-center gap-2 text-xs font-bold text-orange-950">
-                    <Ticket size={16} className="text-orange-600" />
-                    <span>Founder Invitation / Early Access Pass</span>
+              /* ---------------- Voucher ---------------- */
+              <form className="px-ticket" onSubmit={handleRedeemVoucher} noValidate>
+                <div className="px-ticket-top">
+                  <span className="px-ticket-icon">
+                    <Ticket size={20} />
+                  </span>
+                  <div>
+                    <h4 className="px-ticket-title">Founder Invitation / Early Access Pass</h4>
+                    <p className="px-ticket-copy">
+                      If you received an early invitation pass (such as{" "}
+                      <span className="px-code">FOUNDER_PASS</span>), enter it below to unlock
+                      testing access.
+                    </p>
                   </div>
-                  <p className="text-[11px] text-orange-900/80 leading-relaxed">
-                    If you received an early invitation pass (such as <code className="font-mono bg-white px-1.5 py-0.5 rounded border border-orange-200">FOUNDER_PASS</code>), enter it below to unlock testing access.
-                  </p>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label htmlFor="voucher-code" className="text-xs font-bold text-slate-700 block">
+                <div className="px-perf" />
+
+                <div className="px-ticket-bottom">
+                  <label htmlFor="voucher-code" className="ax-label">
                     Voucher Code
                   </label>
-                  <input
-                    id="voucher-code"
-                    type="text"
-                    value={voucherCode}
-                    onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
-                    placeholder="e.g. FOUNDER_PASS"
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 font-mono text-sm uppercase tracking-wider focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20"
-                  />
+                  <div className="px-coupon">
+                    <input
+                      id="voucher-code"
+                      type="text"
+                      value={voucherCode}
+                      onChange={(e) => setVoucherCode(e.target.value.toUpperCase())}
+                      placeholder="e.g. FOUNDER_PASS"
+                      autoComplete="off"
+                      spellCheck={false}
+                    />
+                    <button
+                      type="submit"
+                      className="px-redeem"
+                      disabled={isProcessing || !voucherCode.trim()}
+                    >
+                      {isProcessing ? (
+                        <Loader2 size={15} className="ax-spin" />
+                      ) : (
+                        <Zap size={14} />
+                      )}
+                      <span>Redeem Pass &amp; Activate</span>
+                    </button>
+                  </div>
                 </div>
-
-                <button
-                  type="submit"
-                  disabled={isProcessing || !voucherCode.trim()}
-                  className="w-full py-3 px-4 rounded-xl bg-orange-600 hover:bg-orange-700 text-white font-bold text-sm shadow-md shadow-orange-500/20 transition-all cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Zap size={15} />}
-                  <span>Redeem Pass & Activate</span>
-                </button>
               </form>
             )}
           </div>

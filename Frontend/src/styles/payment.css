@@ -1,0 +1,459 @@
+/* ==========================================================================
+   payment.css — LaunchPilot upgrade modal
+   Builds on auth.css (same tokens, overlay, card, segmented control, buttons).
+   Import auth.css first (PaymentModal.jsx already does).
+   ========================================================================== */
+
+.ax-card.px-card {
+  max-width: 540px;
+}
+
+/* generic position hook so any .ax-seg can slide its pill */
+.ax-seg[data-pos="1"] .ax-seg-pill {
+  transform: translateX(100%);
+}
+
+/* ---- header ------------------------------------------------------------ */
+.px-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.px-brand-mark {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+  background: linear-gradient(180deg, var(--ax-accent-hi), var(--ax-accent));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 6px 16px -4px rgba(224, 86, 38, 0.55);
+}
+.px-title-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.px-title {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.px-caption {
+  margin: 2px 0 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ax-muted);
+}
+.px-pill {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ax-accent);
+  background: var(--ax-ring);
+}
+
+/* ---- plan panel -------------------------------------------------------- */
+.px-seg-plan {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.px-seg-plan em {
+  font-style: normal;
+  font-weight: 500;
+  color: var(--ax-faint);
+  transition: color 0.25s;
+}
+.px-seg-plan[aria-selected="true"] em {
+  color: var(--ax-accent);
+}
+
+.px-panel {
+  margin-top: 16px;
+  padding: 22px;
+  border-radius: 22px;
+  border: 1px solid var(--ax-line);
+  background: linear-gradient(180deg, var(--ax-field), transparent 85%);
+  animation: px-swap 0.45s var(--ax-ease) both;
+}
+.px-panel-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.px-price {
+  font-size: 46px;
+  line-height: 1;
+  font-weight: 650;
+  letter-spacing: -0.05em;
+  font-variant-numeric: tabular-nums;
+}
+.px-per {
+  margin-left: 6px;
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--ax-muted);
+}
+.px-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.px-chip {
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ax-accent);
+  background: var(--ax-ring);
+}
+.px-chip--solid {
+  color: #fff;
+  background: linear-gradient(180deg, var(--ax-accent-hi), var(--ax-accent));
+}
+
+.px-feats {
+  display: grid;
+  gap: 11px;
+  margin: 20px 0 0;
+  padding: 18px 0 0;
+  list-style: none;
+  border-top: 1px solid var(--ax-line);
+}
+.px-feats li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--ax-text);
+}
+.px-feats .px-tick {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: var(--ax-accent);
+  background: var(--ax-ring);
+}
+
+/* ---- checkout dock ----------------------------------------------------- */
+.px-dock {
+  margin-top: 14px;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid var(--ax-line);
+}
+.px-dock-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.px-methods {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  color: var(--ax-muted);
+  min-width: 0;
+}
+.px-methods svg {
+  flex-shrink: 0;
+  color: var(--ax-accent);
+}
+.px-total {
+  flex-shrink: 0;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.px-total small {
+  font-size: 12px;
+  font-weight: 450;
+  color: var(--ax-faint);
+}
+.px-dock .ax-primary {
+  margin-top: 14px;
+}
+.px-trust {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-top: 14px;
+  font-size: 11.5px;
+  color: var(--ax-faint);
+}
+.px-trust span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.px-trust span + span::before {
+  content: "";
+  width: 3px;
+  height: 3px;
+  margin-right: 9px;
+  border-radius: 50%;
+  background: var(--ax-faint);
+  opacity: 0.6;
+}
+.px-trust svg {
+  color: #30a46c;
+}
+
+/* ---- voucher / coupon ticket ------------------------------------------ */
+.px-ticket {
+  margin-top: 4px;
+  border-radius: 22px;
+  border: 1px solid var(--ax-line);
+  background: var(--ax-field);
+  overflow: hidden;
+  animation: px-swap 0.45s var(--ax-ease) both;
+}
+.px-ticket-top {
+  display: flex;
+  gap: 14px;
+  padding: 20px 20px 22px;
+}
+.px-ticket-icon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  color: var(--ax-accent);
+  background: var(--ax-ring);
+}
+.px-ticket-title {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+}
+.px-ticket-copy {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ax-muted);
+}
+.px-code {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 6px;
+  border: 1px solid var(--ax-line);
+  background: var(--ax-surface);
+  color: var(--ax-text);
+  font-family: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+}
+.px-perf {
+  position: relative;
+  height: 1px;
+  background: repeating-linear-gradient(90deg, var(--ax-faint) 0 5px, transparent 5px 11px);
+  opacity: 0.55;
+}
+.px-perf::before,
+.px-perf::after {
+  content: "";
+  position: absolute;
+  top: -10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ax-surface);
+  border: 1px solid var(--ax-line);
+}
+.px-perf::before { left: -11px; }
+.px-perf::after { right: -11px; }
+.px-ticket-bottom {
+  padding: 18px 20px 20px;
+}
+.px-ticket-bottom .ax-label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+.px-coupon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px;
+  border-radius: 15px;
+  border: 1px solid var(--ax-line);
+  background: var(--ax-surface);
+  transition: border-color 0.2s, box-shadow 0.25s;
+}
+.px-coupon:focus-within {
+  border-color: var(--ax-accent);
+  box-shadow: 0 0 0 4px var(--ax-ring);
+}
+.px-coupon input {
+  flex: 1;
+  min-width: 0;
+  height: 40px;
+  padding: 0 12px;
+  border: 0;
+  background: transparent;
+  color: var(--ax-text);
+  outline: none;
+  font-family: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.px-coupon input::placeholder {
+  color: var(--ax-faint);
+  letter-spacing: 0.06em;
+}
+.px-redeem {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-shrink: 0;
+  height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 11px;
+  background: linear-gradient(180deg, var(--ax-accent-hi), var(--ax-accent));
+  color: #fff;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 6px 14px -6px rgba(224, 86, 38, 0.7);
+  transition: transform 0.25s var(--ax-ease), background 0.25s, color 0.25s, box-shadow 0.25s;
+}
+.px-redeem:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+.px-redeem:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.px-redeem:disabled {
+  cursor: default;
+  background: var(--ax-field-hover);
+  color: var(--ax-faint);
+  box-shadow: none;
+}
+
+/* ---- success ----------------------------------------------------------- */
+.px-success {
+  margin: auto 0;
+  text-align: center;
+}
+.px-ring {
+  width: 76px;
+  height: 76px;
+  margin: 6px auto 18px;
+}
+.px-ring circle {
+  fill: rgba(48, 164, 108, 0.12);
+  stroke: #30a46c;
+  stroke-width: 2.5;
+  stroke-dasharray: 189;
+  stroke-dashoffset: 189;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  animation: px-draw 0.8s var(--ax-ease) 0.1s forwards;
+}
+.px-ring path {
+  fill: none;
+  stroke: #30a46c;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 40;
+  stroke-dashoffset: 40;
+  animation: px-draw 0.5s var(--ax-ease) 0.65s forwards;
+}
+.px-success h3 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+.px-success > p {
+  margin: 8px auto 0;
+  max-width: 340px;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ax-muted);
+}
+.px-list {
+  margin: 22px 0 18px;
+  border-radius: 18px;
+  border: 1px solid var(--ax-line);
+  background: var(--ax-field);
+  text-align: left;
+}
+.px-list > div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 13px 16px;
+  font-size: 13px;
+}
+.px-list > div + div {
+  border-top: 1px solid var(--ax-line);
+}
+.px-list dt {
+  flex-shrink: 0;
+  color: var(--ax-muted);
+}
+.px-list dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 560;
+}
+.px-list .is-good { color: #30a46c; }
+.px-list .is-mono {
+  font-family: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  font-weight: 450;
+  color: var(--ax-muted);
+  word-break: break-all;
+}
+.px-success .ax-primary {
+  margin-top: 0;
+}
+
+/* ---- motion ------------------------------------------------------------ */
+@keyframes px-swap {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes px-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@media (max-width: 480px) {
+  .px-price { font-size: 40px; }
+  .px-panel { padding: 18px; }
+  .px-methods { font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-panel, .px-ticket { animation: none; }
+  .px-ring circle, .px-ring path { animation: none; stroke-dashoffset: 0; }
+  .px-redeem { transition: none; }
+}
