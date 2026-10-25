@@ -299,13 +299,14 @@ export function analyzeVenture(entry) {
   const revSim = bp.revenueSimulator || {};
   const debate = bp.aiDebate || {};
 
-  // Detect domain archetype
-  const isB2B = /b2b|enterprise|cfo|procurement|legal|saas|contract|vendor|clinic|agency|compliance|invoice|crm|workflow/i.test(rawIdea);
-  const isDev = /api|developer|infra|code|github|token|llm|cache|latency|database|deploy|sdk|rag/i.test(rawIdea);
-  const isHealth = /dental|clinic|doctor|patient|medical|health|hospital|hipaa|therapy/i.test(rawIdea);
-  const isConsumer = /gym|fitness|workout|social|dating|gaming|mobile app|habit|creator|travel|student/i.test(rawIdea);
-  const isMarketplace = /marketplace|two-sided|platform|buyers and sellers|vendors and|wholesale|freelance/i.test(rawIdea);
-  const isFinance = /payment|fintech|invoice|accounting|tax|bank|credit|lending|wealth/i.test(rawIdea);
+  // Detect domain archetype with category precedence
+  const catLower = (entry.category || "").toLowerCase();
+  const isDev = catLower.includes("dev") || catLower.includes("infra") || /api\b|developer|infra\b|token bill|sub-millisecond|caching proxy|vector db|llm cache/i.test(rawIdea);
+  const isHealth = catLower.includes("health") || catLower.includes("dental") || catLower.includes("clinic") || /dental|clinic|doctor|patient|medical|hipaa|ehr|healthcare/i.test(rawIdea);
+  const isMarketplace = catLower.includes("marketplace") || /marketplace|two-sided|multi-vendor|buyers and sellers|wholesale marketplace/i.test(rawIdea);
+  const isConsumer = catLower.includes("consumer") || catLower.includes("mobile") || catLower.includes("fitness") || /gym|fitness|workout|social app|dating app|habit tracker|micro-wager/i.test(rawIdea);
+  const isFinance = catLower.includes("fintech") || /payment gateway|fintech|accounting|tax filing|lending|wealth management/i.test(rawIdea);
+  const isB2B = catLower.includes("b2b") || catLower.includes("enterprise") || !isConsumer;
 
   // 1. Overall Viability (0–100)
   const baseViab =

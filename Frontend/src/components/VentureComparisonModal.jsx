@@ -327,7 +327,7 @@ export default function VentureComparisonModal({
               onClick={() => setActiveTab("verdict")}
             >
               <TrendingUp size={14} />
-              Vitals & Scorecard
+              Vitals & Verdict
             </button>
             <button
               type="button"
@@ -335,7 +335,7 @@ export default function VentureComparisonModal({
               onClick={() => setActiveTab("matrix")}
             >
               <Layers size={14} />
-              24-Factor Comparison Matrix
+              24-Factor Matrix
             </button>
             <button
               type="button"
@@ -343,7 +343,7 @@ export default function VentureComparisonModal({
               onClick={() => setActiveTab("radar")}
             >
               <ShieldAlert size={14} className="text-rose-500" />
-              Red Flag Radar (Disadvantages & Traps)
+              Red Flag Radar
             </button>
             <button
               type="button"
@@ -351,7 +351,7 @@ export default function VentureComparisonModal({
               onClick={() => setActiveTab("debate")}
             >
               <Flame size={14} className="text-amber-500" />
-              AI VC War Room Duel
+              VC War Room
             </button>
             <button
               type="button"
@@ -359,7 +359,7 @@ export default function VentureComparisonModal({
               onClick={() => setActiveTab("roadmap")}
             >
               <Rocket size={14} className="text-emerald-500" />
-              30-Day Launch Sprint
+              30-Day Sprint
             </button>
           </div>
 
@@ -484,7 +484,14 @@ export default function VentureComparisonModal({
 
           {/* Tab 2: 24-Factor Comparison Matrix */}
           {activeTab === "matrix" && (
-            <div className="space-y-6">
+            <div className="space-y-4">
+              {/* Sticky Column Indicator Header */}
+              <div className="vcd-matrix-head sticky top-0 z-10 bg-slate-100 border border-slate-200 rounded-xl shadow-xs">
+                <span>Metric / Dimension</span>
+                <span className="font-bold text-slate-900 truncate">Venture A: {a.title}</span>
+                <span className="font-bold text-slate-900 truncate">Venture B: {b.title}</span>
+              </div>
+
               {/* Category 1: Market & Economics */}
               <div className="vcd-matrix-card">
                 <div className="p-3 bg-slate-100/70 border-b border-slate-200 text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
