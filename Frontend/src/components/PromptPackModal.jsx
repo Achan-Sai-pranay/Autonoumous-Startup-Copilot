@@ -7,6 +7,7 @@
 // Styling: auth.css (shared tokens) + prompt.css
 // ---------------------------------------------------------------------------
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import {
   Code,
   Copy,
@@ -171,7 +172,7 @@ export default function PromptPackModal({
 
   const lnWidth = `${String(lines.length).length}ch`;
 
-  return (
+  const modalContent = (
     <div
       className="ax-overlay"
       data-theme={theme}
@@ -309,4 +310,8 @@ export default function PromptPackModal({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 }

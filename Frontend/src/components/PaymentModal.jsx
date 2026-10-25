@@ -9,6 +9,7 @@
 // Styling: auth.css (shared tokens) + payment.css
 // ---------------------------------------------------------------------------
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import {
   X,
   Check,
@@ -152,7 +153,7 @@ export default function PaymentModal({
     }
   }
 
-  return (
+  const modalContent = (
     <div
       className="ax-overlay"
       data-theme={theme}
@@ -408,4 +409,8 @@ export default function PaymentModal({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 }

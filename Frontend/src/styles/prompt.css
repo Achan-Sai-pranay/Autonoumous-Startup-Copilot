@@ -6,7 +6,8 @@
 
 .ax-card.pp-card {
   max-width: 860px;
-  max-height: 92vh;
+  max-height: min(92vh, 760px);
+  margin: auto;
 }
 
 /* ---- header ------------------------------------------------------------ */
@@ -128,7 +129,7 @@
 .pp-window {
   position: relative;
   flex: 1;
-  min-height: 300px;
+  min-height: 200px;
   display: flex;
   flex-direction: column;
   overflow: hidden;

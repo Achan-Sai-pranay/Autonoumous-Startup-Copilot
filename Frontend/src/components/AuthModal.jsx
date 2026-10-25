@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Mail, Lock, User, ArrowRight, AlertCircle, Loader2, Eye, EyeOff } from "lucide-react";
 import {
   loginWithEmail,
@@ -119,7 +120,7 @@ export default function AuthModal({
     }
   }
 
-  return (
+  const modalContent = (
     <div
       className="ax-overlay"
       data-theme={theme}
@@ -332,4 +333,8 @@ export default function AuthModal({
       </div>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 }

@@ -4,6 +4,7 @@
 // localStorage. Styling: auth.css (shared tokens) + history.css
 // ---------------------------------------------------------------------------
 import { useState, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { History, X, Trash2, ChevronRight, Search, FolderOpen } from "lucide-react";
 import "../styles/auth.css";
 import "../styles/history.css";
@@ -158,7 +159,7 @@ export default function HistoryPanel({
 
   const isEmpty = history.length === 0;
 
-  return (
+  const panelContent = (
     <div
       className="ax-overlay hp-root"
       data-theme={theme}
@@ -294,4 +295,8 @@ export default function HistoryPanel({
       </aside>
     </div>
   );
+
+  return typeof document !== "undefined"
+    ? createPortal(panelContent, document.body)
+    : panelContent;
 }
