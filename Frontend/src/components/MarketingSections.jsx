@@ -161,7 +161,16 @@ function useTypedPlaceholder(lines, active) {
 export function HeroSection({ onStartWithIdea, initialIdea = "" }) {
   const [heroPrompt, setHeroPrompt] = useState(initialIdea);
   const [focused, setFocused] = useState(false);
+  const textareaRef = useRef(null);
   const typed = useTypedPlaceholder(PLACEHOLDERS, !heroPrompt && !focused);
+
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    const nextH = Math.max(84, Math.min(220, el.scrollHeight));
+    el.style.height = `${nextH}px`;
+  }, [heroPrompt]);
 
   const sampleChips = [
     {
@@ -206,6 +215,7 @@ export function HeroSection({ onStartWithIdea, initialIdea = "" }) {
 
         <form className="hp-prompt" onSubmit={handleSubmit}>
           <textarea
+            ref={textareaRef}
             value={heroPrompt}
             onChange={(e) => setHeroPrompt(e.target.value)}
             onFocus={() => setFocused(true)}

@@ -641,7 +641,7 @@ button.hp-user-btn,
 /* ------------------------------------------------------------------ */
 .hp-hero {
   overflow: hidden;
-  padding: clamp(56px, 9vw, 120px) 0 clamp(48px, 6vw, 80px);
+  padding: clamp(28px, 4.5vw, 60px) 0 clamp(36px, 5vw, 60px);
   background: #fff;
 }
 .hp-hero-glow {
@@ -673,7 +673,7 @@ button.hp-user-btn,
 }
 .hp-sub {
   max-width: 600px;
-  margin: 24px auto 0;
+  margin: 18px auto 0;
   font-size: clamp(1.05rem, 1.8vw, 1.3rem);
   line-height: 1.5;
   letter-spacing: -0.012em;
@@ -681,7 +681,7 @@ button.hp-user-btn,
   text-wrap: pretty;
 }
 .hp-prompt {
-  margin: 44px auto 0;
+  margin: 28px auto 0;
   max-width: 760px;
   text-align: left;
   border-radius: 26px;
@@ -701,7 +701,7 @@ button.hp-user-btn,
 .hp-prompt textarea {
   display: block;
   width: 100%;
-  padding: 24px 26px 8px;
+  padding: 22px 26px 8px;
   border: 0;
   outline: 0;
   resize: none;
@@ -711,6 +711,14 @@ button.hp-user-btn,
   line-height: 1.5;
   letter-spacing: -0.012em;
   color: var(--hp-ink);
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.hp-prompt textarea::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 .hp-prompt textarea::placeholder {
   color: #a1a1a6;

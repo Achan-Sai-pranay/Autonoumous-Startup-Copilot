@@ -161,21 +161,21 @@ export default function HistoryPanel({
 
   const panelContent = (
     <div
-      className="ax-overlay hp-root"
+      className="ax-overlay pv-root"
       data-theme={theme}
       data-state={closing ? "closing" : "open"}
       onMouseDown={(e) => e.target === e.currentTarget && onClose()}
     >
-      <aside className="hp-drawer" role="dialog" aria-modal="true" aria-labelledby="hp-title">
+      <aside className="pv-drawer" role="dialog" aria-modal="true" aria-labelledby="pv-title">
         {/* Header */}
-        <div className="hp-head">
-          <div className="hp-head-left">
-            <span className="hp-head-icon">
+        <div className="pv-head">
+          <div className="pv-head-left">
+            <span className="pv-head-icon">
               <History size={17} />
             </span>
             <div>
-              <h2 className="hp-title" id="hp-title">Project Vault</h2>
-              <p className="hp-count">
+              <h2 className="pv-title" id="pv-title">Project Vault</h2>
+              <p className="pv-count">
                 {history.length} {history.length === 1 ? "blueprint" : "blueprints"} saved
               </p>
             </div>
@@ -192,8 +192,8 @@ export default function HistoryPanel({
 
         {/* Search + quick filters */}
         {!isEmpty && (
-          <div className="hp-tools">
-            <label className="hp-search">
+          <div className="pv-tools">
+            <label className="pv-search">
               <Search size={15} />
               <input
                 type="search"
@@ -203,12 +203,12 @@ export default function HistoryPanel({
                 spellCheck={false}
               />
             </label>
-            <div className="hp-chips" role="group" aria-label="Filter blueprints">
+            <div className="pv-chips" role="group" aria-label="Filter blueprints">
               {filters.map((f) => (
                 <button
                   key={f.id}
                   type="button"
-                  className="hp-chip"
+                  className="pv-chip"
                   aria-pressed={filter === f.id}
                   onClick={() => setFilter(f.id)}
                 >
@@ -221,10 +221,10 @@ export default function HistoryPanel({
         )}
 
         {/* List */}
-        <div className="hp-list">
+        <div className="pv-list">
           {isEmpty && (
-            <div className="hp-empty">
-              <div className="hp-empty-icon">
+            <div className="pv-empty">
+              <div className="pv-empty-icon">
                 <FolderOpen size={22} />
               </div>
               <h3>No blueprints in vault yet</h3>
@@ -233,8 +233,8 @@ export default function HistoryPanel({
           )}
 
           {!isEmpty && visible.length === 0 && (
-            <div className="hp-empty">
-              <div className="hp-empty-icon">
+            <div className="pv-empty">
+              <div className="pv-empty-icon">
                 <Search size={22} />
               </div>
               <h3>No matching blueprints</h3>
@@ -257,21 +257,21 @@ export default function HistoryPanel({
             return (
               <article
                 key={entry.id}
-                className="hp-card"
+                className="pv-card"
                 data-removing={removingId === entry.id}
                 style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
               >
-                <button type="button" className="hp-main" onClick={() => onLoad(entry)}>
-                  <p className="hp-idea">{truncate(entry.idea)}</p>
-                  <div className="hp-meta">
+                <button type="button" className="pv-main" onClick={() => onLoad(entry)}>
+                  <p className="pv-idea">{truncate(entry.idea)}</p>
+                  <div className="pv-meta">
                     {score !== null && (
-                      <span className={`hp-score hp-score--${scoreTone(score)}`}>
+                      <span className={`pv-score pv-score--${scoreTone(score)}`}>
                         {score}
                         <small>/100</small>
                       </span>
                     )}
-                    <span className="hp-date">{formatDate(entry.createdAt)}</span>
-                    <span className="hp-open">
+                    <span className="pv-date">{formatDate(entry.createdAt)}</span>
+                    <span className="pv-open">
                       Load Blueprint <ChevronRight size={13} />
                     </span>
                   </div>
@@ -279,7 +279,7 @@ export default function HistoryPanel({
 
                 <button
                   type="button"
-                  className="hp-del"
+                  className="pv-del"
                   onClick={() => handleDelete(entry.id)}
                   title="Delete blueprint"
                   aria-label="Delete blueprint"
@@ -291,7 +291,7 @@ export default function HistoryPanel({
           })}
         </div>
 
-        <div className="hp-foot">Saved on this device</div>
+        <div className="pv-foot">Saved on this device</div>
       </aside>
     </div>
   );
