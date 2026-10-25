@@ -2,7 +2,8 @@
 // ---------------------------------------------------------------------------
 // Real-Time Competitor & Reddit Evidence Grounding (Scale Founder Exclusive)
 // Pulls live competitor URLs, pricing tiers, traffic telemetry & Reddit threads.
-// Apple minimalist aesthetic with frosted glass tier gating.
+// Apple-style dossier card: 32px radius, quote cards, live telemetry pulse and
+// a frosted glass tier gate. Styling: market.css (self-contained tokens).
 // ---------------------------------------------------------------------------
 import { useState, useEffect } from "react";
 import {
@@ -13,12 +14,14 @@ import {
   RefreshCw,
   Lock,
   Sparkles,
-  ShieldCheck,
   TrendingUp,
   AlertCircle,
   ArrowUpRight,
+  Lightbulb,
+  Tag,
 } from "lucide-react";
 import { isUserScaleFounder } from "../lib/quotaManager.js";
+import "../styles/market.css";
 
 const isLocalhost =
   typeof window !== "undefined" &&
@@ -30,6 +33,73 @@ const rawApiUrl = isLocalhost
 
 const BASE_API = rawApiUrl.replace(/\/api\/[a-zA-Z0-9_-]+$/, "");
 
+/* ------------------------------- helpers ---------------------------------- */
+
+// "850K visits/mo" -> 850000 (null when unparseable)
+function parseTraffic(str) {
+  const m = String(str || "").replace(/,/g, "").match(/([\d.]+)\s*([kKmMbB])?/);
+  if (!m) return null;
+  const n = parseFloat(m[1]);
+  if (!Number.isFinite(n)) return null;
+  const mult = { k: 1e3, m: 1e6, b: 1e9 }[(m[2] || "").toLowerCase()] || 1;
+  return n * mult;
+}
+
+const MONO_GRADIENTS = [
+  ["#e05626", "#f39a5b"],
+  ["#5b6cf0", "#8f9bff"],
+  ["#12a0a0", "#4fd2c2"],
+  ["#8b5cf6", "#b99cff"],
+  ["#d9901a", "#f6c453"],
+];
+
+function monoStyle(name = "") {
+  const sum = [...name].reduce((a, c) => a + c.charCodeAt(0), 0);
+  const [a, b] = MONO_GRADIENTS[sum % MONO_GRADIENTS.length];
+  return { background: `linear-gradient(145deg, ${b}, ${a})` };
+}
+
+function formatTime(d) {
+  try {
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return "";
+  }
+}
+
+function SkeletonPreview() {
+  return (
+    <div aria-hidden="true">
+      <div className="lme-grid">
+        {[0, 1].map((i) => (
+          <div className="lme-skel-card" key={i}>
+            <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+              <div className="lme-skel lme-skel--lg" />
+              <div className="lme-skel" style={{ width: "42%" }} />
+            </div>
+            <div className="lme-skel" style={{ width: "88%" }} />
+            <div className="lme-skel" style={{ width: "64%" }} />
+            <div className="lme-skel lme-skel--box" />
+          </div>
+        ))}
+      </div>
+      <div className="lme-threads" style={{ marginTop: 14 }}>
+        {[0, 1].map((i) => (
+          <div className="lme-skel-card" key={i}>
+            <div className="lme-skel" style={{ width: "30%" }} />
+            <div className="lme-skel" style={{ width: "92%", height: 16 }} />
+            <div className="lme-skel" style={{ width: "70%", height: 16 }} />
+            <div className="lme-skel lme-skel--box" />
+            <div className="lme-skel lme-skel--box" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------ component --------------------------------- */
+
 export default function LiveMarketEvidence({
   idea = "",
   domain = "",
@@ -37,12 +107,15 @@ export default function LiveMarketEvidence({
   currentUser = null,
   onOpenPayment = () => {},
   onToast = () => {},
+  theme = "light", // "light" | "dark"
 }) {
   const isScale = isUserScaleFounder(currentUser?.id);
 
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
+  const [isFallback, setIsFallback] = useState(false);
+  const [syncedAt, setSyncedAt] = useState(null);
 
   const fetchLiveEvidence = async () => {
     setLoading(true);
@@ -62,10 +135,14 @@ export default function LiveMarketEvidence({
       const json = await res.json();
       if (json?.data) {
         setData(json.data);
+        setIsFallback(false);
+        setSyncedAt(new Date());
       }
     } catch (err) {
       console.warn("Using local intelligence model:", err.message);
       // Deterministic fallback so the UI never displays a broken state
+      setIsFallback(true);
+      setSyncedAt(new Date());
       setData({
         competitors: [
           {
@@ -108,175 +185,223 @@ export default function LiveMarketEvidence({
     }
   };
 
+  // Only Scale Founders get the live pull; gated users see a preview skeleton
+  // (no request, and no real data sitting in the DOM behind the blur).
   useEffect(() => {
-    if (idea) {
+    if (idea && isScale) {
       fetchLiveEvidence();
     }
-  }, [idea]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idea, isScale]);
 
   const comps = data?.competitors || [];
   const threads = data?.redditThreads || [];
 
+  const trafficValues = comps.map((c) => parseTraffic(c.traffic));
+  const maxTraffic = Math.max(0, ...trafficValues.filter(Boolean));
+
+  const showSkeleton = !isScale || (loading && !data);
+
   return (
-    <article className="relative overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-xs transition-all">
-      {/* Top Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-slate-100">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              Live Evidence Grounding
-            </span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-orange-50 text-orange-700 border border-orange-200">
-              Scale Founder
-            </span>
-          </div>
-          <h3 className="text-base font-semibold text-slate-900 tracking-tight">
-            Real Competitors & Live Reddit Friction
-          </h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Verified web URLs, published pricing tiers, and genuine Reddit user complaints.
-          </p>
-        </div>
-
-        {isScale && (
-          <button
-            onClick={fetchLiveEvidence}
-            disabled={loading}
-            className="self-start sm:self-auto px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-          >
-            <RefreshCw size={12} className={loading ? "animate-spin text-orange-600" : "text-slate-500"} />
-            {loading ? "Grounding..." : "Refresh Pulse"}
-          </button>
-        )}
-      </div>
-
-      {/* Content Grid */}
-      <div className={`mt-5 space-y-6 ${!isScale ? "filter blur-[3px] select-none pointer-events-none" : ""}`}>
-        {/* Competitor Real URLs & Pricing */}
-        <div>
-          <h4 className="text-xs font-semibold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <Globe size={13} className="text-blue-600" />
-            Verified Competitor Tiers & Web Signals
-          </h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-            {comps.map((c, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-slate-200/70 bg-slate-50/40 p-3.5 hover:border-slate-300 transition-all flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm font-semibold text-slate-900">{c.name}</span>
-                    <a
-                      href={c.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-xs text-orange-600 hover:text-orange-700 flex items-center gap-0.5 font-medium underline-offset-2 hover:underline"
-                    >
-                      Visit Site <ArrowUpRight size={12} />
-                    </a>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-white border border-slate-200 text-slate-700">
-                      {c.pricing || "Freemium"}
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-medium bg-blue-50 text-blue-700 border border-blue-200/60">
-                      {c.traffic || "Verified"}
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-600 mt-2.5 leading-relaxed">
-                    <strong className="text-slate-700 font-medium">User Friction: </strong>
-                    {c.weakness}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Live Reddit Threads */}
-        <div>
-          <h4 className="text-xs font-semibold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-            <MessageSquare size={13} className="text-orange-600" />
-            Live Reddit Complaint Threads & Founder Wedge
-          </h4>
-          <div className="space-y-3">
-            {threads.map((t, i) => (
-              <div
-                key={i}
-                className="rounded-xl border border-slate-200/70 bg-slate-50/50 p-4 hover:border-orange-200 transition-all"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="px-2 py-0.5 rounded-md text-[11px] font-mono font-semibold bg-orange-100/70 text-orange-800 border border-orange-200/60">
-                      {t.subreddit}
-                    </span>
-                    <span className="text-xs text-slate-500 flex items-center gap-1">
-                      <ThumbsUp size={11} className="text-slate-400" /> {t.upvotes} upvotes
-                    </span>
-                  </div>
-                  <a
-                    href={t.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-xs font-medium text-slate-500 hover:text-orange-600 flex items-center gap-0.5 shrink-0"
-                  >
-                    View Thread <ExternalLink size={11} />
-                  </a>
-                </div>
-
-                <a
-                  href={t.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="block text-xs sm:text-sm font-semibold text-slate-800 mt-2 hover:text-orange-600 transition-colors"
-                >
-                  “{t.title}”
-                </a>
-
-                <div className="mt-2.5 pl-3 border-l-2 border-slate-300 text-xs text-slate-600 italic">
-                  "{t.painPoint}"
-                </div>
-
-                <div className="mt-3 pt-2.5 border-t border-slate-200/60 flex items-start gap-1.5 text-xs text-emerald-800 font-medium bg-emerald-50/60 rounded-lg p-2.5">
-                  <span className="font-semibold text-emerald-900 shrink-0">Your Winning Wedge:</span>
-                  <span>{t.founderWedge}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Frosted Glass Gate Overlay for Non-Scale Founders */}
-      {!isScale && (
-        <div className="absolute inset-0 z-20 flex items-center justify-center p-6 bg-white/70 backdrop-blur-md">
-          <div className="max-w-md w-full bg-white rounded-2xl border border-slate-200 p-6 shadow-xl text-center animate-fade-in">
-            <div className="inline-flex items-center justify-center h-11 w-11 rounded-xl bg-orange-50 border border-orange-200 text-orange-600 mb-3 shadow-2xs">
-              <Lock size={20} />
+    <article className="lme" data-theme={theme}>
+      <div className="lme-inner">
+        {/* Header */}
+        <header className="lme-head">
+          <div>
+            <div className="lme-badges">
+              {isScale && (
+                <span className="lme-live" data-state={isFallback && !loading ? "est" : "live"}>
+                  <span className="lme-pulse" />
+                  {loading && !data
+                    ? "Syncing live evidence"
+                    : isFallback
+                    ? "Modelled estimate"
+                    : "Live Evidence Grounding"}
+                  {syncedAt && !loading && <small>{formatTime(syncedAt)}</small>}
+                </span>
+              )}
+              <span className="lme-tier">Scale Founder</span>
             </div>
-            <h4 className="text-base font-semibold text-slate-900 tracking-tight">
-              Scale Founder Intelligence
-            </h4>
-            <p className="text-xs text-slate-600 mt-1.5 leading-relaxed">
-              Pull verified competitor website links, real published pricing models, and authentic Reddit complaint threads to ground your startup thesis in real user data.
+            <h3 className="lme-title">Real Competitors &amp; Live Reddit Friction</h3>
+            <p className="lme-subtitle">
+              Verified web URLs, published pricing tiers, and genuine Reddit user complaints.
             </p>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex flex-col gap-2">
-              <button
-                onClick={() => onOpenPayment("scale_299")}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-semibold text-white bg-orange-600 hover:bg-orange-700 shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-              >
-                <Sparkles size={14} />
-                Unlock with Scale Founder (₹299/mo)
-              </button>
-              <span className="text-[11px] text-slate-400">
-                Includes 10 blueprints/week, public pitch links & dual venture comparison.
-              </span>
-            </div>
           </div>
+
+          {isScale && (
+            <button
+              type="button"
+              className="lme-refresh"
+              onClick={fetchLiveEvidence}
+              disabled={loading}
+              data-loading={loading}
+            >
+              <RefreshCw size={14} />
+              {loading ? "Grounding..." : "Refresh Pulse"}
+            </button>
+          )}
+        </header>
+
+        {/* Body */}
+        <div
+          className="lme-body"
+          data-gated={!isScale}
+          data-refreshing={isScale && loading && !!data}
+        >
+          {showSkeleton ? (
+            <SkeletonPreview />
+          ) : !data ? (
+            <div className="lme-empty">Add an idea to ground it in live market evidence.</div>
+          ) : (
+            <>
+              {data.summary && (
+                <div className="lme-insight">
+                  <span className="lme-icon">
+                    <Lightbulb size={16} />
+                  </span>
+                  <div>
+                    <b>Market read</b>
+                    <p>{data.summary}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Competitors */}
+              <section className="lme-sec">
+                <div className="lme-sec-head">
+                  <span className="lme-icon">
+                    <Globe size={16} />
+                  </span>
+                  <h4>Verified Competitor Tiers &amp; Web Signals</h4>
+                  <span className="lme-count">{comps.length} tracked</span>
+                </div>
+
+                <div className="lme-grid">
+                  {comps.map((c, i) => {
+                    const tv = trafficValues[i];
+                    const pct = tv && maxTraffic ? Math.max(8, (tv / maxTraffic) * 100) : null;
+                    return (
+                      <div className="lme-comp" key={i} style={{ animationDelay: `${i * 70}ms` }}>
+                        <div className="lme-comp-top">
+                          <span className="lme-mono" style={monoStyle(c.name)}>
+                            {(c.name || "?").trim().charAt(0).toUpperCase()}
+                          </span>
+                          <span className="lme-name">{c.name}</span>
+                          <a className="lme-visit" href={c.url} target="_blank" rel="noreferrer">
+                            Visit Site <ArrowUpRight size={14} />
+                          </a>
+                        </div>
+
+                        <dl className="lme-specs">
+                          <div className="lme-spec">
+                            <dt>Pricing</dt>
+                            <dd>{c.pricing || "Freemium"}</dd>
+                          </div>
+                          <div className="lme-spec">
+                            <dt>Monthly traffic</dt>
+                            <dd>{c.traffic || "Verified"}</dd>
+                            {pct !== null && (
+                              <div className="lme-bar" aria-hidden="true">
+                                <i style={{ "--w": `${pct}%` }} />
+                              </div>
+                            )}
+                          </div>
+                        </dl>
+
+                        <div className="lme-friction">
+                          <b>
+                            <AlertCircle size={13} /> User Friction
+                          </b>
+                          {c.weakness}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+
+              {/* Reddit */}
+              <section className="lme-sec">
+                <div className="lme-sec-head">
+                  <span className="lme-icon">
+                    <MessageSquare size={16} />
+                  </span>
+                  <h4>Live Reddit Complaint Threads &amp; Founder Wedge</h4>
+                  <span className="lme-count">{threads.length} threads</span>
+                </div>
+
+                <div className="lme-threads">
+                  {threads.map((t, i) => (
+                    <div className="lme-thread" key={i} style={{ animationDelay: `${i * 80}ms` }}>
+                      <div className="lme-meta">
+                        <span className="lme-subreddit">{t.subreddit}</span>
+                        <span className="lme-votes">
+                          <ThumbsUp size={12} /> <b>{t.upvotes}</b> upvotes
+                        </span>
+                        <a className="lme-view" href={t.url} target="_blank" rel="noreferrer">
+                          View Thread <ExternalLink size={12} />
+                        </a>
+                      </div>
+
+                      <div>
+                        <span className="lme-qmark" aria-hidden="true">“</span>
+                        <a className="lme-quote" href={t.url} target="_blank" rel="noreferrer">
+                          {t.title}
+                        </a>
+                      </div>
+
+                      <div>
+                        <p className="lme-label">
+                          <MessageSquare size={13} /> Pain Point
+                        </p>
+                        <div className="lme-bubble">{t.painPoint}</div>
+                      </div>
+
+                      <div className="lme-wedge">
+                        <span className="lme-icon">
+                          <TrendingUp size={15} />
+                        </span>
+                        <div>
+                          <b>Your Winning Wedge</b>
+                          <span>{t.founderWedge}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </>
+          )}
+
+          {/* Frosted glass gate for non-Scale founders */}
+          {!isScale && (
+            <div className="lme-gate">
+              <div className="lme-gate-card" role="region" aria-label="Scale Founder Intelligence">
+                <div className="lme-lock">
+                  <Lock size={23} />
+                </div>
+                <h4>Scale Founder Intelligence</h4>
+                <p>
+                  Pull verified competitor website links, real published pricing models, and
+                  authentic Reddit complaint threads to ground your startup thesis in real user data.
+                </p>
+                <div className="lme-perks">
+                  <span><Globe size={12} /> Verified URLs</span>
+                  <span><Tag size={12} /> Real pricing</span>
+                  <span><MessageSquare size={12} /> Reddit threads</span>
+                </div>
+                <button type="button" className="lme-cta" onClick={() => onOpenPayment("scale_299")}>
+                  <Sparkles size={16} />
+                  Unlock with Scale Founder (₹299/mo)
+                </button>
+                <span className="lme-note">
+                  Includes 10 blueprints/week, public pitch links &amp; dual venture comparison.
+                </span>
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
     </article>
   );
 }
