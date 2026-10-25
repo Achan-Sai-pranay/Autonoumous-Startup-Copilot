@@ -276,6 +276,33 @@ export const VentureViabilityScorecard = memo(function VentureViabilityScorecard
           ))}
         </ul>
       </div>
+
+      {/* Regulatory & Legal Compliance Shield */}
+      {viabilityScorecard?.regulatoryShield && (
+        <div className="mt-4 p-4 rounded-2xl bg-amber-50/50 border border-amber-200/70">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-mono uppercase tracking-wider text-amber-900 font-bold flex items-center gap-1.5">
+              <ShieldCheck size={14} className="text-amber-600" />
+              Legal & Regulatory Compliance Shield
+            </p>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 border border-amber-300">
+              Risk: {viabilityScorecard.regulatoryShield.legalRiskLevel || "Moderate"}
+            </span>
+          </div>
+          <p className="text-xs text-amber-950 font-sans mb-2">
+            {viabilityScorecard.regulatoryShield.mandatoryDisclaimers}
+          </p>
+          {Array.isArray(viabilityScorecard.regulatoryShield.complianceChecklist) && (
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {viabilityScorecard.regulatoryShield.complianceChecklist.map((c, i) => (
+                <span key={i} className="text-[10px] font-mono bg-white text-slate-700 border border-amber-200/80 px-2 py-0.5 rounded-md">
+                  ✓ {c}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 });

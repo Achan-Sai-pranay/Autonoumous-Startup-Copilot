@@ -15,6 +15,7 @@ import {
   ShieldAlert,
   Scale,
   Check,
+  Copy,
   X,
   Rocket,
   Share2,
@@ -182,12 +183,85 @@ function Slider({ label, valueLabel, min, max, step, value, onChange }) {
   );
 }
 
+const EXPORT_DOC_PREVIEWS = {
+  prd: {
+    title: "Product Requirements Document (PRD)",
+    badge: "PRD Dossier · Phase 4",
+    excerpt: `1. TARGET ICP & USE CASE:
+Solo independent consultants, freelancers & boutique agency owners.
+Core Mission: Eliminate legal review friction and prevent predatory contract terms before signing.
+
+2. CORE MVP FEATURE SCOPE:
+• Instant OCR & Token Parser: Drag & drop PDFs up to 50 pages; automatic extraction of payment terms, non-compete clauses, and liability caps.
+• Red-Flag Severity Engine: High/Moderate/Low risk tags for one-sided indemnity clauses and late-fee penalties.
+• Plain-English Explainer: Explains why each clause is risky in 8th-grade conversational English with suggested revision wording.
+
+3. EXPLICIT ANTI-SCOPE (WHAT WE WON'T BUILD):
+• No automated document signing (DocuSign integration reserved for Phase 2).
+• No formal legal counsel representation or courtroom liability guarantees.
+
+4. FOUR-WEEK EXECUTION ROADMAP:
+• Week 1: Cloud OCR pipeline + PDF token chunker.
+• Week 2: Risk classification agent + plain-English prompt chain.
+• Week 3: Closed alpha with 15 Mom-Tested design partners.
+• Week 4: Self-serve onboarding and Product Hunt launch.`,
+  },
+  pitch: {
+    title: "10-Slide Investor Deck Structure",
+    badge: "Investor Synthesis · 10 Slides",
+    excerpt: `SLIDE 1: THE PROBLEM
+Solo knowledge workers lose an estimated ₹35 Lakhs/year to missed contract traps, delayed milestone payouts, and aggressive liability transfers.
+
+SLIDE 2: THE SOLUTION
+An autonomous AI contract co-pilot that audits agreements in under 30 seconds and outputs actionable counter-proposals.
+
+SLIDE 3: MARKET SIZE (BOTTOM-UP TAM)
+• TAM: $12.4 Billion (70M global freelancers × $175/yr admin spend)
+• SAM: $1.8 Billion (English-speaking knowledge workers)
+• SOM: $45 Million (Realistic 3-year capture of 30,000 active subscribers)
+
+SLIDE 4: BUSINESS MODEL & UNIT ECONOMICS
+• Self-serve monthly plans: ₹129 (Starter) and ₹299 (Scale)
+• 86% Gross Margin with ₹850/mo cloud API burn per 500 active users
+• Infinite runway bootstrapped at 15 paying customers.
+
+SLIDE 5: THE ASK & TRACTION
+Seeking strategic distribution partnerships with top freelance platforms and creator communities.`,
+  },
+  outreach: {
+    title: "Outreach Swipe Files & Social Distribution",
+    badge: "GTM Engine · Ready to Send",
+    excerpt: `COLD OUTBOUND EMAIL (HIGH-CONVERSION)
+Subject: quick question on your freelance client agreements
+
+Hey [First Name],
+
+Noticed your design portfolio on Dribbble — love the work for [Recent Client].
+
+Quick question: when clients send over 15-page master services agreements, how do you verify payment terms and indemnity clauses aren't predatory?
+
+We built a lightweight 1-click auditor that flags payment traps and writes counter-terms in 30 seconds. Would you be open to running your last contract through it for free?
+
+Cheers,
+[Founder Name]
+
+REDDIT LAUNCH POST (r/freelance)
+Title: I got burned by a 90-day delayed payment clause, so I built an AI tool to audit contracts for freelancers.
+Body:
+Last year a client slipped a net-90 payment terms clause into my agreement. It cost me 3 months of stress and ₹4 Lakhs in cash flow delays.
+
+To solve this, I spent the last month building an autonomous contract reviewer. You upload a PDF, and it highlights red-flag clauses in plain English with 1-click counter-proposals. It's completely free to test today — would love brutal feedback!`,
+  },
+};
+
 /* ------------------------------------------------------------------ */
 /* Main component                                                      */
 /* ------------------------------------------------------------------ */
 export function LiveProductSimulator({ onCtaClick }) {
   const [activeTab, setActiveTab] = useState("debate");
   const [defenseIndex, setDefenseIndex] = useState(0);
+  const [previewDoc, setPreviewDoc] = useState(null);
+  const [copiedExcerpt, setCopiedExcerpt] = useState(false);
 
   // Market size
   const [accounts, setAccounts] = useState(3500);
@@ -715,31 +789,118 @@ export function LiveProductSimulator({ onCtaClick }) {
                       <div className="lps-stack">
                         <div className="lps-section-title">
                           <h3>Everything in one 16-part report</h3>
-                          <p className="lps-muted">Download it as a PDF, Markdown or JSON, then share it with your team.</p>
+                          <p className="lps-muted">Click any document to inspect an interactive preview with 1-click copy.</p>
                         </div>
                         <div className="lps-three">
-                          <div className="lps-card lps-doc">
-                            <span className="lps-doc-icon">
-                              <FileText size={18} />
-                            </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewDoc(previewDoc === "prd" ? null : "prd");
+                              setCopiedExcerpt(false);
+                            }}
+                            className={`lps-card lps-doc text-left transition-all cursor-pointer ${
+                              previewDoc === "prd" ? "ring-2 ring-orange-500 bg-slate-900" : "hover:border-orange-500/50"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="lps-doc-icon">
+                                <FileText size={18} />
+                              </span>
+                              <span className="text-[10px] font-mono text-orange-400 font-bold">
+                                {previewDoc === "prd" ? "Active" : "Inspect ↗"}
+                              </span>
+                            </div>
                             <h4>Product requirements</h4>
                             <p>Problem, target users, MVP scope, what you won’t build, and a four-week roadmap.</p>
-                          </div>
-                          <div className="lps-card lps-doc">
-                            <span className="lps-doc-icon">
-                              <Rocket size={18} />
-                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewDoc(previewDoc === "pitch" ? null : "pitch");
+                              setCopiedExcerpt(false);
+                            }}
+                            className={`lps-card lps-doc text-left transition-all cursor-pointer ${
+                              previewDoc === "pitch" ? "ring-2 ring-orange-500 bg-slate-900" : "hover:border-orange-500/50"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="lps-doc-icon">
+                                <Rocket size={18} />
+                              </span>
+                              <span className="text-[10px] font-mono text-orange-400 font-bold">
+                                {previewDoc === "pitch" ? "Active" : "Inspect ↗"}
+                              </span>
+                            </div>
                             <h4>10-slide pitch deck</h4>
                             <p>Problem, solution, market size, advantage, business model and the ask.</p>
-                          </div>
-                          <div className="lps-card lps-doc">
-                            <span className="lps-doc-icon">
-                              <Share2 size={18} />
-                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewDoc(previewDoc === "outreach" ? null : "outreach");
+                              setCopiedExcerpt(false);
+                            }}
+                            className={`lps-card lps-doc text-left transition-all cursor-pointer ${
+                              previewDoc === "outreach" ? "ring-2 ring-orange-500 bg-slate-900" : "hover:border-orange-500/50"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="lps-doc-icon">
+                                <Share2 size={18} />
+                              </span>
+                              <span className="text-[10px] font-mono text-orange-400 font-bold">
+                                {previewDoc === "outreach" ? "Active" : "Inspect ↗"}
+                              </span>
+                            </div>
                             <h4>Outreach drafts</h4>
                             <p>LinkedIn messages, a Reddit launch post and founder emails, ready to send.</p>
-                          </div>
+                          </button>
                         </div>
+
+                        {/* Interactive Document Preview Drawer */}
+                        {previewDoc && EXPORT_DOC_PREVIEWS[previewDoc] && (
+                          <div className="p-4 sm:p-5 rounded-2xl bg-slate-950 border border-orange-500/40 shadow-2xl mt-3 animate-in fade-in duration-300">
+                            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-800">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[11px] font-mono font-bold px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400 border border-orange-500/30">
+                                  {EXPORT_DOC_PREVIEWS[previewDoc].badge}
+                                </span>
+                                <h4 className="text-xs sm:text-sm font-bold text-white tracking-tight">
+                                  {EXPORT_DOC_PREVIEWS[previewDoc].title}
+                                </h4>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (typeof navigator !== "undefined" && navigator.clipboard) {
+                                      navigator.clipboard.writeText(EXPORT_DOC_PREVIEWS[previewDoc].excerpt);
+                                      setCopiedExcerpt(true);
+                                      setTimeout(() => setCopiedExcerpt(false), 2000);
+                                    }
+                                  }}
+                                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-mono font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all cursor-pointer"
+                                >
+                                  {copiedExcerpt ? <Check size={12} className="text-emerald-400" /> : <Copy size={12} />}
+                                  <span>{copiedExcerpt ? "Copied" : "Copy"}</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewDoc(null)}
+                                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
+                                  aria-label="Close preview"
+                                >
+                                  <X size={15} />
+                                </button>
+                              </div>
+                            </div>
+                            <pre className="text-[11px] sm:text-xs text-slate-300 font-mono whitespace-pre-wrap leading-relaxed max-h-56 overflow-y-auto pr-1">
+                              {EXPORT_DOC_PREVIEWS[previewDoc].excerpt}
+                            </pre>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

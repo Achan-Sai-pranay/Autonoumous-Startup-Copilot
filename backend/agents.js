@@ -279,7 +279,12 @@ Return ONE JSON object with this exact structure:
     "monetizationScore": 85,
     "verdict": "Proceed",
     "verdictReasoning": "Two-sentence executive investment thesis reflecting the 3-AI committee ruling.",
-    "fatalRiskTraps": ["Specific failure trap 1", "Specific failure trap 2", "Specific failure trap 3"]
+    "fatalRiskTraps": ["Specific failure trap 1", "Specific failure trap 2", "Specific failure trap 3"],
+    "regulatoryShield": {
+      "legalRiskLevel": "Moderate",
+      "mandatoryDisclaimers": "Mandatory Terms of Service clauses, liability limitations, and licensing disclosures.",
+      "complianceChecklist": ["Data privacy (GDPR/CCPA)", "Terms of Service Liability Shield", "Industry-Specific Disclaimers"]
+    }
   },
   "aiDebate": {
     "bull": {
@@ -377,6 +382,7 @@ Return ONE JSON object with this exact structure:
     "database": "recommended database and why",
     "hosting": "recommended hosting platform(s) and why",
     "aiApis": "recommended AI APIs/models to use, if relevant",
+    "documentIngestion": "OCR, document parsing engines, token chunking, and vector context window handling for real-world user data",
     "architectureOverview": "system architecture design overview"
   },
   "businessStrategy": {
@@ -402,6 +408,10 @@ Return ONE JSON object with this exact structure:
     "platforms": [
       { "name": "LinkedIn", "why": "why this fits" },
       { "name": "Reddit", "why": "why this fits" }
+    ],
+    "channelBenchmarks": [
+      { "channel": "Cold Email Outreach", "benchmark": "35-45% open rate, 3-6% reply, 1.5-3% demo booked" },
+      { "channel": "Targeted Community Posts", "benchmark": "1.8-3.0% CTR, 8-15% waitlist/signup conversion" }
     ],
     "linkedInSearchStrategy": ["query 1", "query 2"],
     "coldEmailTemplate": "full cold email with subject line",
@@ -430,6 +440,11 @@ Return ONE JSON object with this exact structure:
   },
   "revenueSimulator": {
     "pricingAssumption": "Pricing model assumption (e.g. $49/mo Starter, $149/mo Pro)",
+    "retentionMetrics": {
+      "cacPaybackMonths": "3-5 months",
+      "projectedMonthlyChurn": "5-8%/mo",
+      "netLtvToCacRatio": "3.8x"
+    },
     "projections": [
       { "users": 100, "monthlyRevenue": "$4,900", "annualRevenue": "$58,800" },
       { "users": 500, "monthlyRevenue": "$24,500", "annualRevenue": "$294,000" },

@@ -1642,6 +1642,13 @@ function ProductMvpSection({
               <Tile label="Database" value={toSafeString(technicalArchitecture?.database, "PostgreSQL / Vector")} />
               <Tile label="Cloud" value={toSafeString(technicalArchitecture?.hosting, "AWS / Vercel")} />
             </TileGrid>
+            {technicalArchitecture?.documentIngestion && (
+              <MetricRow
+                label="Ingestion & OCR Pipeline"
+                value={toSafeString(technicalArchitecture.documentIngestion)}
+                tone="orange"
+              />
+            )}
             <MetricRow
               label="AI Models & APIs"
               value={toSafeString(technicalArchitecture?.aiApis, "Anthropic Claude / OpenAI / Local Embeddings")}
@@ -1888,13 +1895,31 @@ function FinancesSection({
 
             <TileGrid cols={2}>
               <Tile label="Gross Margin" value={`${grossMargin}%`} sub={activeArch.name} tone="green" />
-              <Tile label="Payback Period" value={activeArch.payback} sub="Acquisition Recoup" />
+              <Tile
+                label="Payback Period"
+                value={revenueSimulator?.retentionMetrics?.cacPaybackMonths || activeArch.payback}
+                sub="Acquisition Recoup"
+              />
             </TileGrid>
 
             <div>
               <MetricRow label="Average Revenue / Order (ARPU)" value={`${formatCurrency(arpu, "INR")}/mo`} />
               <MetricRow label="Expected Customer Lifetime Value" value={formatCurrency(estimatedLtv, "INR")} tone="green" />
               <MetricRow label="Max Allowable Target CAC" value={`< ${formatCurrency(targetCac, "INR")}`} tone="orange" />
+              {revenueSimulator?.retentionMetrics?.projectedMonthlyChurn && (
+                <MetricRow
+                  label="Projected Monthly Churn"
+                  value={revenueSimulator.retentionMetrics.projectedMonthlyChurn}
+                  tone="slate"
+                />
+              )}
+              {revenueSimulator?.retentionMetrics?.netLtvToCacRatio && (
+                <MetricRow
+                  label="Net LTV:CAC Ratio"
+                  value={revenueSimulator.retentionMetrics.netLtvToCacRatio}
+                  tone="green"
+                />
+              )}
             </div>
           </div>
         </StatCard>
@@ -2113,6 +2138,21 @@ function GoToMarketSection({
           }
         >
           <ChannelList channels={platformsList} />
+          {Array.isArray(goToMarket?.channelBenchmarks) && goToMarket.channelBenchmarks.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-slate-100">
+              <span className="text-[10px] font-mono uppercase text-slate-400 font-bold block mb-1.5">
+                Conversion & Channel Benchmarks:
+              </span>
+              <div className="space-y-1.5">
+                {goToMarket.channelBenchmarks.map((b, i) => (
+                  <div key={i} className="flex items-center justify-between text-[11px] bg-slate-50 px-2.5 py-1.5 rounded-lg border border-slate-200/60 font-sans">
+                    <span className="font-semibold text-slate-700">{b.channel || b.platform}</span>
+                    <span className="font-mono text-orange-600 font-bold">{b.benchmark || b.conversionRate || b.openOrClickRate}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </StatCard>
 
         {/* Card 3: Social Launch Copy */}

@@ -115,6 +115,8 @@ export async function initiateRazorpayPayment({
               planId,
               userId: currentUser?.id,
               deviceId,
+              email: currentUser?.email || "",
+              name: currentUser?.name || "",
             }),
           });
 

@@ -65,13 +65,14 @@ function writeJsonFile(filename, data) {
   }
 }
 
-function isSubscriberActive(userId, deviceId) {
+function isSubscriberActive(userId, deviceId, email = "") {
   const subs = readJsonFile("subscriptions.json", []);
   const now = Date.now();
   return subs.some((sub) => {
     const isOwner =
       (userId && sub.userId === userId && userId !== "guest") ||
-      (deviceId && sub.deviceId === deviceId);
+      (deviceId && sub.deviceId === deviceId) ||
+      (email && sub.email && sub.email.toLowerCase() === email.toLowerCase());
     if (!isOwner) return false;
     const expiry = new Date(sub.expiresAt).getTime();
     return expiry > now && sub.status === "active";
@@ -560,6 +561,8 @@ app.post("/api/razorpay/verify-payment", async (req, res) => {
       planId = "starter_129",
       userId = "guest",
       deviceId = "",
+      email = "",
+      name = "",
     } = req.body || {};
 
     if (!razorpay_order_id || !razorpay_payment_id) {
@@ -585,6 +588,8 @@ app.post("/api/razorpay/verify-payment", async (req, res) => {
       orderId: razorpay_order_id,
       userId: userId || "guest",
       deviceId: deviceId || "unknown",
+      email: (email || "").toLowerCase().trim(),
+      name: name || "Founder",
       planId,
       amount: planId === "scale_299" ? 299 : 129,
       currency: "INR",
@@ -608,14 +613,76 @@ app.post("/api/razorpay/verify-payment", async (req, res) => {
   }
 });
 
-// --- 12. Subscription Status Endpoint -------------------------------------
+// --- 12. Razorpay Webhook Endpoint (Async Webhook Events) -------------------
+app.post("/api/razorpay/webhook", async (req, res) => {
+  try {
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const signature = req.headers["x-razorpay-signature"];
+
+    if (webhookSecret && signature) {
+      const bodyStr = JSON.stringify(req.body);
+      const expectedSignature = crypto
+        .createHmac("sha256", webhookSecret)
+        .update(bodyStr)
+        .digest("hex");
+
+      if (expectedSignature !== signature) {
+        console.warn("[Razorpay Webhook] Invalid webhook signature rejected.");
+        return res.status(400).json({ error: "Invalid webhook signature." });
+      }
+    }
+
+    const event = req.body?.event;
+    const payload = req.body?.payload;
+
+    if (event === "payment.captured" || event === "order.paid") {
+      const paymentEntity = payload?.payment?.entity;
+      const orderId = paymentEntity?.order_id;
+      const paymentId = paymentEntity?.id;
+      const email = paymentEntity?.email;
+      const notes = paymentEntity?.notes || {};
+
+      const subscriptions = readJsonFile("subscriptions.json", []);
+      const existing = subscriptions.find((s) => s.paymentId === paymentId || (orderId && s.orderId === orderId));
+
+      if (!existing) {
+        const planId = notes.planId || "starter_129";
+        subscriptions.push({
+          paymentId: paymentId || `pay_wh_${Date.now()}`,
+          orderId: orderId || `order_wh_${Date.now()}`,
+          userId: notes.userId || "guest",
+          deviceId: notes.deviceId || "unknown",
+          email: (email || notes.customerEmail || "").toLowerCase().trim(),
+          name: notes.customerName || "Founder",
+          planId,
+          amount: planId === "scale_299" ? 299 : 129,
+          currency: "INR",
+          status: "active",
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          source: "webhook",
+        });
+        writeJsonFile("subscriptions.json", subscriptions);
+        console.log(`[Razorpay Webhook] Activated subscription for ${email || orderId}`);
+      }
+    }
+
+    res.json({ status: "ok", received: true });
+  } catch (err) {
+    console.error("[Razorpay Webhook] Error processing event:", err.message);
+    res.status(500).json({ error: "Internal webhook error" });
+  }
+});
+
+// --- 13. Subscription Status & Cancellation Endpoints ----------------------
 app.get("/api/subscription/:identifier", (req, res) => {
   const { identifier } = req.params;
   const subs = readJsonFile("subscriptions.json", []);
   const now = Date.now();
+  const lowerId = (identifier || "").toLowerCase().trim();
   const activeSub = subs.find(
     (s) =>
-      (s.userId === identifier || s.deviceId === identifier) &&
+      (s.userId === identifier || s.deviceId === identifier || (s.email && s.email === lowerId)) &&
       new Date(s.expiresAt).getTime() > now &&
       s.status === "active"
   );
@@ -623,6 +690,30 @@ app.get("/api/subscription/:identifier", (req, res) => {
     return res.json({ active: true, subscription: activeSub });
   }
   return res.json({ active: false });
+});
+
+app.post("/api/subscription/cancel", (req, res) => {
+  const { identifier } = req.body || {};
+  if (!identifier) {
+    return res.status(400).json({ error: "Identifier (userId, email, or deviceId) is required." });
+  }
+  const subs = readJsonFile("subscriptions.json", []);
+  const lowerId = identifier.toLowerCase().trim();
+  let cancelledCount = 0;
+
+  subs.forEach((s) => {
+    if ((s.userId === identifier || s.deviceId === identifier || (s.email && s.email === lowerId)) && s.status === "active") {
+      s.status = "cancelled";
+      s.cancelledAt = new Date().toISOString();
+      cancelledCount++;
+    }
+  });
+
+  if (cancelledCount > 0) {
+    writeJsonFile("subscriptions.json", subs);
+    return res.json({ success: true, message: "Subscription cancelled successfully." });
+  }
+  return res.status(404).json({ error: "No active subscription found to cancel." });
 });
 
 // --- 13. Live Web & Reddit Grounding Intelligence (Scale Founder Feature) ---

@@ -166,6 +166,8 @@ Respond with ONLY valid JSON with this exact structure:
   // Try Groq Cloud if API key is provided
   if (apiKey) {
     const models = [
+      "qwen/qwen3.8-27b",
+      "openai/gpt-oss-120b",
       "llama-3.3-70b-versatile",
       "llama-3.1-8b-instant",
     ];
@@ -186,7 +188,7 @@ Respond with ONLY valid JSON with this exact structure:
             temperature: 0.8,
             response_format: { type: "json_object" },
           }),
-          signal: AbortSignal.timeout(3500),
+          signal: AbortSignal.timeout(7000),
         });
 
         if (res.ok) {
@@ -194,7 +196,10 @@ Respond with ONLY valid JSON with this exact structure:
           const content = data?.choices?.[0]?.message?.content;
           const parsed = parseJsonSafely(content);
           if (parsed && parsed.thesis) {
-            const displayModel = model.includes("70b") ? "Llama 3.3 70B" : "Llama 3.1 8B";
+            let displayModel = "Llama 3.3 70B";
+            if (model.includes("qwen")) displayModel = "Qwen 27B";
+            else if (model.includes("gpt-oss")) displayModel = "GPT-OSS 120B";
+            else if (model.includes("8b")) displayModel = "Llama 3.1 8B";
             return {
               provider: `Groq (${displayModel})`,
               thesis: parsed.thesis,
@@ -210,10 +215,10 @@ Respond with ONLY valid JSON with this exact structure:
     }
   }
 
-  // Zero-Config Fallback: Google Gemini with Bull Partner persona (3.5s timeout)
+  // Zero-Config Fallback: Google Gemini with Bull Partner persona (6s timeout)
   try {
     const geminiPrompt = `${systemPrompt}\n\n${userPrompt}`;
-    const raw = await withTimeout(callGemini(geminiPrompt), 3500, "Gemini Bull fallback timed out");
+    const raw = await withTimeout(callGemini(geminiPrompt), 6000, "Gemini Bull fallback timed out");
     const parsed = parseJsonSafely(raw);
     if (parsed && parsed.thesis) {
       return {
@@ -231,7 +236,7 @@ Respond with ONLY valid JSON with this exact structure:
   return getContextualBullFallback(idea);
 }
 
-// --- 4. AI 2: The Bear Partner (OpenRouter DeepSeek Free / Groq Llama) -------
+// --- 4. AI 2: The Bear Partner (OpenRouter / Groq / Gemini) -----------------
 export async function callBearAgent(idea, context = "") {
   const openRouterKey = openRouterPool.getNextKey();
 
@@ -264,10 +269,10 @@ Respond with ONLY valid JSON with this exact structure:
 
   const userPrompt = `Startup Idea: "${idea}"${context ? `\nAdditional Context / Bull Thesis: ${context}` : ""}`;
 
-  // 1. Primary Fast Path: Groq Cloud (Llama 3.3 70B / 3.1 8B Bear Mode) - 1.2s latency
+  // 1. Primary Fast Path: Groq Cloud (Qwen / Llama Bear Mode)
   const groqKey = groqPool.getNextKey();
   if (groqKey) {
-    const groqModels = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
+    const groqModels = ["qwen/qwen3.8-27b", "openai/gpt-oss-120b", "llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
     for (const model of groqModels) {
       try {
         const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -285,7 +290,7 @@ Respond with ONLY valid JSON with this exact structure:
             temperature: 0.4,
             response_format: { type: "json_object" },
           }),
-          signal: AbortSignal.timeout(3500),
+          signal: AbortSignal.timeout(7000),
         });
 
         if (res.ok) {
@@ -293,7 +298,10 @@ Respond with ONLY valid JSON with this exact structure:
           const content = data?.choices?.[0]?.message?.content;
           const parsed = parseJsonSafely(content);
           if (parsed && parsed.thesis) {
-            const displayModel = model.includes("70b") ? "Llama 3.3 70B" : "Llama 3.1 8B";
+            let displayModel = "Llama 3.3 70B";
+            if (model.includes("qwen")) displayModel = "Qwen 27B";
+            else if (model.includes("gpt-oss")) displayModel = "GPT-OSS 120B";
+            else if (model.includes("8b")) displayModel = "Llama 3.1 8B";
             return {
               provider: `Groq (${displayModel} Bear Mode)`,
               thesis: parsed.thesis,
@@ -310,11 +318,13 @@ Respond with ONLY valid JSON with this exact structure:
     }
   }
 
-  // 2. Secondary Path: OpenRouter DeepSeek / Llama Free (3.5s timeout)
+  // 2. Secondary Path: OpenRouter Free / DeepSeek (7s timeout)
   if (openRouterKey) {
     const models = [
-      "deepseek/deepseek-chat:free",
+      "nvidia/nemotron-3.5-lightning:free",
+      "deepseek/deepseek-chat",
       "meta-llama/llama-3.3-70b-instruct:free",
+      "deepseek/deepseek-chat:free",
     ];
     for (const model of models) {
       try {
@@ -335,7 +345,7 @@ Respond with ONLY valid JSON with this exact structure:
             temperature: 0.4,
             response_format: { type: "json_object" },
           }),
-          signal: AbortSignal.timeout(3500),
+          signal: AbortSignal.timeout(7000),
         });
 
         if (res.ok) {
@@ -343,9 +353,9 @@ Respond with ONLY valid JSON with this exact structure:
           const content = data?.choices?.[0]?.message?.content;
           const parsed = parseJsonSafely(content);
           if (parsed && parsed.thesis) {
-            const providerName = model.includes("deepseek")
-              ? "OpenRouter (DeepSeek V3)"
-              : "OpenRouter (Llama 3.3 70B)";
+            let providerName = "OpenRouter (DeepSeek V3)";
+            if (model.includes("nemotron")) providerName = "OpenRouter (Nemotron 3.5)";
+            else if (model.includes("llama")) providerName = "OpenRouter (Llama 3.3 70B)";
             return {
               provider: providerName,
               thesis: parsed.thesis,
@@ -362,10 +372,10 @@ Respond with ONLY valid JSON with this exact structure:
     }
   }
 
-  // 3. Tertiary Zero-Config Fallback: Google Gemini with Bear Partner persona (3.5s timeout)
+  // 3. Tertiary Zero-Config Fallback: Google Gemini with Bear Partner persona (6s timeout)
   try {
     const geminiPrompt = `${systemPrompt}\n\n${userPrompt}`;
-    const raw = await withTimeout(callGemini(geminiPrompt), 3500, "Gemini Bear fallback timed out");
+    const raw = await withTimeout(callGemini(geminiPrompt), 6000, "Gemini Bear fallback timed out");
     const parsed = parseJsonSafely(raw);
     if (parsed && parsed.thesis) {
       return {
@@ -384,7 +394,7 @@ Respond with ONLY valid JSON with this exact structure:
   return getContextualBearFallback(idea);
 }
 
-// --- 5. Parallel Opening Clash (Strict 5.5s overall cap) -------------------
+// --- 5. Parallel Opening Clash (Resilient 12s overall cap) -----------------
 export async function runOpeningClash(idea) {
   try {
     const clashPromise = Promise.allSettled([
@@ -394,7 +404,7 @@ export async function runOpeningClash(idea) {
 
     const [bullResult, bearResult] = await withTimeout(
       clashPromise,
-      5500,
+      12000,
       "Opening clash overall timeout exceeded"
     );
 
