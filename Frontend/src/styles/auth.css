@@ -1,0 +1,531 @@
+/* ==========================================================================
+   auth.css — IdeaPulse / LaunchPilot sign-in modal
+   Apple-style surface, Geist, terracotta accent (#e05626).
+   Theme: <div class="ax-overlay" data-theme="light | dark">
+   ========================================================================== */
+
+.ax-overlay {
+  --ax-accent: #e05626;
+  --ax-accent-hi: #ea6a3d;
+  --ax-accent-lo: #cf4a1d;
+  --ax-ring: rgba(224, 86, 38, 0.22);
+  --ax-ease: cubic-bezier(0.16, 1, 0.3, 1);
+
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  font-family: "Geist", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  background: rgba(18, 12, 8, 0.42);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  backdrop-filter: blur(16px) saturate(150%);
+  animation: ax-fade 0.28s ease both;
+}
+
+/* ---- themes ------------------------------------------------------------ */
+.ax-overlay[data-theme="light"] {
+  --ax-surface: #ffffff;
+  --ax-text: #1d1d1f;
+  --ax-muted: #6e6e73;
+  --ax-faint: #a1a1a6;
+  --ax-line: rgba(0, 0, 0, 0.08);
+  --ax-field: #f5f5f7;
+  --ax-field-hover: #eeeef1;
+  --ax-pill: #ffffff;
+  --ax-pill-shadow: 0 1px 2px rgba(0, 0, 0, 0.1), 0 2px 8px rgba(0, 0, 0, 0.06);
+  --ax-highlight: rgba(255, 255, 255, 0.9);
+  --ax-glow: rgba(224, 86, 38, 0.1);
+  --ax-error-bg: #fff2f0;
+  --ax-error-line: rgba(224, 60, 38, 0.22);
+  --ax-error-text: #c4321a;
+  --ax-card-shadow: 0 0 0 0.5px rgba(0, 0, 0, 0.06), 0 2px 6px rgba(0, 0, 0, 0.04),
+    0 24px 48px -12px rgba(30, 14, 6, 0.28), 0 48px 96px -24px rgba(30, 14, 6, 0.22);
+}
+
+.ax-overlay[data-theme="dark"] {
+  --ax-surface: #121214;
+  --ax-text: #f5f5f7;
+  --ax-muted: #98989f;
+  --ax-faint: #636366;
+  --ax-line: rgba(255, 255, 255, 0.09);
+  --ax-field: rgba(255, 255, 255, 0.06);
+  --ax-field-hover: rgba(255, 255, 255, 0.09);
+  --ax-pill: rgba(255, 255, 255, 0.14);
+  --ax-pill-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ax-highlight: rgba(255, 255, 255, 0.07);
+  --ax-glow: rgba(224, 86, 38, 0.16);
+  --ax-error-bg: rgba(255, 69, 58, 0.1);
+  --ax-error-line: rgba(255, 69, 58, 0.28);
+  --ax-error-text: #ff8a80;
+  --ax-card-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.08), 0 32px 80px -16px rgba(0, 0, 0, 0.8);
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* ---- card -------------------------------------------------------------- */
+.ax-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 416px;
+  max-height: 92vh;
+  overflow: hidden;
+  border-radius: 28px;
+  background: var(--ax-surface);
+  color: var(--ax-text);
+  box-shadow: var(--ax-card-shadow), inset 0 1px 0 var(--ax-highlight);
+  animation: ax-pop 0.5s var(--ax-ease) both;
+}
+
+/* soft terracotta light falling from the top edge */
+.ax-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 220px;
+  background: radial-gradient(60% 100% at 50% 0%, var(--ax-glow), transparent 75%);
+  pointer-events: none;
+}
+
+.ax-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 22px 0;
+  flex-shrink: 0;
+}
+
+.ax-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.ax-brand-mark {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff;
+  background: linear-gradient(180deg, var(--ax-accent-hi), var(--ax-accent));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 4px 12px -2px rgba(224, 86, 38, 0.5);
+}
+
+.ax-brand b {
+  font-weight: 650;
+  color: var(--ax-accent);
+}
+
+.ax-close {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--ax-field);
+  color: var(--ax-muted);
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s, transform 0.3s var(--ax-ease);
+}
+.ax-close:hover {
+  background: var(--ax-field-hover);
+  color: var(--ax-text);
+  transform: rotate(90deg);
+}
+
+/* ---- body -------------------------------------------------------------- */
+.ax-body {
+  position: relative;
+  flex: 1;
+  overflow-y: auto;
+  padding: 22px 26px 24px;
+  overscroll-behavior: contain;
+}
+
+/* segmented control with a sliding pill */
+.ax-seg {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  padding: 3px;
+  margin-bottom: 26px;
+  border-radius: 12px;
+  background: var(--ax-field);
+}
+.ax-seg-pill {
+  position: absolute;
+  top: 3px;
+  bottom: 3px;
+  left: 3px;
+  width: calc(50% - 3px);
+  border-radius: 9px;
+  background: var(--ax-pill);
+  box-shadow: var(--ax-pill-shadow);
+  transition: transform 0.42s var(--ax-ease);
+}
+.ax-seg[data-mode="signup"] .ax-seg-pill {
+  transform: translateX(100%);
+}
+.ax-seg button {
+  position: relative;
+  z-index: 1;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 560;
+  color: var(--ax-muted);
+  cursor: pointer;
+  transition: color 0.25s;
+}
+.ax-seg button[aria-selected="true"] {
+  color: var(--ax-text);
+}
+
+.ax-title {
+  margin: 0;
+  text-align: center;
+  font-size: 26px;
+  line-height: 1.12;
+  font-weight: 650;
+  letter-spacing: -0.035em;
+}
+.ax-sub {
+  margin: 8px auto 24px;
+  max-width: 320px;
+  text-align: center;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ax-muted);
+}
+
+/* ---- fields ------------------------------------------------------------ */
+.ax-field {
+  margin-bottom: 14px;
+}
+.ax-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+.ax-label {
+  font-size: 12.5px;
+  font-weight: 560;
+  color: var(--ax-text);
+}
+.ax-label small {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--ax-faint);
+}
+.ax-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--ax-accent);
+  cursor: pointer;
+}
+.ax-link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.ax-input {
+  position: relative;
+}
+.ax-input > .ax-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--ax-faint);
+  pointer-events: none;
+  transition: color 0.2s;
+}
+.ax-input:focus-within > .ax-icon {
+  color: var(--ax-accent);
+}
+.ax-input input {
+  width: 100%;
+  height: 46px;
+  padding: 0 44px 0 42px;
+  border: 1px solid transparent;
+  border-radius: 13px;
+  background: var(--ax-field);
+  color: var(--ax-text);
+  font: inherit;
+  font-size: 14.5px;
+  outline: none;
+  transition: background 0.2s, border-color 0.2s, box-shadow 0.25s;
+}
+.ax-input input::placeholder {
+  color: var(--ax-faint);
+}
+.ax-input input:hover {
+  background: var(--ax-field-hover);
+}
+.ax-input input:focus {
+  background: var(--ax-surface);
+  border-color: var(--ax-accent);
+  box-shadow: 0 0 0 4px var(--ax-ring);
+}
+.ax-input input:-webkit-autofill {
+  -webkit-text-fill-color: var(--ax-text);
+  -webkit-box-shadow: 0 0 0 40px var(--ax-field) inset;
+  caret-color: var(--ax-text);
+}
+
+.ax-eye {
+  position: absolute;
+  right: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 9px;
+  background: none;
+  color: var(--ax-faint);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+.ax-eye:hover {
+  color: var(--ax-text);
+  background: var(--ax-field-hover);
+}
+
+/* name field: smooth height collapse between modes */
+.ax-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition: grid-template-rows 0.42s var(--ax-ease), opacity 0.3s ease;
+}
+.ax-collapse[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.ax-collapse > div {
+  min-height: 0;
+  overflow: hidden;
+  padding: 0 4px 14px;
+  margin: 0 -4px;
+}
+.ax-collapse .ax-field {
+  margin-bottom: 0;
+}
+
+/* ---- messages ---------------------------------------------------------- */
+.ax-error,
+.ax-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  animation: ax-rise 0.35s var(--ax-ease) both;
+}
+.ax-error {
+  background: var(--ax-error-bg);
+  border: 1px solid var(--ax-error-line);
+  color: var(--ax-error-text);
+}
+.ax-notice {
+  align-items: center;
+  background: var(--ax-field);
+  border: 1px solid var(--ax-line);
+  color: var(--ax-muted);
+}
+.ax-error svg,
+.ax-notice svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ---- buttons ----------------------------------------------------------- */
+.ax-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(180deg, var(--ax-accent-hi) 0%, var(--ax-accent) 100%);
+  color: #fff;
+  font: inherit;
+  font-size: 14.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 1px 2px rgba(120, 40, 10, 0.25),
+    0 10px 24px -8px rgba(224, 86, 38, 0.65);
+  transition: transform 0.25s var(--ax-ease), box-shadow 0.25s, filter 0.2s;
+}
+.ax-primary:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 1px 2px rgba(120, 40, 10, 0.25),
+    0 14px 30px -8px rgba(224, 86, 38, 0.75);
+}
+.ax-primary:active:not(:disabled) {
+  transform: scale(0.985);
+}
+.ax-primary:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+.ax-primary .ax-arrow {
+  transition: transform 0.3s var(--ax-ease);
+}
+.ax-primary:hover:not(:disabled) .ax-arrow {
+  transform: translateX(3px);
+}
+
+.ax-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0 16px;
+  font-size: 12.5px;
+  color: var(--ax-faint);
+}
+.ax-divider::before,
+.ax-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--ax-line);
+}
+
+.ax-socials {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.ax-social {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 44px;
+  border: 1px solid var(--ax-line);
+  border-radius: 13px;
+  background: transparent;
+  color: var(--ax-text);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 540;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s, transform 0.25s var(--ax-ease);
+}
+.ax-social:hover:not(:disabled) {
+  background: var(--ax-field);
+  transform: translateY(-1px);
+}
+.ax-social:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.ax-social:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.ax-social svg {
+  width: 17px;
+  height: 17px;
+}
+
+.ax-guest {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding: 14px 0 0;
+  border: 0;
+  border-top: 1px solid var(--ax-line);
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 540;
+  color: var(--ax-muted);
+  text-align: center;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.ax-guest:hover {
+  color: var(--ax-text);
+}
+.ax-guest span {
+  color: var(--ax-accent);
+}
+
+.ax-legal {
+  margin: 14px 0 0;
+  text-align: center;
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--ax-faint);
+}
+
+/* ---- focus + a11y ------------------------------------------------------ */
+.ax-overlay button:focus-visible {
+  outline: 2px solid var(--ax-accent);
+  outline-offset: 2px;
+}
+.ax-spin {
+  animation: ax-spin 0.8s linear infinite;
+}
+
+/* ---- motion ------------------------------------------------------------ */
+@keyframes ax-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes ax-pop {
+  from { opacity: 0; transform: translateY(14px) scale(0.965); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ax-rise {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ax-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 480px) {
+  .ax-overlay { align-items: flex-end; padding: 0; }
+  .ax-card { max-width: none; max-height: 94vh; border-radius: 28px 28px 0 0; }
+  .ax-body { padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px)); }
+  .ax-input input { font-size: 16px; } /* stops iOS zoom on focus */
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ax-overlay, .ax-card, .ax-error, .ax-notice { animation: none; }
+  .ax-seg-pill, .ax-collapse, .ax-primary, .ax-social, .ax-close { transition: none; }
+}
