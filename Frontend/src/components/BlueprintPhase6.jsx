@@ -16,6 +16,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Copy, Edit2, FileDown, FileText, Loader2, Plus, Sparkles, Trash2, X } from "lucide-react";
 import { Reveal } from "./BlueprintPhase2.jsx";
+import DynamicIslandToast from "./DynamicIslandToast.jsx";
 import "./blueprint.css";
 
 /* ------------------------------------------------------------------ */
@@ -294,14 +295,8 @@ export function CompletionHero({ onExportPdf, onExportMarkdown, onScrollToTop })
   );
 }
 
-export function Toast({ message }) {
-  if (!message) return null;
-  return (
-    <div className="bp-toast" role="status">
-      <Check size={15} />
-      <span>{message}</span>
-    </div>
-  );
+export function Toast({ message, tone }) {
+  return <DynamicIslandToast message={message} tone={tone} />;
 }
 
 /* ------------------------------------------------------------------ */

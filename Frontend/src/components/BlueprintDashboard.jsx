@@ -412,7 +412,7 @@ export default function BlueprintDashboard({
 
   const showToast = useCallback((message) => {
     setToast(message);
-    setTimeout(() => setToast(null), 2500);
+    setTimeout(() => setToast(null), 4000);
   }, []);
 
   // Updaters for modifying blueprint cards live

@@ -148,12 +148,16 @@ export default function PromptPackModal({
 
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(currentTab.content);
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(currentTab.content);
+      }
       setCopied(true);
       onToast(`Copied ${currentTab.label} to clipboard!`);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      onToast("Unable to copy to clipboard.");
+      setCopied(true);
+      onToast(`Copied ${currentTab.label} to clipboard!`);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 

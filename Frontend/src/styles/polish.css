@@ -1,0 +1,188 @@
+/* ==========================================================================
+   polish.css — global Apple-style layer for LaunchPilot
+   Import AFTER index.css (it deliberately overrides a few of its rules):
+     import "./index.css";
+     import "./styles/polish.css";
+   ========================================================================== */
+
+@import url("https://fonts.googleapis.com/css2?family=Geist:wght@300..800&family=Geist+Mono:wght@400..600&display=swap");
+
+:root {
+  --accent: #e05626;
+  --accent-rgb: 224, 86, 38; /* unifies the old orange-500 (249,115,22) with the terracotta used in the studio */
+
+  /* scrollbar tones (light surfaces) */
+  --sb-thumb: rgba(0, 0, 0, 0.12);
+  --sb-thumb-on: rgba(0, 0, 0, 0.24);
+  --sb-thumb-hover: rgba(0, 0, 0, 0.4);
+  --sb-thumb-active: rgba(224, 86, 38, 0.8);
+}
+
+/* dark surfaces: put data-theme="dark" or .sb-dark on any ancestor */
+[data-theme="dark"],
+.sb-dark {
+  --sb-thumb: rgba(255, 255, 255, 0.14);
+  --sb-thumb-on: rgba(255, 255, 255, 0.26);
+  --sb-thumb-hover: rgba(255, 255, 255, 0.45);
+}
+
+/* ---- scrollbars: thin floating pill, no grey track, no arrows ----------- */
+/* Chromium / Edge (Windows) / Safari */
+*::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+*::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+*::-webkit-scrollbar-thumb {
+  min-height: 44px;
+  min-width: 44px;
+  border: 3px solid transparent; /* inset: 6px visible pill inside a 12px lane */
+  border-radius: 999px;
+  background-color: var(--sb-thumb);
+  background-clip: padding-box;
+  transition: background-color 0.25s ease;
+}
+*:hover::-webkit-scrollbar-thumb {
+  background-color: var(--sb-thumb-on);
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--sb-thumb-hover);
+}
+*::-webkit-scrollbar-thumb:active {
+  background-color: var(--sb-thumb-active);
+}
+
+/* old utility classes in index.css (5px, slate) -> same pill */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: var(--sb-thumb);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: var(--sb-thumb-hover);
+}
+
+/* Firefox has no pseudo-elements: thin + transparent track */
+@supports (-moz-appearance: none) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--sb-thumb-on) transparent;
+  }
+}
+
+/* ---- typography: one family, tight, balanced ---------------------------- */
+html,
+body {
+  font-family: "Geist", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: normal;
+  font-optical-sizing: auto;
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+}
+h1,
+h2,
+h3,
+.font-display {
+  font-family: "Geist", "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+p,
+li {
+  text-wrap: pretty;
+}
+code,
+kbd,
+pre,
+samp,
+.font-mono {
+  font-family: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+/* ---- selection + keyboard focus ----------------------------------------- */
+::selection {
+  background: rgba(var(--accent-rgb), 0.22);
+  color: inherit;
+}
+:where(a, button, input, select, textarea, summary, [role="button"], [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ---- surfaces: hairline + layered shadow + real glass ------------------- */
+.card-white {
+  border-color: rgba(0, 0, 0, 0.07);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 10px 28px -14px rgba(30, 14, 6, 0.14);
+}
+.card-white-elevated {
+  border-color: rgba(0, 0, 0, 0.07);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 24px 48px -20px rgba(30, 14, 6, 0.22);
+}
+.glass-panel {
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  border-color: rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04), 0 12px 32px -16px rgba(30, 14, 6, 0.16);
+}
+.glass-panel-elevated {
+  border-color: rgba(var(--accent-rgb), 0.22);
+  box-shadow: 0 24px 44px -18px rgba(var(--accent-rgb), 0.2), 0 2px 4px rgba(0, 0, 0, 0.03);
+}
+.hairline-border {
+  border-color: rgba(0, 0, 0, 0.07);
+}
+.hairline-border:hover {
+  border-color: rgba(0, 0, 0, 0.16);
+}
+.sticky-glass-rail {
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  backdrop-filter: blur(22px) saturate(180%);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+/* accent-driven effects now follow --accent-rgb */
+.spotlight-card::after {
+  background: radial-gradient(
+    600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+    rgba(var(--accent-rgb), 0.08),
+    transparent 50%
+  );
+}
+.bg-orange-spotlight {
+  background: radial-gradient(
+    circle 800px at 50% -120px,
+    rgba(var(--accent-rgb), 0.08),
+    rgba(255, 237, 213, 0.4) 40%,
+    transparent 80%
+  );
+}
+.bg-shimmer-orange {
+  background: linear-gradient(
+    90deg,
+    rgba(var(--accent-rgb), 0.04) 0%,
+    rgba(var(--accent-rgb), 0.18) 50%,
+    rgba(var(--accent-rgb), 0.04) 100%
+  );
+  background-size: 200% 100%;
+}

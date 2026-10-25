@@ -40,6 +40,7 @@ import ResourcesVault from "./ResourcesVault.jsx";
 import StartupDictionaryModal from "./dictionary/StartupDictionaryModal.jsx";
 import PromptPackModal from "./PromptPackModal.jsx";
 import VentureComparisonModal from "./VentureComparisonModal.jsx";
+import DynamicIslandToast from "./DynamicIslandToast.jsx";
 import { ScrollProgress } from "./BlueprintPhase2.jsx";
 import "./home.css";
 import "./workspace.css";
@@ -239,7 +240,7 @@ export default function WorkspacePage({
 
   const showToast = (msg) => {
     setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 2500);
+    setTimeout(() => setToastMessage(null), 4000);
   };
 
   const handleStartNew = () => {
@@ -743,13 +744,8 @@ export default function WorkspacePage({
         </main>
       </div>
 
-      {/* Toast */}
-      {toastMessage && (
-        <div className="wk-toast" role="status">
-          <Check size={15} />
-          <span>{toastMessage}</span>
-        </div>
-      )}
+      {/* Dynamic Island Toast */}
+      <DynamicIslandToast message={toastMessage} />
 
       {/* 1-Click AI Prompt Pack Modal */}
       <PromptPackModal
