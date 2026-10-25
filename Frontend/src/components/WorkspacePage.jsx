@@ -535,7 +535,7 @@ export default function WorkspacePage({
                     )}
                   </label>
 
-                  {history.length >= 2 && (
+                  {history.length >= 1 && (
                     <button
                       type="button"
                       onClick={() => setShowComparisonModal(true)}
@@ -561,9 +561,18 @@ export default function WorkspacePage({
                     Describe any startup thesis and get financial models, SWOT analysis, technical architecture and a
                     PRD in about 30 seconds.
                   </p>
-                  <button type="button" className="hp-btn hp-btn--primary hp-btn--lg" onClick={handleStartNew}>
-                    <Zap size={16} /> Analyze your first startup
-                  </button>
+                  <div className="flex flex-wrap items-center justify-center gap-2.5 mt-2">
+                    <button type="button" className="hp-btn hp-btn--primary hp-btn--lg" onClick={handleStartNew}>
+                      <Zap size={16} /> Analyze your first startup
+                    </button>
+                    <button
+                      type="button"
+                      className="hp-btn hp-btn--ghost hp-btn--lg"
+                      onClick={() => setShowComparisonModal(true)}
+                    >
+                      <Scale size={16} className="text-orange-600" /> Compare Venture Archetypes
+                    </button>
+                  </div>
 
                   <div className="wk-empty-suggest">
                     <button type="button" className="hp-btn hp-btn--ghost" onClick={handleStartNew}>

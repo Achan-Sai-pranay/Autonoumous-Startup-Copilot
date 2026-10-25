@@ -1,0 +1,671 @@
+/* ==========================================================================
+   compare.css — Scale Founder Venture Duel ("Compare 2 Ventures")
+   Premium Apple & Claude aesthetic: Frosted glass, terracotta highlights,
+   rich typography, head-to-head comparison grid, and Red Flag Radar.
+   ========================================================================== */
+
+.vcd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10002;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.65);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  animation: vcd-fade-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes vcd-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes vcd-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.vcd-modal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 1040px;
+  max-height: 94vh;
+  background: #ffffff;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  border-radius: 28px;
+  box-shadow: 
+    0 24px 64px -16px rgba(15, 23, 42, 0.28),
+    0 8px 24px -8px rgba(15, 23, 42, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  overflow: hidden;
+  animation: vcd-scale-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Modal Header */
+.vcd-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 26px;
+  background: rgba(248, 250, 252, 0.85);
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.vcd-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.vcd-header-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1px solid #fed7aa;
+  color: #ea580c;
+  box-shadow: 0 2px 4px rgba(234, 88, 12, 0.08);
+}
+
+.vcd-title-group h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vcd-scale-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #ea580c;
+}
+
+.vcd-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.vcd-close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vcd-close-btn:hover {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+/* Modal Body */
+.vcd-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+/* Venture Pickers Bar */
+.vcd-pickers-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+}
+
+.vcd-picker-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vcd-picker-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.vcd-picker-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.vcd-picker-select:focus {
+  border-color: #ea580c;
+  box-shadow: 0 0 0 3px rgba(234, 88, 12, 0.12);
+}
+
+.vcd-vs-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  font-size: 12px;
+  font-weight: 800;
+  color: #ea580c;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+/* Persona Switcher Bar */
+.vcd-persona-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  background: rgba(254, 243, 199, 0.35);
+  border: 1px solid #fef3c7;
+  border-radius: 16px;
+}
+
+.vcd-persona-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #92400e;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vcd-persona-tabs {
+  display: flex;
+  gap: 6px;
+}
+
+.vcd-persona-btn {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #78350f;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.vcd-persona-btn:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.vcd-persona-btn.active {
+  background: #ffffff;
+  border-color: #f59e0b;
+  color: #b45309;
+  box-shadow: 0 1px 3px rgba(180, 83, 9, 0.12);
+}
+
+/* Executive Verdict Banner */
+.vcd-verdict-banner {
+  display: flex;
+  gap: 18px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  border: 1px solid #bbf7d0;
+  border-radius: 22px;
+  box-shadow: 0 4px 12px -2px rgba(34, 197, 94, 0.08);
+}
+
+.vcd-verdict-trophy {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 4px 8px rgba(22, 163, 74, 0.25);
+  flex-shrink: 0;
+}
+
+.vcd-verdict-content {
+  flex: 1;
+}
+
+.vcd-verdict-tag {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #15803d;
+}
+
+.vcd-verdict-heading {
+  font-size: 18px;
+  font-weight: 800;
+  color: #14532d;
+  letter-spacing: -0.02em;
+  margin-top: 2px;
+}
+
+.vcd-verdict-sub {
+  font-size: 13px;
+  color: #166534;
+  margin-top: 4px;
+  line-height: 1.5;
+}
+
+.vcd-verdict-points {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.vcd-verdict-point {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12.5px;
+  color: #14532d;
+  line-height: 1.45;
+}
+
+/* Tab Navigation */
+.vcd-nav-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  padding: 6px 0 10px;
+  border-bottom: 1px solid #e2e8f0;
+}
+.vcd-nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.vcd-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.vcd-tab-btn:hover {
+  color: #0f172a;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.vcd-tab-btn.active {
+  color: #ea580c;
+  border-color: #fdba74;
+  background: #fff7ed;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(234, 88, 12, 0.12);
+}
+
+/* Category Matrix Table */
+.vcd-matrix-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.vcd-matrix-head {
+  display: grid;
+  grid-template-columns: 2fr 3fr 3fr;
+  padding: 12px 18px;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.vcd-matrix-row {
+  display: grid;
+  grid-template-columns: 2fr 3fr 3fr;
+  padding: 12px 18px;
+  border-bottom: 1px solid #f1f5f9;
+  align-items: center;
+  font-size: 12.5px;
+  transition: background 0.15s ease;
+}
+
+.vcd-matrix-row:hover {
+  background: #f8fafc;
+}
+
+.vcd-matrix-row:last-child {
+  border-bottom: none;
+}
+
+.vcd-metric-label {
+  font-weight: 600;
+  color: #334155;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.vcd-cell {
+  padding: 2px 8px;
+  color: #0f172a;
+}
+
+.vcd-cell-win {
+  font-weight: 700;
+  color: #047857;
+  background: #ecfdf5;
+  border-radius: 8px;
+  padding: 4px 8px;
+  display: inline-block;
+}
+
+.vcd-badge-score {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.vcd-badge-score--win {
+  background: #dcfce7;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
+.vcd-badge-score--neutral {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+/* Red Flag Radar Cards */
+.vcd-radar-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.vcd-radar-col {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.vcd-radar-header {
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vcd-radar-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.vcd-disadvantage-card {
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid #fecdd3;
+  box-shadow: 0 1px 2px rgba(225, 29, 72, 0.05);
+}
+
+.vcd-disadvantage-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.vcd-disadvantage-title {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #9f1239;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.vcd-severity-tag {
+  font-size: 9.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.vcd-severity-tag--critical {
+  background: #ffe4e6;
+  color: #e11d48;
+  border: 1px solid #fecdd3;
+}
+
+.vcd-severity-tag--high {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.vcd-severity-tag--medium {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.vcd-disadvantage-desc {
+  font-size: 12px;
+  color: #4c0519;
+  line-height: 1.45;
+}
+
+.vcd-mitigation-box {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  font-size: 11.5px;
+  color: #14532d;
+  line-height: 1.45;
+}
+
+.vcd-mitigation-box b {
+  color: #15803d;
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* Modal Footer */
+.vcd-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 26px;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.vcd-footer-left {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.vcd-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.vcd-btn-secondary {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.vcd-btn-secondary:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.vcd-btn-primary {
+  padding: 8px 20px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: linear-gradient(180deg, #ea580c 0%, #c2410c 100%);
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 2px 6px rgba(194, 65, 12, 0.25);
+  transition: all 0.2s ease;
+}
+
+.vcd-btn-primary:hover {
+  background: linear-gradient(180deg, #f97316 0%, #ea580c 100%);
+  transform: translateY(-1px);
+}
+
+/* Scale Paywall Gate */
+.vcd-gate-banner {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+
+.vcd-gate-card {
+  max-width: 440px;
+  width: 100%;
+  padding: 28px 24px;
+  background: #ffffff;
+  border: 1px solid #fed7aa;
+  border-radius: 24px;
+  box-shadow: 0 20px 48px -12px rgba(234, 88, 12, 0.18);
+  text-align: center;
+}
+
+.vcd-gate-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #ea580c;
+  margin-bottom: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .vcd-pickers-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .vcd-radar-grid {
+    grid-template-columns: 1fr;
+  }
+  .vcd-matrix-head,
+  .vcd-matrix-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .vcd-matrix-head span:first-child,
+  .vcd-matrix-row > div:first-child {
+    grid-column: span 2;
+    margin-bottom: 4px;
+    font-weight: 700;
+  }
+}
