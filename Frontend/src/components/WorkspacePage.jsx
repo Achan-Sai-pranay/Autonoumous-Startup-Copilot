@@ -32,7 +32,6 @@ import {
   Rocket,
   X,
   Code,
-  Share2,
   Scale,
 } from "lucide-react";
 import StudioSidebar from "./StudioSidebar.jsx";
@@ -40,7 +39,6 @@ import IdeaFinder from "./IdeaFinder.jsx";
 import ResourcesVault from "./ResourcesVault.jsx";
 import StartupDictionaryModal from "./dictionary/StartupDictionaryModal.jsx";
 import PromptPackModal from "./PromptPackModal.jsx";
-import SharePitchModal from "./SharePitchModal.jsx";
 import VentureComparisonModal from "./VentureComparisonModal.jsx";
 import { ScrollProgress } from "./BlueprintPhase2.jsx";
 import "./home.css";
@@ -149,7 +147,6 @@ export default function WorkspacePage({
   const [showDictionaryModal, setShowDictionaryModal] = useState(false);
   const [selectedDictionaryTerm, setSelectedDictionaryTerm] = useState(null);
   const [showPromptPackModal, setShowPromptPackModal] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
   const [showComparisonModal, setShowComparisonModal] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const userDropdownRef = useRef(null);
@@ -715,18 +712,6 @@ export default function WorkspacePage({
                     <Code size={13} className="text-slate-600" />
                     <span className="hidden sm:inline">AI Prompt Pack</span>
                   </button>
-                  <button
-                    type="button"
-                    className="hp-btn hp-btn--ghost hp-btn--sm flex items-center gap-1.5"
-                    onClick={() => setShowShareModal(true)}
-                    title="Generate Shareable Public Pitch Link"
-                  >
-                    <Share2 size={13} className="text-orange-600" />
-                    <span>Share Pitch</span>
-                    <span className="px-1 py-0.2 rounded text-[9px] font-mono font-bold bg-orange-50 text-orange-700 border border-orange-200/60">
-                      Scale
-                    </span>
-                  </button>
                   <button type="button" className="hp-btn hp-btn--ghost hp-btn--sm" onClick={handleStartNew}>
                     <Plus size={14} /> Analyze new venture
                   </button>
@@ -772,17 +757,6 @@ export default function WorkspacePage({
         onClose={() => setShowPromptPackModal(false)}
         idea={idea || history[0]?.idea}
         blueprint={blueprint || history[0]?.blueprint}
-        onToast={showToast}
-      />
-
-      {/* Shareable Public Pitch Link Modal */}
-      <SharePitchModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        idea={idea || history[0]?.idea}
-        blueprint={blueprint || history[0]?.blueprint}
-        currentUser={currentUser}
-        onOpenPayment={onOpenPayment}
         onToast={showToast}
       />
 

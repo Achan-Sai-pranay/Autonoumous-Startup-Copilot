@@ -75,7 +75,6 @@ import PrdDossier from "./PrdDossier.jsx";
 import AiDebateWarRoomSection from "./BlueprintPhase3.jsx";
 import LiveMarketEvidence from "./LiveMarketEvidence.jsx";
 import PromptPackModal from "./PromptPackModal.jsx";
-import SharePitchModal from "./SharePitchModal.jsx";
 import {
   SectionGatewayHeader,
   ViabilitySpotlight,
@@ -385,7 +384,6 @@ export default function BlueprintDashboard({
   const setActiveSection = setControlledActiveSection || setInternalActiveSection;
 
   const [showPromptPackModal, setShowPromptPackModal] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
 
   const [displayMode, setDisplayMode] = useState("continuous"); // "continuous" | "focused"
   const isProgrammaticScrollRef = useRef(false);
@@ -1020,17 +1018,6 @@ export default function BlueprintDashboard({
         onClose={() => setShowPromptPackModal(false)}
         idea={originalIdea || blueprint?.idea}
         blueprint={blueprint}
-        onToast={showToast}
-      />
-
-      {/* Share Pitch Modal */}
-      <SharePitchModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        idea={originalIdea || blueprint?.idea}
-        blueprint={blueprint}
-        currentUser={currentUser}
-        onOpenPayment={onOpenPayment}
         onToast={showToast}
       />
 

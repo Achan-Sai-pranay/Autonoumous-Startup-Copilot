@@ -314,7 +314,7 @@ export default function VentureComparisonModal({
                     Upgrade to Scale Founder (₹299/mo)
                   </button>
                   <span className="text-[11px] text-slate-400">
-                    Includes 10 blueprints/week, public pitch links & real-time Reddit grounding.
+                    Includes 10 blueprints/week, executive PRD exports & real-time Reddit grounding.
                   </span>
                 </div>
               </div>

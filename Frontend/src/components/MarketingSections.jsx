@@ -769,24 +769,24 @@ export function BentoFeatureGrid() {
             <p>Scrapes real competitor pricing tiers and crawls Reddit threads (r/startups, r/SaaS) to find verified complaints and underserved wedges.</p>
           </Reveal>
 
-          {/* Row 3: Public Pitch Links + Venture Comparison Duel */}
+          {/* Row 3: PRD & Dossier Export Suite + Venture Comparison Duel */}
           <Reveal className="hp-tile hp-tile--half" delay={120}>
-            <div className="hp-share-preview" aria-hidden="true">
-              <span className="hp-share-url">launchpilot.ai/p/b2b-audit-89</span>
+            <div className="hp-share-preview" aria-hidden="true" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <span className="hp-share-url">executive-prd-dossier.pdf</span>
               <span className="hp-share-badge">
-                <Check size={11} /> 89/100 Validated
+                <Check size={11} /> 1-Click Export
               </span>
             </div>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
               <span className="hp-tile-icon">
-                <Share2 size={18} />
+                <Layers size={18} />
               </span>
               <span style={{ padding: "3px 8px", borderRadius: "999px", fontSize: "10.5px", fontWeight: 700, background: "#fff7ed", color: "#c2410c", border: "1px solid #fed7aa" }}>
                 Scale Founder Exclusive
               </span>
             </div>
-            <h3>One-Click Shareable Public Pitch Links.</h3>
-            <p>Publish an investor-ready read-only pitch page with a LaunchPilot verification watermark to share with angels, accelerators, or on X.</p>
+            <h3>Executive PRD & Dossier Export Suite.</h3>
+            <p>Export a comprehensive 16-part startup dossier, structured 10-slide pitch deck, and swipe files directly to PDF or Markdown without clutter.</p>
           </Reveal>
 
           <Reveal className="hp-tile hp-tile--half" delay={160}>
@@ -1113,7 +1113,7 @@ export function PricingSection({ onSelectPlan }) {
   const scale = [
     "10 startup blueprints per week",
     "Live Web & Reddit Complaint Grounding (r/startups, r/SaaS)",
-    "Public Shareable Pitch Links with Investor Mode",
+    "Comprehensive PRD & Pitch Deck Export Suite",
     "Side-by-Side Venture Comparison Duel",
     "1-Click Cursor, Lovable & Bolt Prompt Pack",
     "Highest priority AI queue",
@@ -1221,15 +1221,15 @@ export function FaqSection({ onCtaClick }) {
     },
     {
       q: "How does the device quota and subscription work?",
-      a: "Every device gets 1 complete demo blueprint for free with zero locked features. To validate multiple ideas, upgrade to Starter Founder (₹129/mo for 5 ideas/wk) or Scale Founder (₹299/mo for 10 ideas/wk plus live Reddit intelligence, public pitch links, and side-by-side venture comparisons). Instant UPI activation with Razorpay.",
+      a: "Every device gets 1 complete demo blueprint for free with zero locked features. To validate multiple ideas, upgrade to Starter Founder (₹129/mo for 5 ideas/wk) or Scale Founder (₹299/mo for 10 ideas/wk plus live Reddit intelligence, PRD exports, and side-by-side venture comparisons). Instant UPI activation with Razorpay.",
     },
     {
       q: "Can I trust the market size numbers?",
       a: "They are bottom-up estimates built from industry benchmarks and comparable businesses. Treat them as a disciplined ballpark for accelerator applications, angel conversations and team alignment, then confirm with your own research.",
     },
     {
-      q: "Can I download or share my blueprint?",
-      a: "Yes. Every blueprint exports in one click as a formatted PDF or Markdown file, or you can generate a public read-only pitch link with an authentic viability watermark for investors.",
+      q: "Can I download or export my blueprint?",
+      a: "Yes. Every blueprint exports in one click as a formatted PDF or Markdown file, or you can inspect interactive pitch decks and PRDs.",
     },
   ];
 

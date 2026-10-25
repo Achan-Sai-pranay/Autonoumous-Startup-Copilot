@@ -74,21 +74,17 @@ test("Razorpay plan amounts and signature verification", async () => {
   assert.strictEqual(verify("tampered_signature"), false);
 });
 
-test("Public Shareable Pitch Link slug generation and validation", () => {
-  const generateSlug = (idea) => {
-    const base = idea
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .slice(0, 40);
-    return `${base || "pitch"}-abc12`;
+test("Subscription cancellation and status validation contract", () => {
+  const subscriptions = {
+    "usr_123": { planId: "scale_299", status: "active", canceledAt: null },
   };
 
-  const slug = generateSlug("AI Autonomous Startup Copilot");
-  assert.strictEqual(slug, "ai-autonomous-startup-copilot-abc12");
+  // Simulate cancel
+  subscriptions["usr_123"].status = "canceled";
+  subscriptions["usr_123"].canceledAt = new Date().toISOString();
 
-  const specialSlug = generateSlug("B2B SaaS: 100% Automated!! & Fast");
-  assert.strictEqual(specialSlug, "b2b-saas-100-automated-fast-abc12");
+  assert.strictEqual(subscriptions["usr_123"].status, "canceled");
+  assert.ok(subscriptions["usr_123"].canceledAt);
 });
 
 test("Market Intelligence Reddit & Competitor schema contract", () => {
